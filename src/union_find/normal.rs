@@ -31,7 +31,7 @@ impl UnionFind {
         self.par_or_size[self.find_root(a)].get().abs() as usize
     }
 
-    pub fn merge(&self, a: usize, b: usize) -> bool {
+    pub fn merge(&mut self, a: usize, b: usize) -> bool {
         let mut ra = self.find_root(a);
         let mut rb = self.find_root(b);
 
@@ -43,8 +43,9 @@ impl UnionFind {
         if self.par_or_size[ra] > self.par_or_size[rb] {
             std::mem::swap(&mut ra, &mut rb)
         }
-        self.par_or_size[ra].set(self.par_or_size[ra].take() + self.par_or_size[rb].get());
-        self.par_or_size[rb].set(ra as i32);
+        //* enforce `&mut self` since this method may change belongings of nodes.*//
+        self.par_or_size[ra] = Cell::new(self.par_or_size[ra].take() + self.par_or_size[rb].get());
+        self.par_or_size[rb] = Cell::new(ra as i32);
 
         true
     }
