@@ -59,7 +59,12 @@ impl<const MOD: u64> Mint<MOD> {
             return None;
         }
 
-        todo!("Implement baby-step-giant-step algorithm!")
+        fn log_() {
+            todo!("Implement baby-step-giant-step algorithm!");
+        }
+
+        let g = Self::gcd(MOD, self.value);
+        todo!()
     }
 }
 
