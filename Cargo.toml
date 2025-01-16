@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+itertools = "0.14.0"
 num-traits = "0.2.19"
 rustc-hash = "2.1.0"
