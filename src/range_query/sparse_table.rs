@@ -1,4 +1,4 @@
-use std::{fmt::Debug, ops::Range};
+use std::ops::Range;
 
 pub struct SparseTable<T> {
     table: Vec<Vec<T>>,

@@ -17,6 +17,6 @@ mod segment_tree;
 mod sparse_table;
 
 pub use disjoint_sparse_table::DisjointSparseTable;
-pub use mo_alg::mo_algorithm;
+pub use mo_alg::{hilbert_order, mo_algorithm};
 pub use segment_tree::SegmentTree;
 pub use sparse_table::SparseTable;

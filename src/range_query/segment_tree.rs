@@ -15,11 +15,7 @@ impl<T> SegmentTree<T> {
         id: impl Fn() -> T + 'static,
     ) -> Self {
         let offset = data.len();
-        let mut data = Vec::from_iter(
-            std::iter::repeat_with(|| id())
-                .take(offset)
-                .chain(data.into_iter()),
-        );
+        let mut data = Vec::from_iter(std::iter::repeat_with(&id).take(offset).chain(data));
         for i in (1..offset).rev() {
             data[i] = op(&data[i * 2], &data[i * 2 + 1])
         }

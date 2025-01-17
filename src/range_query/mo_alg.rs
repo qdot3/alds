@@ -1,53 +1,53 @@
-use itertools::Itertools;
-
 /// Sort queries in Hilbert order.
-pub fn mo_algorithm(queries: &Vec<(usize, usize)>) -> impl IntoIterator<Item = usize> {
-    let n = queries
-        .iter()
-        .map(|&(l, r)| [l, r])
-        .flatten()
-        .max()
-        .unwrap();
+pub fn mo_algorithm(queries: &[(usize, usize)]) -> Vec<usize> {
+    let mut res = Vec::from_iter(0..queries.len());
+    let len = queries.iter().map(|(l, r)| l.max(r)).max().unwrap() + 1;
+    let h_order = Vec::from_iter(
+        queries
+            .iter()
+            .map(|&(l, r)| hilbert_order(l, r, len.next_power_of_two().ilog2())),
+    );
 
-    queries
-        .iter()
-        .map(|&(l, r)| hilbert_order(l, r, n.next_power_of_two().ilog2(), Dir::DOWN))
-        .enumerate()
-        .sorted_by_key(|(_, ho)| *ho)
-        .map(|(i, _)| i)
+    res.sort_unstable_by_key(|&i| h_order[i]);
+    res
 }
 
-fn hilbert_order(x: usize, y: usize, exp: u32, dir: Dir) -> usize {
-    if exp == 0 {
-        return 0;
+/// Calculate Hilbert order.
+pub fn hilbert_order(x: usize, y: usize, exp: u32) -> usize {
+    fn _hilbert_order(x: usize, y: usize, exp: u32, dir: Dir) -> usize {
+        if exp == 0 {
+            return 0;
+        }
+
+        let exp = exp - 1;
+        let pos = 2 * (x >> exp) + (y >> exp);
+        let w = 1 << exp;
+        let k = match dir {
+            Dir::Up => [2, 1, 3, 0],
+            Dir::Down => [0, 3, 1, 2],
+            Dir::Left => [2, 3, 1, 0],
+            Dir::Right => [0, 1, 3, 2],
+        }[pos];
+        let (x, y) = (x & (w - 1), y & (w - 1));
+        let dir = match dir {
+            Dir::Up => [Dir::Up, Dir::Up, Dir::Right, Dir::Left],
+            Dir::Down => [Dir::Right, Dir::Left, Dir::Down, Dir::Down],
+            Dir::Left => [Dir::Left, Dir::Down, Dir::Left, Dir::Up],
+            Dir::Right => [Dir::Down, Dir::Right, Dir::Up, Dir::Right],
+        }[pos];
+
+        w * w * k + _hilbert_order(x, y, exp, dir)
     }
 
-    let exp = exp - 1;
-    let pos = 2 * (x >> exp) + (y >> exp);
-    let w = 1 << exp;
-    let k = match dir {
-        Dir::UP => [2, 1, 3, 0],
-        Dir::DOWN => [0, 3, 1, 2],
-        Dir::LEFT => [2, 3, 1, 0],
-        Dir::RIGHT => [0, 1, 3, 2],
-    }[pos];
-    let (x, y) = (x & (w - 1), y & (w - 1));
-    let dir = match dir {
-        Dir::UP => [Dir::UP, Dir::UP, Dir::RIGHT, Dir::LEFT],
-        Dir::DOWN => [Dir::RIGHT, Dir::LEFT, Dir::DOWN, Dir::DOWN],
-        Dir::LEFT => [Dir::LEFT, Dir::DOWN, Dir::LEFT, Dir::UP],
-        Dir::RIGHT => [Dir::DOWN, Dir::RIGHT, Dir::UP, Dir::RIGHT],
-    }[pos];
-
-    w * w * k + hilbert_order(x, y, exp, dir)
+    _hilbert_order(x, y, exp, Dir::Down)
 }
 
 #[derive(Clone, Copy)]
 enum Dir {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 #[cfg(test)]
@@ -61,7 +61,7 @@ mod tests {
         for x in 0..w {
             let mut row = Vec::with_capacity(w);
             for y in 0..w {
-                row.push(hilbert_order(x, y, exp, Dir::DOWN));
+                row.push(hilbert_order(x, y, exp));
             }
             res.push(row);
         }
