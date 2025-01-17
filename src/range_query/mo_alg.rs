@@ -1,9 +1,14 @@
 use itertools::Itertools;
 
 /// Sort queries in Hilbert order.
-///
-/// `n` is the number of data.
-pub fn mo_algorithm(queries: &Vec<(usize, usize)>, n: usize) -> impl IntoIterator<Item = usize> {
+pub fn mo_algorithm(queries: &Vec<(usize, usize)>) -> impl IntoIterator<Item = usize> {
+    let n = queries
+        .iter()
+        .map(|&(l, r)| [l, r])
+        .flatten()
+        .max()
+        .unwrap();
+
     queries
         .iter()
         .map(|&(l, r)| hilbert_order(l, r, n.next_power_of_two().ilog2(), Dir::DOWN))
@@ -47,7 +52,6 @@ enum Dir {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     fn calc_hilbert_order(exp: u32) -> Vec<Vec<usize>> {

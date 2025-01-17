@@ -5,8 +5,7 @@ pub struct SparseTable<T> {
     op: Box<dyn Fn(&T, &T) -> T>,
 }
 
-impl<T: Clone> SparseTable<T> {
-    /// *O*(*N* log *N*), where *N* is the length of `values`.
+impl<T> SparseTable<T> {
     pub fn from_vec(values: Vec<T>, op: impl Fn(&T, &T) -> T + 'static) -> Self {
         let n = values.len();
         let d = n.ilog2() as usize;
@@ -27,7 +26,6 @@ impl<T: Clone> SparseTable<T> {
         }
     }
 
-    /// *O*(1)
     pub fn query(&self, range: Range<usize>) -> Option<T> {
         let Range { start, end } = range;
 
@@ -38,14 +36,6 @@ impl<T: Clone> SparseTable<T> {
         } else {
             None
         }
-    }
-}
-
-impl<T: Debug> Debug for SparseTable<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SparseTable")
-            .field("table", &self.table)
-            .finish()
     }
 }
 
