@@ -1,19 +1,33 @@
-/// Sort queries in Hilbert order.
+/// Sort interval queries in Hilbert order.
+///
+/// ## Mo's Algorithm
+///
+/// See [this](https://codeforces.com/blog/entry/61203).
+///
+/// ## Example
+///
+/// ```
+/// use alds::range_query::mo_algorithm;
+///
+/// let queries = vec![(0, 1), (0, 5), (0, 10), (2, 3), (2, 9), (4, 9), (7, 8), (9, 10)];
+/// for i in mo_algorithm(&queries) {
+///     let (l, r) = queries[i];
+///     // do something
+/// }
+/// ```
 pub fn mo_algorithm(queries: &[(usize, usize)]) -> Vec<usize> {
     let mut res = Vec::from_iter(0..queries.len());
-    let len = queries.iter().map(|(l, r)| l.max(r)).max().unwrap() + 1;
-    let h_order = Vec::from_iter(
-        queries
-            .iter()
-            .map(|&(l, r)| hilbert_order(l, r, len.next_power_of_two().ilog2())),
-    );
+    let exp = (queries.iter().map(|(l, r)| l.max(r)).max().unwrap() + 1)
+        .next_power_of_two()
+        .ilog2();
+    let h_order = Vec::from_iter(queries.iter().map(|&(x, y)| hilbert_order(x, y, exp)));
 
     res.sort_unstable_by_key(|&i| h_order[i]);
     res
 }
 
 /// Calculate Hilbert order.
-pub fn hilbert_order(x: usize, y: usize, exp: u32) -> usize {
+fn hilbert_order(x: usize, y: usize, exp: u32) -> usize {
     fn _hilbert_order(x: usize, y: usize, exp: u32, dir: Dir) -> usize {
         if exp == 0 {
             return 0;

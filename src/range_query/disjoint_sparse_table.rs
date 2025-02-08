@@ -47,12 +47,12 @@ impl<T: Clone> DisjointSparseTable<T> {
         if start < end && end <= self.table[0].len() {
             let (l, r) = (start, end - 1);
 
-            let d = self.table.len();
+            let d = self.table.len() - 1;
             if l == r {
-                Some(self.table[d - 1][l].clone())
+                Some(self.table[d][l].clone())
             } else {
                 let i = d - (l ^ r).ilog2() as usize;
-                Some((self.op)(&self.table[i - 1][l], &self.table[i - 1][r]))
+                Some((self.op)(&self.table[i][l], &self.table[i][r]))
             }
         } else {
             None
@@ -89,5 +89,31 @@ mod tests {
         assert_eq!(dst.query(0..0), None);
         assert_eq!(dst.query(10..0), None);
         assert_eq!(dst.query(0..100), None);
+    }
+
+    #[test]
+    fn test_empty() {
+        let dst = DisjointSparseTable::from_vec(vec![], |l: &i32, r| l + r);
+
+        assert_eq!(dst.table, vec![vec![]]);
+        assert_eq!(dst.query(0..1), None)
+    }
+
+    #[test]
+    fn test_one() {
+        let dst = DisjointSparseTable::from_vec(vec![1], |l, r| l + r);
+
+        assert_eq!(dst.table, vec![vec![1]]);
+        assert_eq!(dst.query(0..1), Some(1));
+    }
+
+    #[test]
+    fn test_two() {
+        let dst = DisjointSparseTable::from_vec(vec![1, 2], |l, r| l * r);
+
+        assert_eq!(dst.table, vec![vec![1, 2]]);
+        assert_eq!(dst.query(0..1), Some(1));
+        assert_eq!(dst.query(1..2), Some(2));
+        assert_eq!(dst.query(0..2), Some(2));
     }
 }

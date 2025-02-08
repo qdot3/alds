@@ -3,8 +3,25 @@ use super::Edge;
 #[derive(Debug, Clone)]
 pub struct CSR<W> {
     edges: Vec<Edge<W>>,
-    csr_start: Vec<usize>,
-    edge_id: Vec<usize>,
+    start: Vec<usize>,
+}
+
+impl<W> CSR<W> {
+    pub fn num_edges(&self) -> usize {
+        self.edges.len()
+    }
+
+    pub fn num_nodes(&self) -> usize {
+        unimplemented!()
+    }
+
+    pub fn edges(&self, source: usize) -> &[Edge<W>] {
+        if let Some(&end) = self.start.get(source + 1) {
+            &self.edges[self.start[source]..end]
+        } else {
+            &self.edges[self.start[source]..]
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

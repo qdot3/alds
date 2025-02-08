@@ -18,7 +18,7 @@ impl<W> Edge<W> {
         std::mem::swap(&mut self.source, &mut self.target);
     }
 
-    pub fn is_loop(&self) -> bool {
+    pub fn is_self_loop(&self) -> bool {
         self.source == self.target
     }
 
