@@ -17,7 +17,11 @@
 /// ```
 pub fn mo_algorithm(queries: &[(usize, usize)]) -> Vec<usize> {
     let mut res = Vec::from_iter(0..queries.len());
-    let exp = (queries.iter().map(|(l, r)| l.max(r)).max().unwrap() + 1)
+    let exp = queries
+        .iter()
+        .map(|(l, r)| l.max(r))
+        .max()
+        .unwrap_or(&0)
         .next_power_of_two()
         .ilog2();
     let h_order = Vec::from_iter(queries.iter().map(|&(x, y)| hilbert_order(x, y, exp)));

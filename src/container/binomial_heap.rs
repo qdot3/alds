@@ -4,7 +4,7 @@
 #[derive(Debug, Clone)]
 pub struct BinomialHeap<T> {
     // `arena[0]` is the root
-    arena: Vec<Box<Node<T>>>,
+    arena: Vec<Box<BinomialTree<T>>>,
     size: usize,
 }
 
@@ -123,7 +123,7 @@ impl<T: Ord> BinomialHeap<T> {
         let Self { arena, size } = self;
 
         // lazy implementation
-        arena.push(Box::new(Node::new(value)));
+        arena.push(Box::new(BinomialTree::new(value)));
         *size += 1;
 
         // `arena[0]` is the root
@@ -169,7 +169,8 @@ impl<T: Ord> BinomialHeap<T> {
 
         // melding
         let mut new_arena = Vec::from_iter(
-            std::iter::repeat_with(|| None::<Box<Node<T>>>).take(self.size().ilog2() as usize + 1),
+            std::iter::repeat_with(|| None::<Box<BinomialTree<T>>>)
+                .take(self.size().ilog2() as usize + 1),
         );
         for mut one in self.arena.drain(..) {
             loop {
@@ -208,7 +209,10 @@ impl<T: Ord> Extend<T> for BinomialHeap<T> {
         let Self { arena, size } = self;
 
         let n = arena.len();
-        arena.extend(iter.into_iter().map(|value| Box::new(Node::new(value))));
+        arena.extend(
+            iter.into_iter()
+                .map(|value| Box::new(BinomialTree::new(value))),
+        );
         *size += arena.len() - n;
 
         // `self.arena[0]` is the root.
@@ -241,14 +245,14 @@ impl<T: Ord> From<Vec<T>> for BinomialHeap<T> {
 
 /// Prioritized binomial tree.
 #[derive(Debug, Clone)]
-struct Node<T> {
+struct BinomialTree<T> {
     value: T,
     order: usize,
-    child: Option<Box<Node<T>>>,
-    sibling: Option<Box<Node<T>>>,
+    child: Option<Box<BinomialTree<T>>>,
+    sibling: Option<Box<BinomialTree<T>>>,
 }
 
-impl<T> Node<T> {
+impl<T> BinomialTree<T> {
     /// Returns singleton.
     const fn new(value: T) -> Self {
         Self {
@@ -268,14 +272,14 @@ impl<T> Node<T> {
     }
 }
 
-impl<T: Ord> Node<T> {
+impl<T: Ord> BinomialTree<T> {
     /// Returns the root and children.
     ///
     /// # Panics
     ///
     /// Panics if given nodes is invalid.
-    fn pop(self) -> (T, Vec<Box<Node<T>>>) {
-        let Node {
+    fn pop(self) -> (T, Vec<Box<Self>>) {
+        let Self {
             value,
             order,
             mut child,
@@ -299,7 +303,7 @@ impl<T: Ord> Node<T> {
     /// # Panics
     ///
     /// Panics if given nodes is invalid.
-    fn merge(&mut self, mut other: Self) -> Result<(), Node<T>> {
+    fn merge(&mut self, mut other: Self) -> Result<(), Self> {
         if self.order != other.order {
             return Err(other);
         }

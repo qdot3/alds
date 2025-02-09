@@ -8,7 +8,7 @@ pub struct FenwickTree {
 impl FenwickTree {
     /// Creates new fixed-size Fenwick tree.
     ///
-    /// # Panic
+    /// # Panics
     ///
     /// Panics if `size` is [`usize::MAX`].
     pub fn new(size: usize) -> Self {
@@ -171,7 +171,7 @@ impl FenwickTree {
     pub fn to_vec(self) -> Vec<i64> {
         let Self { mut data } = self;
 
-        // (n log n) / 2
+        // since \sum k dCk = d * 2^{d-1}, then the number of iterations is ( n log n / 2 ).
         for mut i in 1..data.len() {
             let value = data[i];
 
