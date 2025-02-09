@@ -14,7 +14,7 @@ impl<T> BinomialHeap<T> {
     /// # Example
     ///
     /// ```
-    /// use alds::container::BinomialHeap;
+    /// use alds::heap::BinomialHeap;
     ///
     /// let heap0 = BinomialHeap::<()>::new();
     /// assert!(heap0.is_empty());
@@ -40,7 +40,7 @@ impl<T> BinomialHeap<T> {
     /// # Example
     ///
     /// ```
-    /// use alds::container::BinomialHeap;
+    /// use alds::heap::BinomialHeap;
     ///
     /// let mut heap = BinomialHeap::new();
     /// assert_eq!(heap.size(), 0);
@@ -59,7 +59,7 @@ impl<T> BinomialHeap<T> {
     /// # Example
     ///
     /// ```
-    /// use alds::container::BinomialHeap;
+    /// use alds::heap::BinomialHeap;
     ///
     /// let mut heap = BinomialHeap::new();
     /// assert!(heap.is_empty());
@@ -76,7 +76,7 @@ impl<T> BinomialHeap<T> {
     /// # Example
     ///
     /// ```
-    /// use alds::container::BinomialHeap;
+    /// use alds::heap::BinomialHeap;
     ///
     /// let mut heap = BinomialHeap::new();
     ///
@@ -102,7 +102,7 @@ impl<T: Ord> BinomialHeap<T> {
     /// # Example
     ///
     /// ```
-    /// use alds::container::BinomialHeap;
+    /// use alds::heap::BinomialHeap;
     ///
     /// let mut heap = BinomialHeap::new();
     /// assert!(heap.is_empty());
@@ -140,7 +140,7 @@ impl<T: Ord> BinomialHeap<T> {
     /// # Example
     ///
     /// ```
-    /// use alds::container::BinomialHeap;
+    /// use alds::heap::BinomialHeap;
     ///
     /// let mut heap = BinomialHeap::from_iter(5..15);
     /// assert_eq!(heap.pop(), Some(14));

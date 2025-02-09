@@ -140,7 +140,7 @@ impl UnionFind {
     ///
     /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn merge(&mut self, a: usize, b: usize) -> bool {
-        //* use `&mut self` since this method may change belongings of nodes.*//
+        //* use `&mut self` since belongings of nodes may change.*//
 
         let mut ra = self.leader(a);
         let mut rb = self.leader(b);
@@ -153,7 +153,7 @@ impl UnionFind {
         if self.par_or_size[ra] > self.par_or_size[rb] {
             std::mem::swap(&mut ra, &mut rb)
         }
-        //* this method may change belongings of nodes.*//
+        //* this method changes belongings of nodes.*//
         self.par_or_size[ra] = Cell::new(self.par_or_size[ra].take() + self.par_or_size[rb].get());
         self.par_or_size[rb] = Cell::new(ra as i32);
 
@@ -189,48 +189,37 @@ impl UnionFind {
     pub fn groups<'a>(self) -> Groups<'a> {
         let n = self.par_or_size.len();
         let mut group_id = vec![usize::MAX; n];
-        let mut right_partition = Vec::with_capacity(n);
+        let mut size = Vec::with_capacity(n);
         for (gi, i) in (0..n)
             .filter(|&i| self.par_or_size[i].get().is_negative())
             .enumerate()
         {
             group_id[i] = gi;
-            right_partition.push(
-                right_partition.last().unwrap_or(&0) + self.par_or_size[i].get().abs() as usize,
-            );
+            size.push(self.par_or_size[i].get().abs() as usize);
         }
 
-        let mut members = vec![usize::MAX; n];
+        let mut groups = Vec::from_iter(size.into_iter().map(|n| Vec::with_capacity(n)));
         for i in 0..n {
-            let gi = group_id[self.leader(i)];
-
-            right_partition[gi] -= 1;
-            members[right_partition[gi]] = i;
+            groups[group_id[self.leader(i)]].push(i);
         }
 
         Groups {
-            members,
-            left_partition: right_partition,
+            groups,
             _marker: PhantomData,
         }
     }
 }
 
 pub struct Groups<'a> {
-    members: Vec<usize>,
-    left_partition: Vec<usize>,
+    groups: Vec<Vec<usize>>,
 
-    _marker: PhantomData<&'a usize>,
+    _marker: PhantomData<&'a UnionFind>,
 }
 
 impl<'a> Iterator for Groups<'a> {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(n) = self.left_partition.pop() {
-            Some(self.members.split_off(n))
-        } else {
-            None
-        }
+        self.groups.pop()
     }
 }
