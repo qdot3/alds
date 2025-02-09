@@ -189,27 +189,28 @@ impl UnionFind {
     pub fn groups<'a>(self) -> Groups<'a> {
         let n = self.par_or_size.len();
         let mut group_id = vec![usize::MAX; n];
-        let mut partition = Vec::with_capacity(n);
+        let mut right_partition = Vec::with_capacity(n);
         for (gi, i) in (0..n)
             .filter(|&i| self.par_or_size[i].get().is_negative())
             .enumerate()
         {
             group_id[i] = gi;
-            partition
-                .push(partition.last().unwrap_or(&0) + self.par_or_size[i].get().abs() as usize);
+            right_partition.push(
+                right_partition.last().unwrap_or(&0) + self.par_or_size[i].get().abs() as usize,
+            );
         }
 
         let mut members = vec![usize::MAX; n];
         for i in 0..n {
             let gi = group_id[self.leader(i)];
 
-            partition[gi] -= 1;
-            members[partition[gi]] = i;
+            right_partition[gi] -= 1;
+            members[right_partition[gi]] = i;
         }
 
         Groups {
             members,
-            partition,
+            left_partition: right_partition,
             _marker: PhantomData,
         }
     }
@@ -217,7 +218,7 @@ impl UnionFind {
 
 pub struct Groups<'a> {
     members: Vec<usize>,
-    partition: Vec<usize>,
+    left_partition: Vec<usize>,
 
     _marker: PhantomData<&'a usize>,
 }
@@ -226,7 +227,7 @@ impl<'a> Iterator for Groups<'a> {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(n) = self.partition.pop() {
+        if let Some(n) = self.left_partition.pop() {
             Some(self.members.split_off(n))
         } else {
             None
