@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::{cell::Cell, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct UnionFind {
@@ -39,12 +39,12 @@ impl UnionFind {
     /// ```
     /// use alds::union_find::UnionFind;
     ///
-    /// let mut uf = UnionFind::new(1_000);
-    /// assert_eq!(uf.find_root(0), 0);
+    /// let mut uf = UnionFind::new(100);
+    /// assert_eq!(uf.leader(0), 0);
     ///
     /// uf.merge(0, 1);
-    /// assert_eq!(uf.find_root(0), uf.find_root(1));
-    /// assert_ne!(uf.find_root(0), uf.find_root(2));
+    /// assert_eq!(uf.leader(0), uf.leader(1));
+    /// assert_ne!(uf.leader(0), uf.leader(2));
     /// ```
     ///
     /// # Panics
@@ -54,12 +54,12 @@ impl UnionFind {
     /// # Time complexity
     ///
     /// *a*(*n*), where *a* is the inverse of Ackermann function
-    pub fn find_root(&self, a: usize) -> usize {
+    pub fn leader(&self, a: usize) -> usize {
         if self.par_or_size[a].get().is_negative() {
             return a;
         }
         // path compression
-        let ra = self.find_root(self.par_or_size[a].get() as usize);
+        let ra = self.leader(self.par_or_size[a].get() as usize);
         self.par_or_size[a].set(ra as i32);
 
         ra
@@ -72,7 +72,7 @@ impl UnionFind {
     /// ```
     /// use alds::union_find::UnionFind;
     ///
-    /// let mut uf = UnionFind::new(1_000);
+    /// let mut uf = UnionFind::new(100);
     /// assert!(!uf.is_same(0, 1));
     /// uf.merge(0, 1);
     /// assert!(uf.is_same(0, 1));
@@ -86,7 +86,7 @@ impl UnionFind {
     ///
     /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn is_same(&self, a: usize, b: usize) -> bool {
-        self.find_root(a) == self.find_root(b)
+        self.leader(a) == self.leader(b)
     }
 
     /// Returns the size of the group that given node belongs.
@@ -114,7 +114,7 @@ impl UnionFind {
     ///
     /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn size(&self, a: usize) -> usize {
-        self.par_or_size[self.find_root(a)].get().abs() as usize
+        self.par_or_size[self.leader(a)].get().abs() as usize
     }
 
     /// Merge two groups that given nodes belong respectively.
@@ -127,7 +127,7 @@ impl UnionFind {
     /// use alds::union_find::UnionFind;
     ///
     /// let mut uf = UnionFind::new(100);
-    /// 
+    ///
     /// assert!(uf.merge(0, 1));
     /// assert!(!uf.merge(0, 1));
     /// ```
@@ -142,8 +142,8 @@ impl UnionFind {
     pub fn merge(&mut self, a: usize, b: usize) -> bool {
         //* use `&mut self` since this method may change belongings of nodes.*//
 
-        let mut ra = self.find_root(a);
-        let mut rb = self.find_root(b);
+        let mut ra = self.leader(a);
+        let mut rb = self.leader(b);
 
         if ra == rb {
             return false;
@@ -160,22 +160,76 @@ impl UnionFind {
         true
     }
 
-    /// Returns groups.
-    pub fn group(&self) -> Vec<Vec<usize>> {
+    /// Returns iterator of groups.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use alds::union_find::UnionFind;
+    ///
+    /// let mut uf = UnionFind::new(100);
+    /// for i in (2..100).step_by(2) {
+    ///     uf.merge(0, i);
+    ///     uf.merge(1, i + 1);
+    /// }
+    /// assert_eq!(uf.size(0), 50);
+    /// assert_eq!(uf.size(1), 50);
+    ///
+    /// for group in uf.groups() {
+    ///     assert!(!group.is_empty());
+    ///
+    ///     let parity = group[0] % 2;
+    ///     assert!(group.into_iter().all(|i| i % 2 == parity));
+    /// }
+    /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(*n* *a*(*n*)), where *a* is the inverse of Ackermann function
+    pub fn groups<'a>(self) -> Groups<'a> {
         let n = self.par_or_size.len();
         let mut group_id = vec![usize::MAX; n];
-        let mut group = Vec::with_capacity(n);
+        let mut partition = Vec::with_capacity(n);
         for (gi, i) in (0..n)
             .filter(|&i| self.par_or_size[i].get().is_negative())
             .enumerate()
         {
             group_id[i] = gi;
-            group.push(Vec::with_capacity(self.size(i)));
-        }
-        for i in 0..n {
-            group[group_id[self.find_root(i)]].push(i)
+            partition
+                .push(partition.last().unwrap_or(&0) + self.par_or_size[i].get().abs() as usize);
         }
 
-        group
+        let mut members = vec![usize::MAX; n];
+        for i in 0..n {
+            let gi = group_id[self.leader(i)];
+
+            partition[gi] -= 1;
+            members[partition[gi]] = i;
+        }
+
+        Groups {
+            members,
+            partition,
+            _marker: PhantomData,
+        }
+    }
+}
+
+pub struct Groups<'a> {
+    members: Vec<usize>,
+    partition: Vec<usize>,
+
+    _marker: PhantomData<&'a usize>,
+}
+
+impl<'a> Iterator for Groups<'a> {
+    type Item = Vec<usize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(n) = self.partition.pop() {
+            Some(self.members.split_off(n))
+        } else {
+            None
+        }
     }
 }
