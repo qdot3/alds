@@ -197,8 +197,8 @@ impl<T: Ord> From<Vec<T>> for QuadHeap<T> {
     fn from(vec: Vec<T>) -> Self {
         let mut heap = Self { data: vec };
 
-        // sum_(k=0)^d k D^(d - k) ~ D^(d-1), where d := ilog_D(n)
-        // time complexity is *O*(*n* / *D*) for D-ary heap
+        // since sum_(k=0)^d k D^(d - k) ~ D^(d-1), where d := ilog_D(n),
+        // time complexity is *O*(*n* / *D*) for D-ary heap.
         for i in (0..heap.len() / Self::D).rev() {
             heap.shift_down(i);
         }

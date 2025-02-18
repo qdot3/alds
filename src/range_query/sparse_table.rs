@@ -8,8 +8,8 @@ pub struct SparseTable<T> {
 impl<T> SparseTable<T> {
     pub fn from_vec(values: Vec<T>, op: impl Fn(&T, &T) -> T + 'static) -> Self {
         let n = values.len();
-        let d = n.ilog2() as usize;
-        let mut table = Vec::with_capacity(d + 1);
+        let d = n.next_power_of_two().ilog2() as usize;
+        let mut table = Vec::with_capacity(d);
         table.push(values);
         for i in 0..d {
             let w = 1 << i;

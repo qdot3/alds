@@ -1,7 +1,37 @@
 use std::ops::Range;
 
+/// Fenwick tree
+///
+/// # Data structure
+///
+/// ```text
+///       ├──────────┴──────────┴──────────┴──────────┼──────────┼──────────┼──────────┼─
+/// row 2 │ a[1] + a[2] + a[3] + a[4]                 │          │          │          │
+///       ├─────────────────────┬──────────┬──────────┼──────────┴──────────┼──────────┼─
+/// row 1 │ a[1] + a[2]         │          │    ↑↑    │ a[5] + a[6]         │          │
+///       ├──────────┬──────────┼──────────┼──────────┼──────────┬──────────┼──────────┼─
+/// row 0 │ a[1]     │    ↑↑    │ a[3]     │    ↑↑    │ a[5]     │    ↑↑    │ a[7]     │
+///       └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴─
+/// index  1 (0b0001) 2 (0b0010) 3 (0b0011) 4 (0b0100) 5 (0b0101) 6 (0b0110) 7 (0b0111) ...
+///       ┌──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬─
+/// FT    │ FT[1]    │ FT[2]    │ FT[3]    │ FT[4]    │ FT[5]    │ FT[6]    │ FT[7]    │
+///       └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴─
+/// ```
+///
+/// * `index.trailing_zeros()` corresponds to the row number (or block size).
+/// * *Internally*, one-based indexes are used.
+///
+/// # Performance
+///
+/// | operation                   | time complexity | corresponding methods |
+/// |-----------------------------|-----------------|-----------------------|
+/// | convert from vector         | O(*n* log *n*)  | [`from`](crate::range_query::FenwickTree::from)
+/// | get single element          | Θ(1)            | [`range_sum`](crate::range_query::FenwickTree::range_sum)
+/// | update single element       | O(log *n*)      | [`add`](crate::range_query::FenwickTree::add)
+/// | sum contiguous elements     | O(log *n*)      | [`range_sum`](crate::range_query::FenwickTree::range_sum), [`prefix_sum`](crate::range_query::FenwickTree::prefix_sum)
+/// | binary search on prefix sum | Θ(log *n*)      | [`partition_point`](crate::range_query::FenwickTree::partition_point)
 pub struct FenwickTree {
-    // one-based indexing internally (`data[0]` is an identity element or 0 for simpler implementation)
+    /// one-based indexing internally (`data[0]` is the identity element 0 for simple implementation)
     data: Vec<i64>,
 }
 
@@ -27,11 +57,11 @@ impl FenwickTree {
     /// let mut ft = FenwickTree::new(5);
     ///
     /// ft.add(0, 1);
-    /// assert_eq!(ft.query(0..1), 1);
+    /// assert_eq!(ft.prefix_sum(1), 1);
     ///
     /// ft.add(2, 2);
     /// ft.add(4, 3);
-    /// assert_eq!(ft.prefix_sum(4), 1 + 2 + 3);
+    /// assert_eq!(ft.prefix_sum(4), 1 + 2);
     /// ```
     ///
     /// # Time complexity
@@ -128,6 +158,8 @@ impl FenwickTree {
     ///
     /// let mut ft = FenwickTree::from(vec![1; 100]);
     /// assert_eq!(ft.partition_point(|v| v < 50), 49);
+    /// assert_eq!(ft.partition_point(|v| v < 1), 0);
+    /// assert_eq!(ft.partition_point(|v| v < 1_000), 100);
     ///
     /// ft.add(0, -50);
     /// assert_eq!(ft.partition_point(|v| v < 50), 99);
@@ -184,6 +216,10 @@ impl FenwickTree {
         }
 
         data.split_off(1)
+    }
+
+    pub fn to_cumulative_vec(self) -> Vec<i64> {
+        todo!()
     }
 }
 

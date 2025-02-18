@@ -186,7 +186,7 @@ impl UnionFind {
     /// # Time complexity
     ///
     /// *O*(*n* *a*(*n*)), where *a* is the inverse of Ackermann function
-    pub fn groups<'a>(self) -> Groups<'a> {
+    pub fn groups<'a>(&self) -> Groups<'a> {
         let n = self.par_or_size.len();
         let mut group_id = vec![usize::MAX; n];
         let mut size = Vec::with_capacity(n);

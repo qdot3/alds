@@ -6,7 +6,7 @@
 //! |--------------------------|-----------------------------|--------------|-----------------------------|--------|---------------------------|---------------------|
 //! | [`SparseTable`]          | *O*(*N* log *N*)            | N/A          | *O*(1)                      | Yes    | *x* &#x2218; *x* = *x*    |                     |
 //! | [`DisjointSparseTable`]  | *O*(*N* log *N*)            | N/A          | *O*(1)                      | Yes    |                           |                     |
-//! | [`FenwickTree`]          | *O*(*N*)                    | *O*(log *N*) | *O*(log *N*)                | Yes    | +/- (currently)           | space efficient     |
+//! | [`FenwickTree`]          | *O*(*N* log *N*)            | *O*(log *N*) | *O*(log *N*)                | Yes    | +/- (currently)           | space efficient     |
 //! | [`SegmentTree`]          | *O*(*N* log *N*)            | *O*(log *N*) | *O*(log *N*)                | Yes    | unit element              | single point update |
 //! | `LazySegmentTree`        | *O*(*N* log *N*)            | *O*(log *N*) | *O*(log *N*)                | Yes    | unit element              | interval update     |
 //! | [`mo_algorithm`]         | *O*(*Q*(log *Q* + log *N*)) | N/A          | *Θ*(*N* / sqrt(*Q*))        | No     | inverse operation         | sort queries        |

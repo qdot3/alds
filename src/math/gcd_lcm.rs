@@ -21,7 +21,13 @@ pub trait GCD<Other = Self> {
     fn gcd(self, other: Other) -> Self::Output;
 }
 
-macro_rules! gcd_impl {
+pub trait LCM<Other = Self> {
+    type Output;
+
+    fn lcm(self, other: Other) -> Self::Output;
+}
+
+macro_rules! gcd_lcm_impl {
     ($( $t:ty )*) => {$(
         impl GCD for $t {
             type Output = Option<$t>;
@@ -41,19 +47,7 @@ macro_rules! gcd_impl {
         }
 
         forward_ref_binop! { impl GCD, gcd for $t, $t }
-    )*};
-}
 
-gcd_impl! { u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 }
-
-pub trait LCM<Other = Self> {
-    type Output;
-
-    fn lcm(self, other: Other) -> Self::Output;
-}
-
-macro_rules! lcm_impl {
-    ($( $t:ty )*) => {$(
         impl LCM for $t {
             type Output = Option<$t>;
 
@@ -69,7 +63,7 @@ macro_rules! lcm_impl {
     )*};
 }
 
-lcm_impl! { u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 }
+gcd_lcm_impl! { u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 }
 
 #[cfg(test)]
 mod test {
