@@ -37,7 +37,7 @@ impl PartiallyPersistentUnionFind {
     }
 
     pub fn find(&self, i: usize, time: u32) -> usize {
-        if self.node[i].is_root_at(time) {
+        if self.node[i].is_root(time) {
             return i;
         }
         self.find(self.node[i].get_parent().unwrap(), time)
@@ -108,13 +108,13 @@ impl Node {
         Self {
             par_or_rank: -1,
             time_updated: Self::TIME_INFINITY,
-            // initialize with empty `Vec` to save space
+            // initialize with not `vec![(0, 1)]` but `Vec::new()` to save space
             size_history: Vec::new(),
         }
     }
 
     #[inline]
-    const fn is_root_at(&self, time: u32) -> bool {
+    const fn is_root(&self, time: u32) -> bool {
         self.time_updated > time
     }
 

@@ -12,6 +12,8 @@ use std::{cell::Cell, marker::PhantomData};
 /// | [`same`](UnionFind::same)     | *O*(α(*N*))     |
 /// | [`unite`](UnionFind::unite)   | *O*(α(*N*))     |
 /// | [`groups`](UnionFind::groups) | *O*(*N* α(*N*)) |
+///
+/// * α(*N*) is the inverse of Ackermann function which diverges very slowly.
 #[derive(Debug, Clone)]
 pub struct UnionFind {
     par_or_size: Vec<Cell<i32>>,
