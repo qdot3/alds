@@ -5,7 +5,7 @@
 //! |                          | construction                | update       | query                       | online | constraints on operations | comments            |
 //! |--------------------------|-----------------------------|--------------|-----------------------------|--------|---------------------------|---------------------|
 //! | [`SparseTable`]          | *O*(*N* log *N*)            | N/A          | *O*(1)                      | Yes    | *x* &#x2218; *x* = *x*    |                     |
-//! | [`DisjointSparseTable`]  | *O*(*N* log *N*)            | N/A          | *O*(1)                      | Yes    |                           |                     |
+//! | [`DisjointSparseTable`]  | *O*(*N* log *N*)            | N/A          | *O*(1)                      | Yes    |                           | *N* < *Q*           |
 //! | [`FenwickTree`]          | *O*(*N* log *N*)            | *O*(log *N*) | *O*(log *N*)                | Yes    | +/- (currently)           | space efficient     |
 //! | [`SegmentTree`]          | *O*(*N* log *N*)            | *O*(log *N*) | *O*(log *N*)                | Yes    | unit element              | single point update |
 //! | `LazySegmentTree`        | *O*(*N* log *N*)            | *O*(log *N*) | *O*(log *N*)                | Yes    | unit element              | interval update     |

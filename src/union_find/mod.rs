@@ -1,7 +1,10 @@
+//! A collection of union-find tree variants
+//!
+//!
 mod normal;
-mod persistent;
+mod partially_persistent;
 mod weighted;
 
 pub use normal::UnionFind;
-pub use persistent::PersistentUnionFind;
+pub use partially_persistent::PartiallyPersistentUnionFind;
 pub use weighted::WeightedUnionFind;

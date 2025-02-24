@@ -15,12 +15,38 @@
 //! ```
 use forward_ref::forward_ref_binop;
 
+/// Calculates greatest common divisor (GCD).
+///
+/// # Example
+///
+/// ```
+/// use alds::math::GCD;
+///
+/// let non_zero = 3 * 5 * 7;
+/// assert_eq!(non_zero.gcd(0), None);
+///
+/// let non_zero2 = 5 * 7 * 11;
+/// assert_eq!(non_zero.gcd(non_zero2), Some(5 * 7));
+/// ```
 pub trait GCD<Other = Self> {
     type Output;
 
     fn gcd(self, other: Other) -> Self::Output;
 }
 
+/// Calculates least common multiplier (LCM).
+///
+/// # Example
+///
+/// ```
+/// use alds::math::LCM;
+///
+/// let non_zero = 2 * 3 * 5;
+/// assert_eq!(non_zero.lcm(0), None);
+///
+/// let non_zero2 = 3 * 5 * 7;
+/// assert_eq!(non_zero.lcm(-non_zero2), Some(2 * 3 * 5 * 7));
+/// ```
 pub trait LCM<Other = Self> {
     type Output;
 
@@ -38,7 +64,7 @@ macro_rules! gcd_lcm_impl {
                 }
 
                 let (mut a, mut b) = (self, other);
-                while b > 0 {
+                while b != 0 {
                     (a, b) = (b, a % b)
                 }
 
