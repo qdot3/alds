@@ -4,22 +4,19 @@ use std::{cell::Cell, marker::PhantomData};
 ///
 /// # Performance note
 ///
-/// | method                        | time complexity |
-/// |-------------------------------|-----------------|
-/// | [`new`](UnionFind::new)       | *O*(*N*)        |
-/// | [`find`](UnionFind::find)     | *O*(α(*N*))     |
-/// | [`size`](UnionFind::size)     | *O*(α(*N*))     |
-/// | [`same`](UnionFind::same)     | *O*(α(*N*))     |
-/// | [`unite`](UnionFind::unite)   | *O*(α(*N*))     |
-/// | [`groups`](UnionFind::groups) | *O*(*N* α(*N*)) |
+/// | [new](UnionFind::new) | [find](UnionFind::find)/[size](UnionFind::size)/[same](UnionFind::same)/[unite](UnionFind::unite) | [groups](UnionFind::groups) |
+/// |-----------------------|---------------------------------------------------------------------------------------------------|-----------------------------|
+/// | *O*(*N*)              | *O*(α(*N*))~                                                                                      | *O*(*N* α(*N*))             |
 ///
-/// * α(*N*) is the inverse of Ackermann function which diverges very slowly.
+/// * α(*N*) is the functional inverse of Ackermann's function which diverges very slowly.
 #[derive(Debug, Clone)]
 pub struct UnionFind {
     par_or_size: Vec<Cell<i32>>,
 }
 
 impl UnionFind {
+    const MAX_SIZE: usize = i32::MAX as usize + 1; // or 2^31
+
     /// Creates union find tree with *n* nodes.
     ///
     /// # Example
@@ -34,11 +31,9 @@ impl UnionFind {
     /// assert!(uf.same(1, 2));
     /// assert!(!uf.same(1, 3));
     /// ```
-    ///
-    /// # Time complexity
-    ///
-    /// *O*(*n*)
     pub fn new(size: usize) -> Self {
+        assert!(size <= Self::MAX_SIZE);
+
         Self {
             par_or_size: vec![Cell::new(-1); size],
         }
@@ -64,10 +59,6 @@ impl UnionFind {
     /// # Panics
     ///
     /// Panics if given node is unknown.
-    ///
-    /// # Time complexity
-    ///
-    /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn find(&self, a: usize) -> usize {
         if self.par_or_size[a].get().is_negative() {
             return a;
@@ -95,9 +86,6 @@ impl UnionFind {
     /// # Panics
     ///
     /// Panics if given node is unknown.
-    ///
-    /// # Time complexity
-    ///
     /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn same(&self, a: usize, b: usize) -> bool {
         self.find(a) == self.find(b)
@@ -123,9 +111,6 @@ impl UnionFind {
     /// # Panics
     ///
     /// Panics if given node is unknown.
-    ///
-    /// # Time complexity
-    ///
     /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn size(&self, a: usize) -> usize {
         self.par_or_size[self.find(a)].get().abs() as usize
@@ -149,10 +134,6 @@ impl UnionFind {
     /// # Panics
     ///
     /// Panics if given node is unknown.
-    ///
-    /// # Time complexity
-    ///
-    /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn unite(&mut self, a: usize, b: usize) -> bool {
         //* use `&mut self` since belongings of nodes may change.*//
 
@@ -196,10 +177,6 @@ impl UnionFind {
     ///     assert!(group.into_iter().all(|i| i % 2 == parity));
     /// }
     /// ```
-    ///
-    /// # Time complexity
-    ///
-    /// *O*(*n* *a*(*n*)), where *a* is the inverse of Ackermann function
     pub fn groups<'a>(&self) -> Groups<'a> {
         let n = self.par_or_size.len();
         let mut group_id = vec![usize::MAX; n];

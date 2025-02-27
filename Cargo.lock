@@ -63,6 +63,20 @@ name = "proconio"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c10091de86d0dc939b37a115d74597cbe83af470032a1729d50c98ccee043cb0"
+dependencies = [
+ "proconio-derive",
+]
+
+[[package]]
+name = "proconio-derive"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bccfa078f1a3db6563793531989799a2201d9bdf609f48dd82620b443fbcd409"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "quote"
@@ -90,7 +104,7 @@ checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.98",
 ]
 
 [[package]]
@@ -101,6 +115,17 @@ checksum = "e90803f7d6354f81ce56045759c8631d3fa49ddb9c08c3d948e5a3afb4d03af1"
 dependencies = [
  "serde",
  "unreachable",
+]
+
+[[package]]
+name = "syn"
+version = "1.0.109"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
 ]
 
 [[package]]

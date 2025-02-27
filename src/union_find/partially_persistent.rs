@@ -6,14 +6,9 @@
 ///
 /// # Performance note
 ///
-/// | method                                         | time complexity |
-/// |------------------------------------------------|-----------------|
-/// | [`new`](PartiallyPersistentUnionFind::new)     | *O*(*N*)        |
-/// | [`find`](PartiallyPersistentUnionFind::find)   | *O*(log *N*)    |
-/// | [`size`](PartiallyPersistentUnionFind::size)   | *O*(log *N*)    |
-/// | [`same`](PartiallyPersistentUnionFind::same)   | *O*(log *N*)    |
-/// | [`unite`](PartiallyPersistentUnionFind::unite) | *O*(log *N*)    |
-/// | others                                         | *O*(1)          |
+/// | [new](PartiallyPersistentUnionFind::new) | [find](PartiallyPersistentUnionFind::find)/[size](PartiallyPersistentUnionFind::size)/[same](PartiallyPersistentUnionFind::same)/[unite](PartiallyPersistentUnionFind::unite) |
+/// |------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+/// | *O*(*N*)                                 | *O*(log *N*)                                                                                                                                                                  |
 #[derive(Debug, Clone)]
 pub struct PartiallyPersistentUnionFind {
     node: Vec<Node>,
@@ -21,10 +16,10 @@ pub struct PartiallyPersistentUnionFind {
 }
 
 impl PartiallyPersistentUnionFind {
-    const MAX_CAPACITY: usize = i32::MAX as usize + 1; // or 2^31
+    const MAX_SIZE: usize = i32::MAX as usize + 1; // or 2^31
 
     pub fn new(size: usize) -> Self {
-        assert!(size <= Self::MAX_CAPACITY);
+        assert!(size <= Self::MAX_SIZE);
 
         Self {
             node: vec![Node::new(); size],
@@ -66,6 +61,7 @@ impl PartiallyPersistentUnionFind {
             assert_eq!(node[ri].time_updated, Node::TIME_INFINITY);
             assert_eq!(node[rj].time_updated, Node::TIME_INFINITY);
 
+            // union by rank
             if node[ri].par_or_rank > node[rj].par_or_rank {
                 std::mem::swap(&mut ri, &mut rj);
             } else if node[ri].par_or_rank == node[rj].par_or_rank {
@@ -90,7 +86,7 @@ impl PartiallyPersistentUnionFind {
 
 #[derive(Debug, Clone)]
 struct Node {
-    /// non-negative integer means parent index, negative integer means rank (height of the tree).
+    /// non-negative integer indicates parent index, negative integer indicates rank (height of the tree).
     par_or_rank: i32,
     time_updated: u32,
     /// Vec<(time, size)>
