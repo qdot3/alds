@@ -1,0 +1,325 @@
+use std::{
+    fmt::Debug,
+    hash::Hash,
+    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+};
+
+use rustc_hash::FxHashMap;
+
+pub struct Barret {
+    modulus: u64,
+    /// `(2^64 / modulus).ceil()`
+    inv_modulus: u64,
+}
+
+impl Barret {
+    pub const fn new(modulus: u32) -> Self {
+        assert!(modulus != 0);
+
+        let modulus = modulus as u64;
+        let inv_modulus = (1_u64.wrapping_neg() / modulus).wrapping_add(1);
+        assert!(modulus.wrapping_mul(inv_modulus) == 0);
+
+        Self {
+            modulus,
+            inv_modulus,
+        }
+    }
+
+    pub fn new_mint(&self, value: u64) -> BDMint {
+        if value < self.modulus * self.modulus {
+            self.reduce(value)
+        } else {
+            value % self.modulus
+        };
+
+        BDMint {
+            value,
+            barret: &self,
+        }
+    }
+
+    /// Returns `x % modulus` for `0 <= x < modulus^2`.
+    fn reduce(&self, x: u64) -> u64 {
+        if x < self.modulus {
+            return x;
+        }
+
+        // 1. x = p * m + q, 0 <= p, q < 2^32  =>  x * im = p * (m * im) + q * im
+        // 2. m * im = m * ceil(2^64 / m) = 2^64 + r, 0 <= r < m
+        // 3. x * im = p * 2^64 + r * p + q * im
+        // 4. r * p + q * im < m * m + m * im < 2 * m^2 + m < 2 * 2^64
+        // 5. floor(x * im / 2^64) = p or p + 1
+        assert!(x < self.modulus * self.modulus);
+        let carry = ((x as u128 * self.inv_modulus as u128) >> 64) as u64;
+        debug_assert!(carry <= self.modulus);
+        let x = x.wrapping_sub(carry * self.modulus);
+
+        if x < self.modulus {
+            x
+        } else {
+            x.wrapping_add(self.modulus)
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct BDMint<'a> {
+    value: u64,
+    barret: &'a Barret,
+}
+
+impl<'a> BDMint<'a> {
+    pub const fn value(&self) -> u64 {
+        self.value
+    }
+
+    pub const fn modulus(&self) -> u64 {
+        self.barret.modulus
+    }
+
+    pub fn pow(mut self, mut exp: u32) -> Self {
+        let mut res = self.barret.new_mint(1);
+        while exp > 0 {
+            if exp % 2 == 1 {
+                res *= self;
+            }
+            self = self * self;
+            exp /= 2;
+        }
+
+        res
+    }
+
+    /// Returns `(inv?(a) mod b, gcd(a, b))`, where `a < b` and `a * inv?(a) = g mod b`.
+    fn inv_gcd(a: u64, b: u64) -> Option<(u64, u64)> {
+        if a == 0 || b == 0 {
+            return None;
+        }
+        assert!(a < b);
+
+        // a * x + b * y = g  <=>  g - a * x = 0 mod b
+        let (mut g0, mut g1) = (b as i64, a as i64);
+        let (mut x0, mut x1) = (0, 1);
+        while g1 > 0 {
+            let (div, rem) = (g0 / g1, g0 % g1);
+
+            (g0, g1) = (g1, rem);
+            (x0, x1) = (x1, x0 - x1 * div);
+        }
+
+        if x0.is_negative() {
+            x0 += b as i64 / g0
+        }
+
+        Some((x0 as u64, g0 as u64))
+    }
+
+    pub fn inv(mut self) -> Option<Self> {
+        if let Some((inv, 1)) = Self::inv_gcd(self.value(), self.modulus()) {
+            self.value = inv;
+            return Some(self);
+        }
+
+        None
+    }
+
+    /// define 0^0 = 1.
+    pub fn log(self, base: Self) -> Option<u32> {
+        if self.modulus() == 1 {
+            return Some(0);
+        }
+        match (base.value(), self.value()) {
+            (0, 0) => return Some(1),
+            (0, _) => return None,
+            (_, 1) => return Some(0),
+            (1, _) => return None,
+            _ => (),
+        }
+
+        let d = self.modulus().ilog2();
+        let mut pow_base = self.barret.new_mint(1);
+        for k in 0..d {
+            if pow_base == self {
+                return Some(k);
+            }
+            pow_base *= base;
+        }
+
+        if let Some((g, inv)) = Self::inv_gcd(pow_base.value(), self.modulus()) {
+            if self.value() % g != 0 {
+                return None;
+            } else if g == self.modulus() {
+                return Some(0);
+            }
+
+            let barret = Barret::new((self.modulus() / g) as u32);
+            let x = barret.new_mint(base.value());
+            let y = barret.new_mint(self.value()) * barret.new_mint(inv).pow(d);
+            match (x.value(), y.value()) {
+                (0, 0) => return Some(1),
+                (0, _) => return None,
+                (_, 1) => return Some(0),
+                (1, _) => return None,
+                _ => (),
+            }
+
+            // solve x^k = y by baby-step-giant-step algorithm
+            // x^(p * i + q) = y, 0 <= i, q < p  <=>  x^q = y * (x^-p)^i
+            let p = (x.modulus() as u32).isqrt() + 1;
+
+            let mut pow_x = barret.new_mint(1).pow(p);
+            let inv_x = x.inv().expect("x and modulus are coprime");
+            let mut lhs = FxHashMap::default();
+            lhs.reserve(p as usize);
+            // insert items in descending order for smaller *q*.
+            for q in (0..p).rev() {
+                pow_x *= inv_x;
+                lhs.insert(pow_x, q);
+            }
+
+            let mut rhs = y;
+            let pow_inv_x = inv_x.pow(p);
+            for i in 0..p {
+                if let Some(q) = lhs.get(&rhs) {
+                    return Some(p * i + q + d);
+                }
+                rhs *= pow_inv_x
+            }
+        }
+
+        None
+    }
+}
+
+impl<'a> Debug for BDMint<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.value.fmt(f)
+    }
+}
+
+impl<'a> Hash for BDMint<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.value.hash(state);
+    }
+}
+impl<'a> PartialEq for BDMint<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl<'a> Eq for BDMint<'a> {}
+
+impl<'a> PartialOrd for BDMint<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}
+
+impl<'a> Ord for BDMint<'a> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.value.cmp(&other.value)
+    }
+}
+
+macro_rules! forward_ref_barret_binop {
+    ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
+        impl<$lt> $trait<&$t> for $t {
+            type Output = $t;
+
+            fn $method(self, rhs: &$t) -> Self::Output {
+                self.$method(*rhs)
+            }
+        }
+
+        impl<$lt> $trait<$t> for &$t {
+            type Output = $t;
+
+            fn $method(self, rhs: $t) -> Self::Output {
+                (*self).$method(rhs)
+            }
+        }
+
+        impl<$lt> $trait<&$t> for &$t {
+            type Output = $t;
+
+            fn $method(self, rhs: &$t) -> Self::Output {
+                (*self).$method(rhs)
+            }
+        }
+    };
+}
+
+forward_ref_barret_binop!(impl<'a> Add, add for BDMint<'a>);
+forward_ref_barret_binop!(impl<'a> Sub, sub for BDMint<'a>);
+forward_ref_barret_binop!(impl<'a> Mul, mul for BDMint<'a>);
+
+impl<'a> Add for BDMint<'a> {
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+
+        self
+    }
+}
+
+impl<'a> Sub for BDMint<'a> {
+    type Output = Self;
+
+    fn sub(mut self, rhs: Self) -> Self::Output {
+        self -= rhs;
+
+        self
+    }
+}
+
+impl<'a> Mul for BDMint<'a> {
+    type Output = Self;
+
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        self *= rhs;
+
+        self
+    }
+}
+
+macro_rules! forward_ref_barret_op_assign {
+    ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
+        impl<$lt> $trait<&$t> for $t {
+            fn $method(&mut self, rhs: &$t) {
+                self.$method(*rhs)
+            }
+        }
+    };
+}
+
+forward_ref_barret_op_assign! { impl<'a> AddAssign, add_assign for BDMint<'a> }
+forward_ref_barret_op_assign! { impl<'a> SubAssign, sub_assign for BDMint<'a> }
+forward_ref_barret_op_assign! { impl<'a> MulAssign, mul_assign for BDMint<'a> }
+
+impl<'a> AddAssign for BDMint<'a> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.value += rhs.value;
+        if self.value > self.barret.modulus {
+            self.value -= self.barret.modulus
+        }
+    }
+}
+
+impl<'a> SubAssign for BDMint<'a> {
+    fn sub_assign(&mut self, rhs: Self) {
+        if self.value < rhs.value {
+            self.value += self.barret.modulus - rhs.value
+        } else {
+            self.value -= rhs.value
+        }
+    }
+}
+
+impl<'a> MulAssign for BDMint<'a> {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.value = self.barret.reduce(self.value * rhs.value);
+    }
+}
