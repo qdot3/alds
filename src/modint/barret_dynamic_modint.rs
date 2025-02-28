@@ -1,11 +1,15 @@
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     hash::Hash,
+    iter::Sum,
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
 };
 
 use rustc_hash::FxHashMap;
 
+/// Mod int with dynamic modulus based on Barret reduction algorithm.
+///
+///
 pub struct Barret {
     modulus: u64,
     /// `(2^64 / modulus).ceil()`
@@ -18,7 +22,6 @@ impl Barret {
 
         let modulus = modulus as u64;
         let inv_modulus = (1_u64.wrapping_neg() / modulus).wrapping_add(1);
-        assert!(modulus.wrapping_mul(inv_modulus) == 0);
 
         Self {
             modulus,
@@ -26,8 +29,8 @@ impl Barret {
         }
     }
 
-    pub fn new_mint(&self, value: u64) -> BDMint {
-        if value < self.modulus * self.modulus {
+    pub const fn mint(&self, value: u64) -> BDMint {
+        let value = if value < self.modulus * self.modulus {
             self.reduce(value)
         } else {
             value % self.modulus
@@ -40,7 +43,7 @@ impl Barret {
     }
 
     /// Returns `x % modulus` for `0 <= x < modulus^2`.
-    fn reduce(&self, x: u64) -> u64 {
+    const fn reduce(&self, x: u64) -> u64 {
         if x < self.modulus {
             return x;
         }
@@ -51,9 +54,9 @@ impl Barret {
         // 4. r * p + q * im < m * m + m * im < 2 * m^2 + m < 2 * 2^64
         // 5. floor(x * im / 2^64) = p or p + 1
         assert!(x < self.modulus * self.modulus);
-        let carry = ((x as u128 * self.inv_modulus as u128) >> 64) as u64;
-        debug_assert!(carry <= self.modulus);
-        let x = x.wrapping_sub(carry * self.modulus);
+        //* use `carrying_mul` if stabilized*/
+        let carry = ((x as u128 * self.inv_modulus as u128) >> u64::BITS) as u64;
+        let x = x.wrapping_sub(carry.wrapping_mul(self.modulus));
 
         if x < self.modulus {
             x
@@ -79,7 +82,7 @@ impl<'a> BDMint<'a> {
     }
 
     pub fn pow(mut self, mut exp: u32) -> Self {
-        let mut res = self.barret.new_mint(1);
+        let mut res = self.barret.mint(1);
         while exp > 0 {
             if exp % 2 == 1 {
                 res *= self;
@@ -92,7 +95,7 @@ impl<'a> BDMint<'a> {
     }
 
     /// Returns `(inv?(a) mod b, gcd(a, b))`, where `a < b` and `a * inv?(a) = g mod b`.
-    fn inv_gcd(a: u64, b: u64) -> Option<(u64, u64)> {
+    pub(super) const fn inv_gcd(a: u64, b: u64) -> Option<(u64, u64)> {
         if a == 0 || b == 0 {
             return None;
         }
@@ -115,7 +118,7 @@ impl<'a> BDMint<'a> {
         Some((x0 as u64, g0 as u64))
     }
 
-    pub fn inv(mut self) -> Option<Self> {
+    pub const fn inv(mut self) -> Option<Self> {
         if let Some((inv, 1)) = Self::inv_gcd(self.value(), self.modulus()) {
             self.value = inv;
             return Some(self);
@@ -137,8 +140,8 @@ impl<'a> BDMint<'a> {
             _ => (),
         }
 
-        let d = self.modulus().ilog2();
-        let mut pow_base = self.barret.new_mint(1);
+        let d = self.modulus().ilog2() + 1;
+        let mut pow_base = self.barret.mint(1);
         for k in 0..d {
             if pow_base == self {
                 return Some(k);
@@ -146,20 +149,22 @@ impl<'a> BDMint<'a> {
             pow_base *= base;
         }
 
-        if let Some((g, inv)) = Self::inv_gcd(pow_base.value(), self.modulus()) {
+        // gcd(base^d, modulus) = gcd(base^d % modulus, modulus)
+        if let Some((_, g)) = Self::inv_gcd(pow_base.value(), self.modulus()) {
             if self.value() % g != 0 {
                 return None;
             } else if g == self.modulus() {
-                return Some(0);
+                return Some(d);
             }
 
             let barret = Barret::new((self.modulus() / g) as u32);
-            let x = barret.new_mint(base.value());
-            let y = barret.new_mint(self.value()) * barret.new_mint(inv).pow(d);
+            let x = dbg!(barret.mint(base.value()));
+            let inv_x = x.inv().expect("x and new modulus will be coprime");
+            let y = barret.mint(self.value()) * inv_x.pow(d);
             match (x.value(), y.value()) {
-                (0, 0) => return Some(1),
+                (0, 0) => return Some(1 + d),
                 (0, _) => return None,
-                (_, 1) => return Some(0),
+                (_, 1) => return Some(d),
                 (1, _) => return None,
                 _ => (),
             }
@@ -168,8 +173,7 @@ impl<'a> BDMint<'a> {
             // x^(p * i + q) = y, 0 <= i, q < p  <=>  x^q = y * (x^-p)^i
             let p = (x.modulus() as u32).isqrt() + 1;
 
-            let mut pow_x = barret.new_mint(1).pow(p);
-            let inv_x = x.inv().expect("x and modulus are coprime");
+            let mut pow_x = barret.mint(1).pow(p);
             let mut lhs = FxHashMap::default();
             lhs.reserve(p as usize);
             // insert items in descending order for smaller *q*.
@@ -194,10 +198,17 @@ impl<'a> BDMint<'a> {
 
 impl<'a> Debug for BDMint<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.value.fmt(f)
+        f.debug_struct("BDMint")
+            .field("value", &self.value())
+            .field("modulus", &self.modulus())
+            .finish()
     }
 }
-
+impl<'a> Display for BDMint<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
 impl<'a> Hash for BDMint<'a> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.value.hash(state);

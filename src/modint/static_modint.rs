@@ -3,7 +3,7 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
 };
 
-use rustc_hash::FxHashMap;
+use super::{BDMint, Barret};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Mint<const MOD: u64> {
@@ -19,7 +19,7 @@ impl<const MOD: u64> Mint<MOD> {
         Self { value: value % MOD }
     }
 
-    pub fn pow(mut self, mut exp: u64) -> Self {
+    pub fn pow(mut self, mut exp: u32) -> Self {
         let mut res = Self::new(1);
         while exp > 0 {
             if exp & 1 == 1 {
@@ -32,103 +32,21 @@ impl<const MOD: u64> Mint<MOD> {
         res
     }
 
-    const fn gcd(mut a: u64, mut b: u64) -> Option<u64> {
-        if a == 0 || b == 0 {
-            return None;
-        }
-
-        while b > 0 {
-            (a, b) = (b, a % b)
-        }
-        Some(a)
-    }
-
-    pub fn inv(self) -> Option<Self> {
-        if Self::gcd(MOD, self.value) == Some(1) {
-            //? overflow? non-recursive version?
-            fn inv_(a: i64, b: i64) -> i64 {
-                if a == 1 {
-                    return 1;
-                } else {
-                    return b + (1 - b * inv_(b % a, a)) / a;
-                }
-            }
-
-            return Some(Self::new(
-                inv_(self.value as i64, MOD as i64).rem_euclid(MOD as i64) as u64,
-            ));
+    pub const fn inv(mut self) -> Option<Self> {
+        if let Some((inv, 1)) = BDMint::inv_gcd(self.value, MOD) {
+            self.value = inv;
+            return Some(self);
         }
 
         None
     }
 
     /// define 0^0 = 1
-    pub fn log(self, base: Self) -> Option<u64> {
-        if MOD == 1 {
-            return Some(0);
-        }
-        assert!(MOD >= 2);
-
-        if base.value == 0 {
-            return match self.value {
-                0 => Some(1),
-                1 => Some(0),
-                _ => None,
-            };
-        } else if base.value == 1 {
-            return if self.value == 1 { Some(0) } else { None };
-        }
-
-        if let Some(g) = Self::gcd(MOD, base.value) {
-            if g == 1 {
-                let p = MOD.isqrt() + 1;
-
-                // base^(pi+q) = self (mod MOD)
-                // base^q = self (base^-p)^i (mod MOD) for 0 <= i, q < p
-                let inv_base = base.inv().expect("MOD and base is coprime");
-
-                let mut lhs = FxHashMap::default();
-                lhs.reserve(p as usize);
-                // insert items in descending order for smaller q
-                let mut pow_base = base.pow(p);
-                for q in (0..p).rev() {
-                    pow_base *= inv_base;
-                    lhs.insert(pow_base, q);
-                }
-
-                let pow_inv_base = inv_base.pow(p);
-                let mut rhs = self;
-                for i in 0..p {
-                    if let Some(q) = lhs.get(&rhs) {
-                        return Some(p * i + q);
-                    }
-                    rhs *= pow_inv_base
-                }
-
-                return None;
-            } else {
-                let (mut small_mod, mut large_g) = (MOD / g, g);
-                // O(log^2 MOD)
-                while let Some(g) = Self::gcd(base.value, small_mod) {
-                    if g == 1 {
-                        break;
-                    }
-
-                    small_mod /= g;
-                    large_g *= g
-                }
-                debug_assert_eq!(Self::gcd(base.value, small_mod), Some(1));
-
-                if self.value % large_g != 0 {
-                    return None;
-                }
-
-                // base^(k-1) = (self/g) (base/g)^-1 (mod small mod)
-                todo!("impl dynamic modint")
-            }
-        }
-
-        None
+    pub fn log(self, base: Self) -> Option<u32> {
+        let barret = Barret::new(MOD as u32);
+        let x = barret.mint(base.value);
+        let y = barret.mint(self.value);
+        y.log(x)
     }
 }
 
