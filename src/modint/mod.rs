@@ -1,3 +1,4 @@
+mod barret_dynamic_modint;
 mod montgomery_dynamic_modint;
 mod static_modint;
 

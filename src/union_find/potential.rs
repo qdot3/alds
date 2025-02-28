@@ -4,9 +4,11 @@ use std::cell::Cell;
 ///
 /// # Performance note
 ///
-/// | [new](UnionFindWithPotential::new) |
-/// |------------------------------------|
-/// | *O*(*N*)                           |
+/// | [new](UnionFindWithPotential::new) | [find](UnionFindWithPotential::find)/[size](UnionFindWithPotential::size)/[same](UnionFindWithPotential::same)/[unite](UnionFindWithPotential::unite)/[potential](UnionFindWithPotential::potential) |
+/// |------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+/// | *O*(*N*)                           | *O*(α(*N*)), amortized                                                                                                                                                                               |
+///
+/// * α(*N*) is the functional inverse of Ackermann's function which diverges very slowly.
 #[derive(Debug, Clone)]
 pub struct UnionFindWithPotential<P: Group> {
     node: Vec<Cell<Node<P>>>,

@@ -8,4 +8,5 @@ forward_ref = "1.0.0"
 itertools = "0.14.0"
 num-traits = "0.2.19"
 proconio = { version = "0.5.0", features = ["derive"] }
+rustc-hash = "2.1.1"
 stash = "0.1.6"

@@ -6,7 +6,7 @@ use std::{cell::Cell, marker::PhantomData};
 ///
 /// | [new](UnionFind::new) | [find](UnionFind::find)/[size](UnionFind::size)/[same](UnionFind::same)/[unite](UnionFind::unite) | [groups](UnionFind::groups) |
 /// |-----------------------|---------------------------------------------------------------------------------------------------|-----------------------------|
-/// | *O*(*N*)              | *O*(α(*N*))~                                                                                      | *O*(*N* α(*N*))             |
+/// | *O*(*N*)              | *O*(α(*N*))                                                                                       | *O*(*N* α(*N*))             |
 ///
 /// * α(*N*) is the functional inverse of Ackermann's function which diverges very slowly.
 #[derive(Debug, Clone)]
