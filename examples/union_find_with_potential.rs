@@ -51,6 +51,6 @@ impl Group for Potential {
     }
 
     fn inverse(&self) -> Self {
-        Self(self.0.inv().unwrap())
+        Self(-self.0)
     }
 }

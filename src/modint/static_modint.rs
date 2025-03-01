@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use super::{BDMint, Barret};
@@ -160,6 +160,29 @@ impl<const MOD: u64> MulAssign for Mint<MOD> {
 }
 
 forward_ref_mod_op_assign!(impl MulAssign, mul_assign for Mint<u64>);
+
+macro_rules! forward_ref_mod_unop {
+    ( impl<const $const_generics:ident: $const_ty:ty> $trait:ident, $method:ident for $t:ty ) => {
+        impl<const $const_generics: $const_ty> $trait for &$t {
+            type Output = $t;
+
+            fn $method(self) -> Self::Output {
+                (*self).$method()
+            }
+        }
+    };
+}
+
+forward_ref_mod_unop!{ impl<const MOD: u64> Neg, neg for Mint<MOD> }
+
+impl<const MOD: u64> Neg for Mint<MOD> {
+    type Output =Self;
+
+    fn neg(mut self) -> Self::Output {
+        self.value = MOD - self.value;
+        self
+    }
+}
 
 #[cfg(test)]
 mod test {

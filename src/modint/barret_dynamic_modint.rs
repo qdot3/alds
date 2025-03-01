@@ -1,13 +1,12 @@
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
-    iter::Sum,
-    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use rustc_hash::FxHashMap;
 
-/// Mod int with dynamic modulus based on Barret reduction algorithm.
+/// Represents modulo *M* with dynamic modulus (*M*) based on Barret reduction algorithm.
 ///
 ///
 pub struct Barret {
@@ -158,7 +157,7 @@ impl<'a> BDMint<'a> {
             }
 
             let barret = Barret::new((self.modulus() / g) as u32);
-            let x = dbg!(barret.mint(base.value()));
+            let x = barret.mint(base.value());
             let inv_x = x.inv().expect("x and new modulus will be coprime");
             let y = barret.mint(self.value()) * inv_x.pow(d);
             match (x.value(), y.value()) {
@@ -332,5 +331,28 @@ impl<'a> SubAssign for BDMint<'a> {
 impl<'a> MulAssign for BDMint<'a> {
     fn mul_assign(&mut self, rhs: Self) {
         self.value = self.barret.reduce(self.value * rhs.value);
+    }
+}
+
+macro_rules! forward_ref_barret_unop {
+    ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
+        impl<$lt> $trait for &$t {
+            type Output = $t;
+
+            fn $method(self) -> Self::Output {
+                (*self).$method()
+            }
+        }
+    };
+}
+
+forward_ref_barret_unop! { impl<'a> Neg, neg for BDMint<'a>}
+
+impl<'a> Neg for BDMint<'a> {
+    type Output = Self;
+
+    fn neg(mut self) -> Self::Output {
+        self.value = self.modulus() - self.value();
+        self
     }
 }
