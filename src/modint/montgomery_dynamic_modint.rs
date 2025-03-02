@@ -18,7 +18,7 @@ pub struct Montgomery {
 }
 
 impl Montgomery {
-    const RADIX: u64 = 1 << u64::BITS / 2; // 1^32
+    const RADIX: u64 = 1 << (u64::BITS / 2); // 1^32
 
     /// Creates a new [`Barret`] with the given `modulus`.
     ///
@@ -63,7 +63,7 @@ impl Montgomery {
 
         MDMint {
             value,
-            montgomery: &self,
+            montgomery: self,
         }
     }
 
@@ -99,7 +99,7 @@ pub struct MDMint<'a> {
     montgomery: &'a Montgomery,
 }
 
-impl<'a> MDMint<'a> {
+impl MDMint<'_> {
     /// Returns the value.
     pub const fn value(&self) -> u64 {
         self.montgomery.reduce(self.value)
@@ -125,7 +125,7 @@ impl<'a> MDMint<'a> {
     }
 }
 
-impl<'a> Debug for MDMint<'a> {
+impl Debug for MDMint<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MDMint")
             .field("value", &self.value())
@@ -134,33 +134,33 @@ impl<'a> Debug for MDMint<'a> {
     }
 }
 
-impl<'a> Display for MDMint<'a> {
+impl Display for MDMint<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-impl<'a> Hash for MDMint<'a> {
+impl Hash for MDMint<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.value.hash(state);
     }
 }
 
-impl<'a> PartialEq for MDMint<'a> {
+impl PartialEq for MDMint<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
 }
 
-impl<'a> Eq for MDMint<'a> {}
+impl Eq for MDMint<'_> {}
 
-impl<'a> PartialOrd for MDMint<'a> {
+impl PartialOrd for MDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.value.partial_cmp(&other.value)
     }
 }
 
-impl<'a> Ord for MDMint<'a> {
+impl Ord for MDMint<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.value.cmp(&other.value)
     }
@@ -170,7 +170,7 @@ forward_ref_dyn_mint_binop!(impl<'a> Add, add for MDMint<'a>);
 forward_ref_dyn_mint_binop!(impl<'a> Sub, sub for MDMint<'a>);
 forward_ref_dyn_mint_binop!(impl<'a> Mul, mul for MDMint<'a>);
 
-impl<'a> Add for MDMint<'a> {
+impl Add for MDMint<'_> {
     type Output = Self;
 
     fn add(mut self, rhs: Self) -> Self::Output {
@@ -180,7 +180,7 @@ impl<'a> Add for MDMint<'a> {
     }
 }
 
-impl<'a> Sub for MDMint<'a> {
+impl Sub for MDMint<'_> {
     type Output = Self;
 
     fn sub(mut self, rhs: Self) -> Self::Output {
@@ -190,7 +190,7 @@ impl<'a> Sub for MDMint<'a> {
     }
 }
 
-impl<'a> Mul for MDMint<'a> {
+impl Mul for MDMint<'_> {
     type Output = Self;
 
     fn mul(mut self, rhs: Self) -> Self::Output {
@@ -204,13 +204,13 @@ forward_ref_dyn_mint_op_assign!(impl<'a> AddAssign, add_assign for MDMint<'a>);
 forward_ref_dyn_mint_op_assign!(impl<'a> SubAssign, sub_assign for MDMint<'a>);
 forward_ref_dyn_mint_op_assign!(impl<'a> MulAssign, mul_assign for MDMint<'a>);
 
-impl<'a> AddAssign for MDMint<'a> {
+impl AddAssign for MDMint<'_> {
     fn add_assign(&mut self, rhs: Self) {
         self.value += rhs.value
     }
 }
 
-impl<'a> SubAssign for MDMint<'a> {
+impl SubAssign for MDMint<'_> {
     fn sub_assign(&mut self, rhs: Self) {
         if self.value < rhs.value {
             self.value = self.value + self.montgomery.modulus - rhs.value
@@ -220,7 +220,7 @@ impl<'a> SubAssign for MDMint<'a> {
     }
 }
 
-impl<'a> MulAssign for MDMint<'a> {
+impl MulAssign for MDMint<'_> {
     fn mul_assign(&mut self, rhs: Self) {
         // v1 * v2 < m * m < m * r
         self.value = self.montgomery.reduce(self.value * rhs.value)
@@ -229,7 +229,7 @@ impl<'a> MulAssign for MDMint<'a> {
 
 forward_ref_dyn_mint_unop!(impl<'a> Neg, neg for MDMint<'a>);
 
-impl<'a> Neg for MDMint<'a> {
+impl Neg for MDMint<'_> {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {

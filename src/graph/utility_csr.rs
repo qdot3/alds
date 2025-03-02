@@ -31,6 +31,12 @@ pub struct CSRBuilder<W> {
     num_in: Vec<usize>,
 }
 
+impl<W> Default for CSRBuilder<W> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<W> CSRBuilder<W> {
     pub fn new() -> Self {
         Self {
@@ -45,8 +51,7 @@ impl<W> From<Vec<Edge<W>>> for CSRBuilder<W> {
     fn from(value: Vec<Edge<W>>) -> Self {
         if let Some(max) = value
             .iter()
-            .map(|e| [e.source(), e.target()])
-            .flatten()
+            .flat_map(|e| [e.source(), e.target()])
             .max()
         {
             let mut num_out = vec![0; max + 1];

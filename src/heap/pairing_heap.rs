@@ -14,6 +14,12 @@ pub struct PairingHeap<I, P> {
     map: HashMap<I, Rc<NodeRef<I, P>>>,
 }
 
+impl<I: Hash + Eq + Clone, P: Ord> Default for PairingHeap<I, P> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<I: Hash + Eq + Clone, P: Ord> PairingHeap<I, P> {
     pub fn new() -> Self {
         Self {
@@ -199,9 +205,9 @@ impl<I, P: Ord> Node<I, P> {
         if let Some(parent) = std::mem::take(&mut node.borrow_mut().parent) {
             let parent = Weak::upgrade(&parent).unwrap();
 
-            if parent.borrow().has_child(&node) {
+            if parent.borrow().has_child(node) {
                 parent.borrow_mut().child = std::mem::take(&mut node.borrow_mut().sibling);
-            } else if parent.borrow().has_sibling(&node) {
+            } else if parent.borrow().has_sibling(node) {
                 parent.borrow_mut().sibling = std::mem::take(&mut node.borrow_mut().sibling);
             } else {
                 unreachable!("given node should be a child or sibling of the parent")
@@ -214,12 +220,10 @@ impl<I, P: Ord> Node<I, P> {
     fn pair_and_detach_children(node: &mut Rc<NodeRef<I, P>>) -> Option<Rc<NodeRef<I, P>>> {
         let mut child = std::mem::take(&mut node.borrow_mut().child);
         std::iter::from_fn(move || {
-            std::mem::take(&mut child).and_then(|inner| {
+            std::mem::take(&mut child).inspect(|inner| {
                 inner.borrow_mut().parent = None;
                 let sibling = std::mem::take(&mut inner.borrow_mut().sibling);
                 child = sibling;
-
-                Some(inner)
             })
         })
         .chunks(2)

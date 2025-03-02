@@ -47,7 +47,7 @@ impl Barret {
 
         BDMint {
             value,
-            barret: &self,
+            barret: self,
         }
     }
 
@@ -88,7 +88,7 @@ pub struct BDMint<'a> {
     barret: &'a Barret,
 }
 
-impl<'a> BDMint<'a> {
+impl BDMint<'_> {
     /// Returns the value.
     pub const fn value(&self) -> u64 {
         self.value
@@ -220,7 +220,7 @@ impl<'a> BDMint<'a> {
     }
 }
 
-impl<'a> Debug for BDMint<'a> {
+impl Debug for BDMint<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("BDMint")
             .field("value", &self.value())
@@ -229,33 +229,33 @@ impl<'a> Debug for BDMint<'a> {
     }
 }
 
-impl<'a> Display for BDMint<'a> {
+impl Display for BDMint<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-impl<'a> Hash for BDMint<'a> {
+impl Hash for BDMint<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.value.hash(state);
     }
 }
 
-impl<'a> PartialEq for BDMint<'a> {
+impl PartialEq for BDMint<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
 }
 
-impl<'a> Eq for BDMint<'a> {}
+impl Eq for BDMint<'_> {}
 
-impl<'a> PartialOrd for BDMint<'a> {
+impl PartialOrd for BDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.value.partial_cmp(&other.value)
     }
 }
 
-impl<'a> Ord for BDMint<'a> {
+impl Ord for BDMint<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.value.cmp(&other.value)
     }
@@ -265,7 +265,7 @@ forward_ref_dyn_mint_binop!(impl<'a> Add, add for BDMint<'a>);
 forward_ref_dyn_mint_binop!(impl<'a> Sub, sub for BDMint<'a>);
 forward_ref_dyn_mint_binop!(impl<'a> Mul, mul for BDMint<'a>);
 
-impl<'a> Add for BDMint<'a> {
+impl Add for BDMint<'_> {
     type Output = Self;
 
     fn add(mut self, rhs: Self) -> Self::Output {
@@ -275,7 +275,7 @@ impl<'a> Add for BDMint<'a> {
     }
 }
 
-impl<'a> Sub for BDMint<'a> {
+impl Sub for BDMint<'_> {
     type Output = Self;
 
     fn sub(mut self, rhs: Self) -> Self::Output {
@@ -285,7 +285,7 @@ impl<'a> Sub for BDMint<'a> {
     }
 }
 
-impl<'a> Mul for BDMint<'a> {
+impl Mul for BDMint<'_> {
     type Output = Self;
 
     fn mul(mut self, rhs: Self) -> Self::Output {
@@ -299,7 +299,7 @@ forward_ref_dyn_mint_op_assign! { impl<'a> AddAssign, add_assign for BDMint<'a> 
 forward_ref_dyn_mint_op_assign! { impl<'a> SubAssign, sub_assign for BDMint<'a> }
 forward_ref_dyn_mint_op_assign! { impl<'a> MulAssign, mul_assign for BDMint<'a> }
 
-impl<'a> AddAssign for BDMint<'a> {
+impl AddAssign for BDMint<'_> {
     fn add_assign(&mut self, rhs: Self) {
         self.value += rhs.value;
         if self.value > self.barret.modulus {
@@ -308,7 +308,7 @@ impl<'a> AddAssign for BDMint<'a> {
     }
 }
 
-impl<'a> SubAssign for BDMint<'a> {
+impl SubAssign for BDMint<'_> {
     fn sub_assign(&mut self, rhs: Self) {
         if self.value < rhs.value {
             self.value += self.barret.modulus - rhs.value
@@ -318,7 +318,7 @@ impl<'a> SubAssign for BDMint<'a> {
     }
 }
 
-impl<'a> MulAssign for BDMint<'a> {
+impl MulAssign for BDMint<'_> {
     fn mul_assign(&mut self, rhs: Self) {
         self.value = self.barret.reduce(self.value * rhs.value);
     }
@@ -326,7 +326,7 @@ impl<'a> MulAssign for BDMint<'a> {
 
 forward_ref_dyn_mint_unop! { impl<'a> Neg, neg for BDMint<'a>}
 
-impl<'a> Neg for BDMint<'a> {
+impl Neg for BDMint<'_> {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {

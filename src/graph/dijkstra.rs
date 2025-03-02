@@ -26,7 +26,7 @@ impl Dijkstra<()> {
             for e in csr.edges(source) {
                 // if dist[tar].is_some(), then dist[tar] <= dist[src] + 1.
                 if distance[e.target()].is_none() {
-                    distance[e.target()] = distance[e.source()].and_then(|d| Some(d + 1));
+                    distance[e.target()] = distance[e.source()].map(|d| d + 1);
                     parent[e.target()] = Some(e.source());
 
                     next.push_back(e.target());

@@ -9,6 +9,12 @@ pub struct QuadHeap<T> {
     data: Vec<T>,
 }
 
+impl<T: Ord> Default for QuadHeap<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Ord> QuadHeap<T> {
     /// branching factor.
     const D: usize = 4;
@@ -62,7 +68,7 @@ impl<T: Ord> QuadHeap<T> {
 
     /// Consumes the `QuadHeap` and returns the underlying vector in arbitrary order.
     pub fn into_vec(self) -> Vec<T> {
-        self.data.into()
+        self.data
     }
 
     /// Returns an iterator visiting all values in the underlying vector, in arbitrary order.
@@ -110,7 +116,7 @@ impl<T: Ord> QuadHeap<T> {
         while c > 0 {
             let p = (c - 1) / Self::D;
 
-            if &self.data[p] >= &self.data[c] {
+            if self.data[p] >= self.data[c] {
                 break;
             }
 
@@ -139,7 +145,7 @@ impl<T: Ord> QuadHeap<T> {
     ///
     /// *O*(1)
     pub fn peek(&self) -> Option<&T> {
-        self.data.get(0)
+        self.data.first()
     }
 
     /// # Example

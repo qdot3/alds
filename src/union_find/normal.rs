@@ -113,7 +113,7 @@ impl UnionFind {
     /// Panics if given node is unknown.
     /// *a*(*n*), where *a* is the inverse of Ackermann function
     pub fn size(&self, a: usize) -> usize {
-        self.par_or_size[self.find(a)].get().abs() as usize
+        self.par_or_size[self.find(a)].get().unsigned_abs() as usize
     }
 
     /// unite two groups that given nodes belong respectively.
@@ -186,7 +186,7 @@ impl UnionFind {
             .enumerate()
         {
             group_id[i] = gi;
-            size.push(self.par_or_size[i].get().abs() as usize);
+            size.push(self.par_or_size[i].get().unsigned_abs() as usize);
         }
 
         let mut groups = Vec::from_iter(size.into_iter().map(|n| Vec::with_capacity(n)));
@@ -207,7 +207,7 @@ pub struct Groups<'a> {
     _marker: PhantomData<&'a UnionFind>,
 }
 
-impl<'a> Iterator for Groups<'a> {
+impl Iterator for Groups<'_> {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {

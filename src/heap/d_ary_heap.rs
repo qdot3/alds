@@ -9,6 +9,12 @@ pub struct DAryHeap<T, const D: usize> {
     data: Vec<T>,
 }
 
+impl<T: Ord, const D: usize> Default for DAryHeap<T, D> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Ord, const D: usize> DAryHeap<T, D> {
     /// See [`Vec::new`].
     ///
@@ -71,7 +77,7 @@ impl<T: Ord, const D: usize> DAryHeap<T, D> {
 
     /// Consumes the `QuadHeap` and returns the underlying vector in arbitrary order.
     pub fn into_vec(self) -> Vec<T> {
-        self.data.into()
+        self.data
     }
 
     /// Returns an iterator visiting all values in the underlying vector, in arbitrary order.
@@ -119,7 +125,7 @@ impl<T: Ord, const D: usize> DAryHeap<T, D> {
         while c > 0 {
             let p = (c - 1) / D;
 
-            if &self.data[p] >= &self.data[c] {
+            if self.data[p] >= self.data[c] {
                 break;
             }
 
@@ -148,7 +154,7 @@ impl<T: Ord, const D: usize> DAryHeap<T, D> {
     ///
     /// *O*(1)
     pub fn peek(&self) -> Option<&T> {
-        self.data.get(0)
+        self.data.first()
     }
 
     /// # Example

@@ -8,6 +8,12 @@ pub struct BinomialHeap<T> {
     size: usize,
 }
 
+impl<T> Default for BinomialHeap<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> BinomialHeap<T> {
     /// Creates an empty binomial heap.
     ///
@@ -92,7 +98,7 @@ impl<T> BinomialHeap<T> {
     ///
     /// *O*(1)
     pub fn peek(&self) -> Option<&T> {
-        self.arena.get(0).and_then(|node| Some(node.peek()))
+        self.arena.first().map(|node| node.peek())
     }
 }
 
@@ -187,7 +193,7 @@ impl<T: Ord> BinomialHeap<T> {
         assert!(self.arena.is_empty());
         let mut new_arena = new_arena.into_iter().skip_while(|v| v.is_none());
         if let Some(mut max_v) = new_arena.next().and_then(|v| v) {
-            for mut node in new_arena.filter_map(|v| v) {
+            for mut node in new_arena.flatten() {
                 if node.peek() > max_v.peek() {
                     std::mem::swap(&mut node, &mut max_v);
                 }
@@ -239,7 +245,7 @@ impl<U: Ord> FromIterator<U> for BinomialHeap<U> {
 
 impl<T: Ord> From<Vec<T>> for BinomialHeap<T> {
     fn from(value: Vec<T>) -> Self {
-        Self::from_iter(value.into_iter())
+        Self::from_iter(value)
     }
 }
 

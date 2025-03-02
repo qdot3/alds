@@ -12,7 +12,7 @@ pub struct SMint<const MOD: u64> {
 }
 
 impl<const MOD: u64> SMint<MOD> {
-    const MAX_MOD: u64 = 1 << u64::BITS / 2;
+    const MAX_MOD: u64 = 1 << (u64::BITS / 2);
 
     pub const fn new(value: u64) -> Self {
         assert!(MOD <= Self::MAX_MOD);
