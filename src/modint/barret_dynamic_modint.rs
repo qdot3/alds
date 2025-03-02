@@ -6,9 +6,13 @@ use std::{
 
 use rustc_hash::FxHashMap;
 
-/// Represents modulo *M* with dynamic modulus (*M*) based on Barret reduction algorithm.
+use super::macros::{
+    forward_ref_dyn_mint_binop, forward_ref_dyn_mint_op_assign, forward_ref_dyn_mint_unop,
+};
+
+/// Owner and factory for [`BDMint`] instances with the same modulus.
 ///
-///
+/// To use a different modulus, create a new [`Barret`] with the desired modulus.
 pub struct Barret {
     modulus: u64,
     /// `(2^64 / modulus).ceil()`
@@ -16,6 +20,11 @@ pub struct Barret {
 }
 
 impl Barret {
+    /// Creates a new [`Barret`] with the given `modulus`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `modulus` is zero.
     pub const fn new(modulus: u32) -> Self {
         assert!(modulus != 0);
 
@@ -28,6 +37,7 @@ impl Barret {
         }
     }
 
+    /// Creates a new [`BDMint`] instance with the given `value` and the fixed modulus.
     pub const fn mint(&self, value: u64) -> BDMint {
         let value = if value < self.modulus * self.modulus {
             self.reduce(value)
@@ -65,6 +75,13 @@ impl Barret {
     }
 }
 
+/// Modular integer with a runtime-specified modulus based on
+/// [Barret reduction](https://en.wikipedia.org/wiki/Barrett_reduction) algorithm.
+///
+/// Any binary operations are restricted to elements with the same owner
+/// to ensure that they share the same modulus.
+///
+/// To use [`BDMint`] with a different modulus, create a new [`Barret`] instance as its owner.
 #[derive(Clone, Copy)]
 pub struct BDMint<'a> {
     value: u64,
@@ -72,14 +89,17 @@ pub struct BDMint<'a> {
 }
 
 impl<'a> BDMint<'a> {
+    /// Returns the value.
     pub const fn value(&self) -> u64 {
         self.value
     }
 
+    /// Returns the fixed modulus.
     pub const fn modulus(&self) -> u64 {
         self.barret.modulus
     }
 
+    /// Raises `self` to the power of `exp`, using exponentiation by squaring.
     pub fn pow(mut self, mut exp: u32) -> Self {
         let mut res = self.barret.mint(1);
         while exp > 0 {
@@ -117,6 +137,7 @@ impl<'a> BDMint<'a> {
         Some((x0 as u64, g0 as u64))
     }
 
+    /// Returns the inverse of `self` if exists.
     pub const fn inv(mut self) -> Option<Self> {
         if let Some((inv, 1)) = Self::inv_gcd(self.value(), self.modulus()) {
             self.value = inv;
@@ -126,7 +147,11 @@ impl<'a> BDMint<'a> {
         None
     }
 
-    /// define 0^0 = 1.
+    /// Returns the logarithm of `self` with respect to the given `base` if exists.
+    ///
+    /// # Note
+    ///
+    /// `0^0` is defined to be `1`.
     pub fn log(self, base: Self) -> Option<u32> {
         if self.modulus() == 1 {
             return Some(0);
@@ -203,16 +228,19 @@ impl<'a> Debug for BDMint<'a> {
             .finish()
     }
 }
+
 impl<'a> Display for BDMint<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.value())
     }
 }
+
 impl<'a> Hash for BDMint<'a> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.value.hash(state);
     }
 }
+
 impl<'a> PartialEq for BDMint<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
@@ -233,37 +261,9 @@ impl<'a> Ord for BDMint<'a> {
     }
 }
 
-macro_rules! forward_ref_barret_binop {
-    ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
-        impl<$lt> $trait<&$t> for $t {
-            type Output = $t;
-
-            fn $method(self, rhs: &$t) -> Self::Output {
-                self.$method(*rhs)
-            }
-        }
-
-        impl<$lt> $trait<$t> for &$t {
-            type Output = $t;
-
-            fn $method(self, rhs: $t) -> Self::Output {
-                (*self).$method(rhs)
-            }
-        }
-
-        impl<$lt> $trait<&$t> for &$t {
-            type Output = $t;
-
-            fn $method(self, rhs: &$t) -> Self::Output {
-                (*self).$method(rhs)
-            }
-        }
-    };
-}
-
-forward_ref_barret_binop!(impl<'a> Add, add for BDMint<'a>);
-forward_ref_barret_binop!(impl<'a> Sub, sub for BDMint<'a>);
-forward_ref_barret_binop!(impl<'a> Mul, mul for BDMint<'a>);
+forward_ref_dyn_mint_binop!(impl<'a> Add, add for BDMint<'a>);
+forward_ref_dyn_mint_binop!(impl<'a> Sub, sub for BDMint<'a>);
+forward_ref_dyn_mint_binop!(impl<'a> Mul, mul for BDMint<'a>);
 
 impl<'a> Add for BDMint<'a> {
     type Output = Self;
@@ -295,19 +295,9 @@ impl<'a> Mul for BDMint<'a> {
     }
 }
 
-macro_rules! forward_ref_barret_op_assign {
-    ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
-        impl<$lt> $trait<&$t> for $t {
-            fn $method(&mut self, rhs: &$t) {
-                self.$method(*rhs)
-            }
-        }
-    };
-}
-
-forward_ref_barret_op_assign! { impl<'a> AddAssign, add_assign for BDMint<'a> }
-forward_ref_barret_op_assign! { impl<'a> SubAssign, sub_assign for BDMint<'a> }
-forward_ref_barret_op_assign! { impl<'a> MulAssign, mul_assign for BDMint<'a> }
+forward_ref_dyn_mint_op_assign! { impl<'a> AddAssign, add_assign for BDMint<'a> }
+forward_ref_dyn_mint_op_assign! { impl<'a> SubAssign, sub_assign for BDMint<'a> }
+forward_ref_dyn_mint_op_assign! { impl<'a> MulAssign, mul_assign for BDMint<'a> }
 
 impl<'a> AddAssign for BDMint<'a> {
     fn add_assign(&mut self, rhs: Self) {
@@ -334,25 +324,15 @@ impl<'a> MulAssign for BDMint<'a> {
     }
 }
 
-macro_rules! forward_ref_barret_unop {
-    ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
-        impl<$lt> $trait for &$t {
-            type Output = $t;
-
-            fn $method(self) -> Self::Output {
-                (*self).$method()
-            }
-        }
-    };
-}
-
-forward_ref_barret_unop! { impl<'a> Neg, neg for BDMint<'a>}
+forward_ref_dyn_mint_unop! { impl<'a> Neg, neg for BDMint<'a>}
 
 impl<'a> Neg for BDMint<'a> {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        self.value = self.modulus() - self.value();
+        if self.value > 0 {
+            self.value = self.modulus() - self.value();
+        }
         self
     }
 }

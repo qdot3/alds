@@ -51,7 +51,10 @@ impl<P: Group> UnionFindWithPotential<P> {
     }
 
     pub fn size(&self, i: usize) -> usize {
-        self.node[self.find(i)].get().get_size().expect("node ri is a root node")
+        self.node[self.find(i)]
+            .get()
+            .get_size()
+            .expect("node ri is a root node")
     }
 
     /// get P_ij of P(i) = P_ij * P(j)

@@ -5,12 +5,13 @@ use std::{
 
 use super::{BDMint, Barret};
 
+/// Modular integer with a compile-time fixed modulus.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Mint<const MOD: u64> {
+pub struct SMint<const MOD: u64> {
     value: u64,
 }
 
-impl<const MOD: u64> Mint<MOD> {
+impl<const MOD: u64> SMint<MOD> {
     const MAX_MOD: u64 = 1 << u64::BITS / 2;
 
     pub const fn new(value: u64) -> Self {
@@ -19,6 +20,17 @@ impl<const MOD: u64> Mint<MOD> {
         Self { value: value % MOD }
     }
 
+    /// Returns the value.
+    pub const fn value(&self) -> u64 {
+        self.value
+    }
+
+    /// Returns the modulus.
+    pub const fn modulus(&self) -> u64 {
+        MOD
+    }
+
+    /// Raises `self` to the power of `exp`, using exponentiation by squaring.
     pub fn pow(mut self, mut exp: u32) -> Self {
         let mut res = Self::new(1);
         while exp > 0 {
@@ -32,6 +44,7 @@ impl<const MOD: u64> Mint<MOD> {
         res
     }
 
+    /// Returns the inverse of `self` if exists.
     pub const fn inv(mut self) -> Option<Self> {
         if let Some((inv, 1)) = BDMint::inv_gcd(self.value, MOD) {
             self.value = inv;
@@ -41,7 +54,12 @@ impl<const MOD: u64> Mint<MOD> {
         None
     }
 
-    /// define 0^0 = 1
+    /// Returns the logarithm of `self` with respect to the given `base` if exists.
+    ///
+    /// # Note
+    ///
+    /// * `0^0` is defined to be `1`.
+    /// * wrapper of [`BDMint::log`]
     pub fn log(self, base: Self) -> Option<u32> {
         let barret = Barret::new(MOD as u32);
         let x = barret.mint(base.value);
@@ -50,7 +68,7 @@ impl<const MOD: u64> Mint<MOD> {
     }
 }
 
-impl<const MOD: u64> Display for Mint<MOD> {
+impl<const MOD: u64> Display for SMint<MOD> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.value.fmt(f)
     }
@@ -98,7 +116,7 @@ macro_rules! forward_ref_mod_op_assign {
     };
 }
 
-impl<const MOD: u64> Add for Mint<MOD> {
+impl<const MOD: u64> Add for SMint<MOD> {
     type Output = Self;
 
     #[inline]
@@ -108,18 +126,18 @@ impl<const MOD: u64> Add for Mint<MOD> {
     }
 }
 
-forward_ref_mod_binop!(impl Add, add for Mint<u64>);
+forward_ref_mod_binop!(impl Add, add for SMint<u64>);
 
-impl<const MOD: u64> AddAssign for Mint<MOD> {
+impl<const MOD: u64> AddAssign for SMint<MOD> {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.value = (self.value + rhs.value) % MOD;
     }
 }
 
-forward_ref_mod_op_assign!(impl AddAssign, add_assign for Mint<u64>);
+forward_ref_mod_op_assign!(impl AddAssign, add_assign for SMint<u64>);
 
-impl<const MOD: u64> Sub for Mint<MOD> {
+impl<const MOD: u64> Sub for SMint<MOD> {
     type Output = Self;
 
     #[inline]
@@ -129,18 +147,18 @@ impl<const MOD: u64> Sub for Mint<MOD> {
     }
 }
 
-forward_ref_mod_binop!(impl Sub, sub for Mint<u64>);
+forward_ref_mod_binop!(impl Sub, sub for SMint<u64>);
 
-impl<const MOD: u64> SubAssign for Mint<MOD> {
+impl<const MOD: u64> SubAssign for SMint<MOD> {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.value = (self.value + MOD - rhs.value) % MOD;
     }
 }
 
-forward_ref_mod_op_assign!(impl SubAssign, sub_assign for Mint<u64>);
+forward_ref_mod_op_assign!(impl SubAssign, sub_assign for SMint<u64>);
 
-impl<const MOD: u64> Mul for Mint<MOD> {
+impl<const MOD: u64> Mul for SMint<MOD> {
     type Output = Self;
 
     #[inline]
@@ -150,16 +168,16 @@ impl<const MOD: u64> Mul for Mint<MOD> {
     }
 }
 
-forward_ref_mod_binop!(impl Mul, mul for Mint<u64>);
+forward_ref_mod_binop!(impl Mul, mul for SMint<u64>);
 
-impl<const MOD: u64> MulAssign for Mint<MOD> {
+impl<const MOD: u64> MulAssign for SMint<MOD> {
     #[inline]
     fn mul_assign(&mut self, rhs: Self) {
         self.value = self.value * rhs.value % MOD;
     }
 }
 
-forward_ref_mod_op_assign!(impl MulAssign, mul_assign for Mint<u64>);
+forward_ref_mod_op_assign!(impl MulAssign, mul_assign for SMint<u64>);
 
 macro_rules! forward_ref_mod_unop {
     ( impl<const $const_generics:ident: $const_ty:ty> $trait:ident, $method:ident for $t:ty ) => {
@@ -173,13 +191,15 @@ macro_rules! forward_ref_mod_unop {
     };
 }
 
-forward_ref_mod_unop!{ impl<const MOD: u64> Neg, neg for Mint<MOD> }
+forward_ref_mod_unop! { impl<const MOD: u64> Neg, neg for SMint<MOD> }
 
-impl<const MOD: u64> Neg for Mint<MOD> {
-    type Output =Self;
+impl<const MOD: u64> Neg for SMint<MOD> {
+    type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        self.value = MOD - self.value;
+        if self.value > 0 {
+            self.value = MOD - self.value;
+        }
         self
     }
 }
@@ -191,22 +211,22 @@ mod test {
     #[test]
     fn inv_prime() {
         const MOD: u64 = 998_244_353;
-        let m = Mint::<MOD>::new(2);
+        let m = SMint::<MOD>::new(2);
         let m_inv = m.inv().unwrap();
-        assert_eq!(m * m_inv, Mint::new(1));
+        assert_eq!(m * m_inv, SMint::new(1));
 
         let m_inv_inv = m_inv.inv().unwrap();
-        assert_eq!(m_inv * m_inv_inv, Mint::new(1))
+        assert_eq!(m_inv * m_inv_inv, SMint::new(1))
     }
 
     #[test]
     fn inv_composite() {
         const MOD: u64 = 2 * 3 * 7;
-        let m = Mint::<MOD>::new(5);
+        let m = SMint::<MOD>::new(5);
         let m_inv = m.inv().unwrap();
-        assert_eq!(m * m_inv, Mint::new(1));
+        assert_eq!(m * m_inv, SMint::new(1));
 
-        let m = m * Mint::new(1_000_000_000);
+        let m = m * SMint::new(1_000_000_000);
         assert_eq!(m.inv(), None)
     }
 }

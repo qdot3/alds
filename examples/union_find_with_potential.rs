@@ -1,7 +1,7 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/unionfind_with_potential
 
 use alds::{
-    modint::Mint,
+    modint::SMint,
     union_find::{Group, UnionFindWithPotential},
 };
 use proconio::{fastout, input};
@@ -19,7 +19,7 @@ fn main() {
         if flag == 0 {
             input! { u: usize, v: usize, x_uv: u64, }
 
-            if uf.unite(u, v, Potential(Mint::new(x_uv))).is_ok() {
+            if uf.unite(u, v, Potential(SMint::new(x_uv))).is_ok() {
                 println!("1")
             } else {
                 println!("0")
@@ -39,11 +39,11 @@ fn main() {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Potential(Mint<MOD>);
+struct Potential(SMint<MOD>);
 
 impl Group for Potential {
     fn identity() -> Self {
-        Self(Mint::new(0))
+        Self(SMint::new(0))
     }
 
     fn binary_operation(&self, rhs: Self) -> Self {

@@ -5,7 +5,7 @@ use itertools::Itertools;
 /// This is a max heap.
 #[derive(Debug, Clone)]
 pub struct DAryHeap<T, const D: usize> {
-    // data[0] is the root node.
+    /// data[0] is the root node.
     data: Vec<T>,
 }
 

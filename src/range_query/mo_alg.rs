@@ -23,7 +23,8 @@ pub fn mo_algorithm(queries: &[(usize, usize)]) -> Vec<usize> {
         .max()
         .unwrap_or(&0)
         .next_power_of_two()
-        .ilog2();
+        .ilog2()
+        + 1;
     let h_order = Vec::from_iter(queries.iter().map(|&(x, y)| hilbert_order(x, y, exp)));
 
     res.sort_unstable_by_key(|&i| h_order[i]);
