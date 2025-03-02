@@ -6,9 +6,7 @@ use std::{
 
 use rustc_hash::FxHashMap;
 
-use super::macros::{
-    forward_ref_dyn_mint_binop, forward_ref_dyn_mint_op_assign, forward_ref_dyn_mint_unop,
-};
+use super::macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop};
 
 /// Owner and factory for [`BDMint`] instances with the same modulus.
 ///
@@ -58,10 +56,9 @@ impl Barret {
         }
 
         // 1. x = p * m + q, 0 <= p, q < 2^32  =>  x * im = p * (m * im) + q * im
-        // 2. m * im = m * ceil(2^64 / m) = 2^64 + r, 0 <= r < m
-        // 3. x * im = p * 2^64 + r * p + q * im
-        // 4. r * p + q * im < m * m + m * im < 2 * m^2 + m < 2 * 2^64
-        // 5. floor(x * im / 2^64) = p or p + 1
+        // 2. m * im = m * ceil(2^64 / m) = 2^64 + r, 0 <= r < m  =>  x * im = p * 2^64 + r * p + q * im
+        // 3. r * p + q * im < m * m + m * im < 2^64 + m * (m + 1) < 2 * 2^64
+        // 4. floor(x * im / 2^64) = p or p + 1
         assert!(x < self.modulus * self.modulus);
         //* use `carrying_mul` if stabilized*/
         let carry = ((x as u128 * self.inv_modulus as u128) >> u64::BITS) as u64;
@@ -261,9 +258,9 @@ impl Ord for BDMint<'_> {
     }
 }
 
-forward_ref_dyn_mint_binop!(impl<'a> Add, add for BDMint<'a>);
-forward_ref_dyn_mint_binop!(impl<'a> Sub, sub for BDMint<'a>);
-forward_ref_dyn_mint_binop!(impl<'a> Mul, mul for BDMint<'a>);
+forward_ref_mint_binop!( impl<'a> Add, add for BDMint<'a> );
+forward_ref_mint_binop!( impl<'a> Sub, sub for BDMint<'a> );
+forward_ref_mint_binop!( impl<'a> Mul, mul for BDMint<'a> );
 
 impl Add for BDMint<'_> {
     type Output = Self;
@@ -295,9 +292,9 @@ impl Mul for BDMint<'_> {
     }
 }
 
-forward_ref_dyn_mint_op_assign! { impl<'a> AddAssign, add_assign for BDMint<'a> }
-forward_ref_dyn_mint_op_assign! { impl<'a> SubAssign, sub_assign for BDMint<'a> }
-forward_ref_dyn_mint_op_assign! { impl<'a> MulAssign, mul_assign for BDMint<'a> }
+forward_ref_mint_op_assign!( impl<'a> AddAssign, add_assign for BDMint<'a> );
+forward_ref_mint_op_assign!( impl<'a> SubAssign, sub_assign for BDMint<'a> );
+forward_ref_mint_op_assign!( impl<'a> MulAssign, mul_assign for BDMint<'a> );
 
 impl AddAssign for BDMint<'_> {
     fn add_assign(&mut self, rhs: Self) {
@@ -324,7 +321,7 @@ impl MulAssign for BDMint<'_> {
     }
 }
 
-forward_ref_dyn_mint_unop! { impl<'a> Neg, neg for BDMint<'a>}
+forward_ref_mint_unop!( impl<'a> Neg, neg for BDMint<'a> );
 
 impl Neg for BDMint<'_> {
     type Output = Self;

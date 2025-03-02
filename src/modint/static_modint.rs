@@ -1,12 +1,18 @@
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
+    iter::{Product, Sum},
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::{BDMint, Barret};
+use super::{
+    macros::{
+        forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop,
+    },
+    BDMint, Barret,
+};
 
 /// Modular integer with a compile-time fixed modulus.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SMint<const MOD: u64> {
     value: u64,
 }
@@ -68,65 +74,73 @@ impl<const MOD: u64> SMint<MOD> {
     }
 }
 
-impl<const MOD: u64> Display for SMint<MOD> {
+impl<const MOD: u64> Debug for SMint<MOD> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.value.fmt(f)
+        f.debug_struct("SMint")
+            .field("value", &self.value)
+            .field("modulus", &MOD)
+            .finish()
     }
 }
 
-macro_rules! forward_ref_mod_binop {
-    (impl $imp:ident, $method:ident for $t:ident <$u:ident>) => {
-        impl<const MOD: $u> $imp<&$t<MOD>> for $t<MOD> {
-            type Output = $t<MOD>;
-
-            #[inline]
-            fn $method(self, other: &$t<MOD>) -> $t<MOD> {
-                self.$method(*other)
-            }
-        }
-
-        impl<const MOD: $u> $imp<$t<MOD>> for &$t<MOD> {
-            type Output = $t<MOD>;
-
-            #[inline]
-            fn $method(self, other: $t<MOD>) -> $t<MOD> {
-                (*self).$method(other)
-            }
-        }
-
-        impl<const MOD: $u> $imp<&$t<MOD>> for &$t<MOD> {
-            type Output = $t<MOD>;
-
-            #[inline]
-            fn $method(self, other: &$t<MOD>) -> $t<MOD> {
-                (*self).$method(*other)
-            }
-        }
-    };
+impl<const MOD: u64> Display for SMint<MOD> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value())
+    }
 }
 
-macro_rules! forward_ref_mod_op_assign {
-    (impl $imp:ident, $method:ident for $t:ident <$u:ident>) => {
-        impl<const MOD: $u> $imp<&$t<MOD>> for $t<MOD> {
-            #[inline]
-            fn $method(&mut self, other: &$t<MOD>) {
-                $imp::$method(self, *other);
-            }
-        }
-    };
+impl<const MOD: u64> Sum for SMint<MOD> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::new(0), |acc, x| acc + x)
+    }
 }
+
+impl<const MOD: u64> Product for SMint<MOD> {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::new(1), |acc, x| acc * x)
+    }
+}
+
+forward_ref_mint_binop!( impl<const MOD: u64> Add, add for SMint<MOD> );
+forward_ref_mint_binop!( impl<const MOD: u64> Sub, sub for SMint<MOD> );
+forward_ref_mint_binop!( impl<const MOD: u64> Mul, mul for SMint<MOD> );
 
 impl<const MOD: u64> Add for SMint<MOD> {
     type Output = Self;
 
     #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
-        let value = (self.value + rhs.value) % MOD;
-        Self { value }
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self += rhs;
+
+        self
     }
 }
 
-forward_ref_mod_binop!(impl Add, add for SMint<u64>);
+impl<const MOD: u64> Sub for SMint<MOD> {
+    type Output = Self;
+
+    #[inline]
+    fn sub(mut self, rhs: Self) -> Self::Output {
+        self -= rhs;
+
+        self
+    }
+}
+
+impl<const MOD: u64> Mul for SMint<MOD> {
+    type Output = Self;
+
+    #[inline]
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        self *= rhs;
+
+        self
+    }
+}
+
+forward_ref_mint_op_assign!( impl<const MOD: u64> AddAssign, add_assign for SMint<MOD> );
+forward_ref_mint_op_assign!( impl<const MOD: u64> SubAssign, sub_assign for SMint<MOD> );
+forward_ref_mint_op_assign!( impl<const MOD: u64> MulAssign, mul_assign for SMint<MOD> );
 
 impl<const MOD: u64> AddAssign for SMint<MOD> {
     #[inline]
@@ -135,40 +149,12 @@ impl<const MOD: u64> AddAssign for SMint<MOD> {
     }
 }
 
-forward_ref_mod_op_assign!(impl AddAssign, add_assign for SMint<u64>);
-
-impl<const MOD: u64> Sub for SMint<MOD> {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Self) -> Self::Output {
-        let value = (self.value + MOD - rhs.value) % MOD;
-        Self { value }
-    }
-}
-
-forward_ref_mod_binop!(impl Sub, sub for SMint<u64>);
-
 impl<const MOD: u64> SubAssign for SMint<MOD> {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.value = (self.value + MOD - rhs.value) % MOD;
     }
 }
-
-forward_ref_mod_op_assign!(impl SubAssign, sub_assign for SMint<u64>);
-
-impl<const MOD: u64> Mul for SMint<MOD> {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, rhs: Self) -> Self::Output {
-        let value = self.value * rhs.value % MOD;
-        Self { value }
-    }
-}
-
-forward_ref_mod_binop!(impl Mul, mul for SMint<u64>);
 
 impl<const MOD: u64> MulAssign for SMint<MOD> {
     #[inline]
@@ -177,21 +163,7 @@ impl<const MOD: u64> MulAssign for SMint<MOD> {
     }
 }
 
-forward_ref_mod_op_assign!(impl MulAssign, mul_assign for SMint<u64>);
-
-macro_rules! forward_ref_mod_unop {
-    ( impl<const $const_generics:ident: $const_ty:ty> $trait:ident, $method:ident for $t:ty ) => {
-        impl<const $const_generics: $const_ty> $trait for &$t {
-            type Output = $t;
-
-            fn $method(self) -> Self::Output {
-                (*self).$method()
-            }
-        }
-    };
-}
-
-forward_ref_mod_unop! { impl<const MOD: u64> Neg, neg for SMint<MOD> }
+forward_ref_mint_unop!( impl<const MOD: u64> Neg, neg for SMint<MOD> );
 
 impl<const MOD: u64> Neg for SMint<MOD> {
     type Output = Self;

@@ -4,9 +4,7 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::macros::{
-    forward_ref_dyn_mint_binop, forward_ref_dyn_mint_op_assign, forward_ref_dyn_mint_unop,
-};
+use super::macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop};
 
 /// Owner and factory for [`MDMint`] instances with the same modulus.
 ///
@@ -166,9 +164,9 @@ impl Ord for MDMint<'_> {
     }
 }
 
-forward_ref_dyn_mint_binop!(impl<'a> Add, add for MDMint<'a>);
-forward_ref_dyn_mint_binop!(impl<'a> Sub, sub for MDMint<'a>);
-forward_ref_dyn_mint_binop!(impl<'a> Mul, mul for MDMint<'a>);
+forward_ref_mint_binop!( impl<'a> Add, add for MDMint<'a> );
+forward_ref_mint_binop!( impl<'a> Sub, sub for MDMint<'a> );
+forward_ref_mint_binop!( impl<'a> Mul, mul for MDMint<'a> );
 
 impl Add for MDMint<'_> {
     type Output = Self;
@@ -200,9 +198,9 @@ impl Mul for MDMint<'_> {
     }
 }
 
-forward_ref_dyn_mint_op_assign!(impl<'a> AddAssign, add_assign for MDMint<'a>);
-forward_ref_dyn_mint_op_assign!(impl<'a> SubAssign, sub_assign for MDMint<'a>);
-forward_ref_dyn_mint_op_assign!(impl<'a> MulAssign, mul_assign for MDMint<'a>);
+forward_ref_mint_op_assign!( impl<'a> AddAssign, add_assign for MDMint<'a> );
+forward_ref_mint_op_assign!( impl<'a> SubAssign, sub_assign for MDMint<'a> );
+forward_ref_mint_op_assign!( impl<'a> MulAssign, mul_assign for MDMint<'a> );
 
 impl AddAssign for MDMint<'_> {
     fn add_assign(&mut self, rhs: Self) {
@@ -227,7 +225,7 @@ impl MulAssign for MDMint<'_> {
     }
 }
 
-forward_ref_dyn_mint_unop!(impl<'a> Neg, neg for MDMint<'a>);
+forward_ref_mint_unop!( impl<'a> Neg, neg for MDMint<'a> );
 
 impl Neg for MDMint<'_> {
     type Output = Self;
