@@ -10,3 +10,4 @@ num-traits = "0.2.19"
 proconio = { version = "0.5.0", features = ["derive"] }
 rustc-hash = "2.1.1"
 stash = "0.1.6"
+thiserror = "2.0.11"

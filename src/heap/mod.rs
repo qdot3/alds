@@ -13,5 +13,5 @@ mod quad_heap;
 pub use binomial_heap::BinomialHeap;
 pub use d_ary_heap::DAryHeap;
 pub use pairing_heap::PairingHeap;
-pub use pairing_heap2::PairingHeap2;
+// pub use pairing_heap2::PairingHeap2;
 pub use quad_heap::QuadHeap;

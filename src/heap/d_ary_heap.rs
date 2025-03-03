@@ -16,13 +16,17 @@ impl<T: Ord, const D: usize> Default for DAryHeap<T, D> {
 }
 
 impl<T: Ord, const D: usize> DAryHeap<T, D> {
+    const fn assert_branching_factor() {
+        assert!(D > 0, "branching factor `D` should be positive.");
+    }
+
     /// See [`Vec::new`].
     ///
     /// # Panics
     ///
     /// Panics if `D = 0`.
     pub const fn new() -> Self {
-        assert!(D > 0, "branching factor `D` should be positive.");
+        Self::assert_branching_factor();
 
         Self { data: Vec::new() }
     }
@@ -33,7 +37,7 @@ impl<T: Ord, const D: usize> DAryHeap<T, D> {
     ///
     /// Panics if `D = 0`.
     pub fn with_capacity(capacity: usize) -> Self {
-        assert!(D > 0, "`D` should be positive");
+        Self::assert_branching_factor();
 
         Self {
             data: Vec::with_capacity(capacity),

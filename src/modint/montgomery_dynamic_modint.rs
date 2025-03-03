@@ -18,7 +18,7 @@ pub struct Montgomery {
 impl Montgomery {
     const RADIX: u64 = 1 << (u64::BITS / 2); // 1^32
 
-    /// Creates a new [`Barret`] with the given `modulus`.
+    /// Creates a new [`Montgomery`] with the given `modulus`.
     ///
     /// # Panics
     ///
@@ -152,6 +152,7 @@ impl PartialEq for MDMint<'_> {
 
 impl Eq for MDMint<'_> {}
 
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for MDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.value.partial_cmp(&other.value)

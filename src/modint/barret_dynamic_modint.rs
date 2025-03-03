@@ -87,11 +87,13 @@ pub struct BDMint<'a> {
 
 impl BDMint<'_> {
     /// Returns the value.
+    #[inline]
     pub const fn value(&self) -> u64 {
         self.value
     }
 
     /// Returns the fixed modulus.
+    #[inline]
     pub const fn modulus(&self) -> u64 {
         self.barret.modulus
     }
@@ -246,6 +248,7 @@ impl PartialEq for BDMint<'_> {
 
 impl Eq for BDMint<'_> {}
 
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for BDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.value.partial_cmp(&other.value)

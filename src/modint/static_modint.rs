@@ -5,9 +5,7 @@ use std::{
 };
 
 use super::{
-    macros::{
-        forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop,
-    },
+    macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
     BDMint, Barret,
 };
 
@@ -21,7 +19,10 @@ impl<const MOD: u64> SMint<MOD> {
     const MAX_MOD: u64 = 1 << (u64::BITS / 2);
 
     pub const fn new(value: u64) -> Self {
-        assert!(MOD <= Self::MAX_MOD);
+        assert!(
+            MOD <= Self::MAX_MOD,
+            "modulus should be less than or equal to 2^32"
+        );
 
         Self { value: value % MOD }
     }
