@@ -35,7 +35,7 @@ impl PartiallyPersistentUnionFind {
         if self.node[i].is_root(time) {
             return i;
         }
-        self.find(self.node[i].get_parent().unwrap(), time)
+        self.find(self.node[i].get_parent().expect("should has parent"), time)
     }
 
     pub fn same(&self, i: usize, j: usize, time: u32) -> bool {
@@ -111,7 +111,7 @@ impl Node {
 
     #[inline]
     const fn is_root(&self, time: u32) -> bool {
-        self.time_updated > time
+        self.time_updated == Node::TIME_INFINITY || self.time_updated > time
     }
 
     #[inline]
