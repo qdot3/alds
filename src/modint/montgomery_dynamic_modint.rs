@@ -4,7 +4,10 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop};
+use super::{
+    inv_gcd::inv_gcd,
+    macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
+};
 
 /// Owner and factory for [`MDMint`] instances with the same modulus.
 ///
@@ -57,10 +60,10 @@ impl Montgomery {
     /// Creates a new [`MDMint`] instance with the given `value` and the fixed modulus.
     pub const fn mint(&self, value: u32) -> MDMint {
         // `value < RADIX = 2^32`
-        let value = self.reduce(value as u64 * self.radix2_mod_modulus);
+        let r_value = self.reduce(value as u64 * self.radix2_mod_modulus);
 
         MDMint {
-            value,
+            r_value,
             montgomery: self,
         }
     }
@@ -93,14 +96,14 @@ impl Montgomery {
 #[derive(Clone, Copy)]
 pub struct MDMint<'a> {
     /// x * RADIX mod modulus
-    value: u64,
+    r_value: u64,
     montgomery: &'a Montgomery,
 }
 
 impl MDMint<'_> {
     /// Returns the value.
     pub const fn value(&self) -> u64 {
-        self.montgomery.reduce(self.value)
+        self.montgomery.reduce(self.r_value)
     }
 
     /// Returns the modulus.
@@ -121,6 +124,18 @@ impl MDMint<'_> {
 
         res
     }
+
+    /// Returns the inverse of `self` if exists.
+    pub fn inv(mut self) -> Option<Self> {
+        if let Some((inv, 1)) = inv_gcd(self.value(), self.modulus()) {
+            let mont = self.montgomery;
+
+            self.r_value = mont.reduce(mont.radix2_mod_modulus * inv);
+            return Some(self);
+        }
+
+        None
+    }
 }
 
 impl Debug for MDMint<'_> {
@@ -140,13 +155,13 @@ impl Display for MDMint<'_> {
 
 impl Hash for MDMint<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.value.hash(state);
+        self.r_value.hash(state);
     }
 }
 
 impl PartialEq for MDMint<'_> {
     fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
+        self.r_value == other.r_value
     }
 }
 
@@ -155,13 +170,13 @@ impl Eq for MDMint<'_> {}
 #[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for MDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
+        self.value().partial_cmp(&other.value())
     }
 }
 
 impl Ord for MDMint<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.value.cmp(&other.value)
+        self.value().cmp(&other.value())
     }
 }
 
@@ -205,16 +220,18 @@ forward_ref_mint_op_assign!( impl<'a> MulAssign, mul_assign for MDMint<'a> );
 
 impl AddAssign for MDMint<'_> {
     fn add_assign(&mut self, rhs: Self) {
-        self.value += rhs.value
+        self.r_value += rhs.r_value;
+        if self.r_value > self.modulus() {
+            self.r_value -= self.modulus()
+        }
     }
 }
 
 impl SubAssign for MDMint<'_> {
     fn sub_assign(&mut self, rhs: Self) {
-        if self.value < rhs.value {
-            self.value = self.value + self.montgomery.modulus - rhs.value
-        } else {
-            self.value -= rhs.value
+        self.r_value = self.r_value.wrapping_sub(rhs.r_value);
+        if self.r_value >= self.modulus() {
+            self.r_value = self.r_value.wrapping_add(self.modulus());
         }
     }
 }
@@ -222,7 +239,7 @@ impl SubAssign for MDMint<'_> {
 impl MulAssign for MDMint<'_> {
     fn mul_assign(&mut self, rhs: Self) {
         // v1 * v2 < m * m < m * r
-        self.value = self.montgomery.reduce(self.value * rhs.value)
+        self.r_value = self.montgomery.reduce(self.r_value * rhs.r_value)
     }
 }
 
@@ -232,8 +249,8 @@ impl Neg for MDMint<'_> {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        if self.value > 0 {
-            self.value = self.montgomery.modulus - self.value;
+        if self.r_value > 0 {
+            self.r_value = self.montgomery.modulus - self.r_value;
         }
 
         self

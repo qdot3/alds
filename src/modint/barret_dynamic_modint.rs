@@ -6,7 +6,10 @@ use std::{
 
 use rustc_hash::FxHashMap;
 
-use super::macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop};
+use super::{
+    inv_gcd::inv_gcd,
+    macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
+};
 
 /// Owner and factory for [`BDMint`] instances with the same modulus.
 ///
@@ -112,33 +115,9 @@ impl BDMint<'_> {
         res
     }
 
-    /// Returns `(inv?(a) mod b, gcd(a, b))`, where `a < b` and `a * inv?(a) = g mod b`.
-    pub(super) const fn inv_gcd(a: u64, b: u64) -> Option<(u64, u64)> {
-        if a == 0 || b == 0 {
-            return None;
-        }
-        assert!(a < b);
-
-        // a * x + b * y = g  <=>  g - a * x = 0 mod b
-        let (mut g0, mut g1) = (b as i64, a as i64);
-        let (mut x0, mut x1) = (0, 1);
-        while g1 > 0 {
-            let (div, rem) = (g0 / g1, g0 % g1);
-
-            (g0, g1) = (g1, rem);
-            (x0, x1) = (x1, x0 - x1 * div);
-        }
-
-        if x0.is_negative() {
-            x0 += b as i64 / g0
-        }
-
-        Some((x0 as u64, g0 as u64))
-    }
-
     /// Returns the inverse of `self` if exists.
     pub const fn inv(mut self) -> Option<Self> {
-        if let Some((inv, 1)) = Self::inv_gcd(self.value(), self.modulus()) {
+        if let Some((inv, 1)) = inv_gcd(self.value(), self.modulus()) {
             self.value = inv;
             return Some(self);
         }
@@ -173,7 +152,7 @@ impl BDMint<'_> {
         }
 
         // gcd(base^d, modulus) = gcd(base^d % modulus, modulus)
-        if let Some((_, g)) = Self::inv_gcd(pow_base.value(), self.modulus()) {
+        if let Some((_, g)) = inv_gcd(pow_base.value(), self.modulus()) {
             if self.value() % g != 0 {
                 return None;
             } else if g == self.modulus() {

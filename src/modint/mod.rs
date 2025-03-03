@@ -4,19 +4,28 @@
 //!
 //! ## [`SMint`]
 //!
-//! * Compile-time fixed modulus
-//! * Many operations: `add`, `sub`, `mul`, `neg`, `pow`, `inv` and `log`
+//! * Compile-time fixed non-zero modulus
 //!
 //! ## [`MDMint`]
 //!
 //! * Runtime-specified *odd* modulus
-//! * Limited operations: `add`, `sub`, `mul`, `neg` and `pow`
 //! * May be faster than [`BDMint`]
 //!
 //! ## [`BDMint`]
 //!
-//! * Runtime-specified modulus
-//! * Same operations as [`SMint`]
+//! * Runtime-specified any non-zero modulus
+//!
+//!
+//! # Performance note
+//!
+//! | `+`, `-`, and `*` | `pow`        | `inv`           | `log`            | `sqrt`, `cbrt` and `nth_root` |
+//! |-------------------|--------------|-----------------|------------------|-------------------------------|
+//! | *O*(1)            | *O*(log *M*) |*O*(log *M*)[^1] | *O*( sqrt(*M*) ) | under construction            |
+//!
+//! * *M* is modulus
+//!
+//! [^1]: More precisely, same as `gcd`.
+//!
 //!
 //! # References
 //!
@@ -28,6 +37,7 @@
 //!
 //! * [wiki](https://en.wikipedia.org/wiki/Barrett_reduction)
 mod barret_dynamic_modint;
+mod inv_gcd;
 mod macros;
 mod montgomery_dynamic_modint;
 mod static_modint;

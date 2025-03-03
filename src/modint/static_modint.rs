@@ -5,8 +5,9 @@ use std::{
 };
 
 use super::{
+    inv_gcd::inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
-    BDMint, Barret,
+    Barret,
 };
 
 /// Modular integer with a compile-time fixed modulus.
@@ -53,7 +54,7 @@ impl<const MOD: u64> SMint<MOD> {
 
     /// Returns the inverse of `self` if exists.
     pub const fn inv(mut self) -> Option<Self> {
-        if let Some((inv, 1)) = BDMint::inv_gcd(self.value, MOD) {
+        if let Some((inv, 1)) = inv_gcd(self.value, MOD) {
             self.value = inv;
             return Some(self);
         }
