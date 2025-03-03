@@ -92,7 +92,7 @@ impl Montgomery {
 /// Any binary operations are restricted to elements with the same owner
 /// to ensure that they share the same modulus.
 ///
-/// To use [`MDMint`] with a different modulus, create a new [`Montgomery`] instance as its owner.
+/// To use [`MDMint`] with a different modulus, create a new [`Montgomery`] instance.
 #[derive(Clone, Copy)]
 pub struct MDMint<'a> {
     /// x * RADIX mod modulus
@@ -126,7 +126,7 @@ impl MDMint<'_> {
     }
 
     /// Returns the inverse of `self` if exists.
-    pub fn inv(mut self) -> Option<Self> {
+    pub const fn inv(mut self) -> Option<Self> {
         if let Some((inv, 1)) = inv_gcd(self.value(), self.modulus()) {
             let mont = self.montgomery;
 
@@ -167,10 +167,9 @@ impl PartialEq for MDMint<'_> {
 
 impl Eq for MDMint<'_> {}
 
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for MDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value().partial_cmp(&other.value())
+        Some(self.cmp(other))
     }
 }
 

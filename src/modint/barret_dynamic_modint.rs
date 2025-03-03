@@ -81,7 +81,7 @@ impl Barret {
 /// Any binary operations are restricted to elements with the same owner
 /// to ensure that they share the same modulus.
 ///
-/// To use [`BDMint`] with a different modulus, create a new [`Barret`] instance as its owner.
+/// To use [`BDMint`] with a different modulus, create a new [`Barret`] instance.
 #[derive(Clone, Copy)]
 pub struct BDMint<'a> {
     value: u64,
@@ -90,13 +90,11 @@ pub struct BDMint<'a> {
 
 impl BDMint<'_> {
     /// Returns the value.
-    #[inline]
     pub const fn value(&self) -> u64 {
         self.value
     }
 
     /// Returns the fixed modulus.
-    #[inline]
     pub const fn modulus(&self) -> u64 {
         self.barret.modulus
     }
@@ -161,7 +159,7 @@ impl BDMint<'_> {
 
             let barret = Barret::new((self.modulus() / g) as u32);
             let x = barret.mint(base.value());
-            let inv_x = x.inv().expect("x and new modulus will be coprime");
+            let inv_x = x.inv().expect("x and new modulus should be coprime");
             let y = barret.mint(self.value()) * inv_x.pow(d);
             match (x.value(), y.value()) {
                 (0, 0) => return Some(1 + d),
@@ -227,10 +225,9 @@ impl PartialEq for BDMint<'_> {
 
 impl Eq for BDMint<'_> {}
 
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for BDMint<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
+        Some(self.cmp(other))
     }
 }
 

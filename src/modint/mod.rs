@@ -24,7 +24,7 @@
 //!
 //! * *M* is modulus
 //!
-//! [^1]: More precisely, same as `gcd`.
+//! [^1]: More precisely, same cost as Euclidean GCD algorithm.
 //!
 //!
 //! # References
