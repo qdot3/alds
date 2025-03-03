@@ -29,7 +29,7 @@ impl<P: Group> UnionFindWithPotential<P> {
         // path compression
         if let Some(p) = self.node[i].get().get_parent() {
             let ri = self.find(p);
-            // P(i) = L @ P(parent) = L @ L' @ P(root)
+            // P(i) = Pi @ P(parent) = Pi @ Pp @ P(root)
             self.node[i].set(Node {
                 par_or_size: ri as i32,
                 potential: (self.node[i].get().potential())
@@ -71,11 +71,11 @@ impl<P: Group> UnionFindWithPotential<P> {
     /// Sets P(i) = P_ij @ P(j) if there is no contradiction
     pub fn unite(&mut self, i: usize, j: usize, mut potential_ij: P) -> Result<bool, ()> {
         if let Some(p_ij) = self.potential(i, j) {
-            if potential_ij == p_ij {
-                return Ok(false);
+            return if potential_ij == p_ij {
+                Ok(false)
             } else {
-                return Err(());
-            }
+                Err(())
+            };
         }
 
         // very ugly!
@@ -92,14 +92,12 @@ impl<P: Group> UnionFindWithPotential<P> {
             node[ri].get_mut().par_or_size += node[rj].get().par_or_size;
             // P(i) = Pi @ P(ri), P(j) = Pj @ P(rj), P(i) = P_ij @ P(j)
             // => P(rj) = inv(Pj) @ inv(P_ij) @ Pi * P(ri)
-            let new_rj = Node {
+            node[rj] = Cell::new(Node {
                 par_or_size: ri as i32,
                 potential: (node[j].get().potential().inverse())
                     .binary_operation(potential_ij.inverse())
                     .binary_operation(node[i].get().potential()),
-            };
-            // enforce mutability
-            node[rj] = Cell::new(new_rj)
+            })
         }
 
         Ok(true)
@@ -109,7 +107,7 @@ impl<P: Group> UnionFindWithPotential<P> {
 #[derive(Debug, Clone, Copy)]
 struct Node<P: Group> {
     par_or_size: i32,
-    /// P(self) = P * P(parent)
+    /// P(self) = P @ P(parent)
     potential: P,
 }
 
