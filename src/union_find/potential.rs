@@ -15,7 +15,7 @@ pub struct UnionFindWithPotential<P: Group> {
 }
 
 impl<P: Group> UnionFindWithPotential<P> {
-    const MAX_SIZE: usize = i32::MAX as usize + 1; // or 2^31
+    const MAX_SIZE: usize = i32::MAX as usize + 1; // 2^31
 
     pub fn new(size: usize) -> Self {
         assert!(size <= Self::MAX_SIZE);
@@ -29,16 +29,12 @@ impl<P: Group> UnionFindWithPotential<P> {
         // path compression
         if let Some(p) = self.node[i].get().get_parent() {
             let ri = self.find(p);
-
-            // P(i) = L * P(parent) = L * L' * P(root)
-            let new_i = Node {
+            // P(i) = L @ P(parent) = L @ L' @ P(root)
+            self.node[i].set(Node {
                 par_or_size: ri as i32,
-                potential: self.node[i]
-                    .get()
-                    .potential()
+                potential: (self.node[i].get().potential())
                     .binary_operation(self.node[p].get().potential()),
-            };
-            self.node[i].set(new_i);
+            });
 
             return ri;
         }
@@ -54,32 +50,28 @@ impl<P: Group> UnionFindWithPotential<P> {
         self.node[self.find(i)]
             .get()
             .get_size()
-            .expect("node ri is a root node")
+            .expect("node should be a root node")
     }
 
-    /// get P_ij of P(i) = P_ij * P(j)
+    /// get P_ij of `P(i) = P_ij @ P(j)`
     pub fn potential(&self, i: usize, j: usize) -> Option<P> {
         if !self.same(i, j) {
             return None;
         }
 
         // the parent is the root due to path compression.
-        // P(i) = P * P(root), P(base) = P' * P(root) => P(i) = P * inv(P') * P(base)
+        // P(i) = Pi @ P(root), P(j) = Pj @ P(root) => P(i) = Pi @ inv(Pj) @ P(j)
+        // => P_ij = Pi @ inv(Pj)
         Some(
-            self.node[i]
-                .get()
-                .potential()
+            (self.node[i].get().potential())
                 .binary_operation(self.node[j].get().potential().inverse()),
         )
     }
 
-    /// set P(i) = P_ij * P(j)
-    pub fn unite(&mut self, i: usize, j: usize, mut p_ij: P) -> Result<bool, ()> {
-        let mut ri = self.find(i);
-        let mut rj = self.find(j);
-
-        if ri == rj {
-            if p_ij == self.potential(i, j).unwrap() {
+    /// Sets P(i) = P_ij @ P(j) if there is no contradiction
+    pub fn unite(&mut self, i: usize, j: usize, mut potential_ij: P) -> Result<bool, ()> {
+        if let Some(p_ij) = self.potential(i, j) {
+            if potential_ij == p_ij {
                 return Ok(false);
             } else {
                 return Err(());
@@ -88,23 +80,22 @@ impl<P: Group> UnionFindWithPotential<P> {
 
         // very ugly!
         {
+            let mut ri = self.find(i);
+            let mut rj = self.find(j);
             let Self { node } = self;
 
-            if node[ri].get().get_size() < node[rj].get().get_size() {
+            if node[ri].get().get_size().unwrap() < node[rj].get().get_size().unwrap() {
                 std::mem::swap(&mut ri, &mut rj);
-                p_ij = p_ij.inverse();
+                potential_ij = potential_ij.inverse();
             }
 
             node[ri].get_mut().par_or_size += node[rj].get().par_or_size;
-            // P(i) = P * P(ri), P(j) = P' * P(rj), P(i) = P_ij * P(j)
-            // => P(rj) = inv(P') * inv(P_ij) * P * P(ri)
+            // P(i) = Pi @ P(ri), P(j) = Pj @ P(rj), P(i) = P_ij @ P(j)
+            // => P(rj) = inv(Pj) @ inv(P_ij) @ Pi * P(ri)
             let new_rj = Node {
                 par_or_size: ri as i32,
-                potential: node[i]
-                    .get()
-                    .potential()
-                    .inverse()
-                    .binary_operation(p_ij.inverse())
+                potential: (node[j].get().potential().inverse())
+                    .binary_operation(potential_ij.inverse())
                     .binary_operation(node[i].get().potential()),
             };
             // enforce mutability

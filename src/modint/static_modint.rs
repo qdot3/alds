@@ -170,11 +170,8 @@ forward_ref_mint_unop!( impl<const MOD: u64> Neg, neg for SMint<MOD> );
 impl<const MOD: u64> Neg for SMint<MOD> {
     type Output = Self;
 
-    fn neg(mut self) -> Self::Output {
-        if self.value > 0 {
-            self.value = MOD - self.value;
-        }
-        self
+    fn neg(self) -> Self::Output {
+        Self::new(0) - self
     }
 }
 
