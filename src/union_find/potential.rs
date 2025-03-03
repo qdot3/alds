@@ -69,12 +69,12 @@ impl<P: Group> UnionFindWithPotential<P> {
     }
 
     /// Sets P(i) = P_ij @ P(j) if there is no contradiction
-    pub fn unite(&mut self, i: usize, j: usize, mut potential_ij: P) -> Result<bool, ()> {
+    pub fn unite(&mut self, i: usize, j: usize, potential_ij: P) -> Result<bool, ()> {
         if let Some(p_ij) = self.potential(i, j) {
-            return if potential_ij == p_ij {
-                Ok(false)
+            if potential_ij == p_ij {
+                return Ok(false);
             } else {
-                Err(())
+                return Err(());
             };
         }
 
@@ -84,19 +84,21 @@ impl<P: Group> UnionFindWithPotential<P> {
             let mut rj = self.find(j);
             let Self { node } = self;
 
-            if node[ri].get().get_size().unwrap() < node[rj].get().get_size().unwrap() {
+            // P(i) = Pi @ P(ri), P(j) = Pj @ P(rj), P(i) = P_ij @ P(j)
+            // => P(ri) = inv(Pi) @ P_ij @ Pj @ P(rj)
+            let mut potential_ri_rj = (node[i].get().potential().inverse())
+                .binary_operation(potential_ij)
+                .binary_operation(node[j].get().potential());
+
+            if node[ri].get().get_size().unwrap() > node[rj].get().get_size().unwrap() {
                 std::mem::swap(&mut ri, &mut rj);
-                potential_ij = potential_ij.inverse();
+                potential_ri_rj = potential_ri_rj.inverse()
             }
 
-            node[ri].get_mut().par_or_size += node[rj].get().par_or_size;
-            // P(i) = Pi @ P(ri), P(j) = Pj @ P(rj), P(i) = P_ij @ P(j)
-            // => P(rj) = inv(Pj) @ inv(P_ij) @ Pi * P(ri)
-            node[rj] = Cell::new(Node {
-                par_or_size: ri as i32,
-                potential: (node[j].get().potential().inverse())
-                    .binary_operation(potential_ij.inverse())
-                    .binary_operation(node[i].get().potential()),
+            node[rj].get_mut().par_or_size += node[ri].get().par_or_size;
+            node[ri] = Cell::new(Node {
+                par_or_size: rj as i32,
+                potential: potential_ri_rj,
             })
         }
 
