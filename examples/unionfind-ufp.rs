@@ -1,11 +1,11 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/unionfind
 
 use alds::union_find::{Group, UnionFindWithPotential};
-use proconio::{fastout, input, marker::Usize1};
+use proconio::{fastout, input};
 
 #[fastout]
 fn main() {
-    input! { n: usize, q: usize, query: [(u8, Usize1, Usize1); q], }
+    input! { n: usize, q: usize, query: [(u8, usize, usize); q], }
 
     let mut ufp = UnionFindWithPotential::new(n);
     for (flag, i, j) in query {
