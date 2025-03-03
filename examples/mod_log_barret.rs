@@ -5,11 +5,9 @@ use proconio::{fastout, input};
 
 #[fastout]
 fn main() {
-    input! { t: usize, }
+    input! { t: usize, query: [(u64, u64, u32); t], }
 
-    for _ in 0..t {
-        input! { x: u64, y: u64, m: u32, }
-
+    for (x, y, m) in query {
         let barret = Barret::new(m);
         let x = barret.mint(x);
         let y = barret.mint(y);

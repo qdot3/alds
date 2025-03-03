@@ -161,13 +161,13 @@ impl BDMint<'_> {
             let x = barret.mint(base.value());
             let inv_x = x.inv().expect("x and new modulus should be coprime");
             let y = barret.mint(self.value()) * inv_x.pow(d);
-            // match (x.value(), y.value()) {
-            //     (0, 0) => return Some(1 + d),
-            //     (0, _) => return None,
-            //     (_, 1) => return Some(d),
-            //     (1, _) => return None,
-            //     _ => (),
-            // }
+            match (x.value(), y.value()) {
+                (0, 0) => return Some(1 + d),
+                (0, _) => return None,
+                (_, 1) => return Some(d),
+                (1, _) => return None,
+                _ => (),
+            }
 
             // solve x^k = y by baby-step-giant-step algorithm
             // x^(p * i + q) = y, 0 <= i, q < p  <=>  x^q = y * (x^-p)^i
