@@ -49,11 +49,7 @@ impl<W> CSRBuilder<W> {
 
 impl<W> From<Vec<Edge<W>>> for CSRBuilder<W> {
     fn from(value: Vec<Edge<W>>) -> Self {
-        if let Some(max) = value
-            .iter()
-            .flat_map(|e| [e.source(), e.target()])
-            .max()
-        {
+        if let Some(max) = value.iter().flat_map(|e| [e.source(), e.target()]).max() {
             let mut num_out = vec![0; max + 1];
             let mut num_in = vec![0; max + 1];
             for e in &value {

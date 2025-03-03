@@ -134,9 +134,8 @@ impl BDMint<'_> {
         }
         match (base.value(), self.value()) {
             (0, 0) => return Some(1),
-            (0, _) => return None,
-            (_, 1) => return Some(0),
-            (1, _) => return None,
+            (_, 1) => return Some(0), // 0^0 = 1
+            (0, _) | (1, _) => return None,
             _ => (),
         }
 
@@ -161,32 +160,31 @@ impl BDMint<'_> {
             let x = barret.mint(base.value());
             let inv_x = x.inv().expect("x and new modulus should be coprime");
             let y = barret.mint(self.value()) * inv_x.pow(d);
-            match (x.value(), y.value()) {
-                (0, 0) => return Some(1 + d),
-                (0, _) => return None,
-                (_, 1) => return Some(d),
-                (1, _) => return None,
+            match (base.value(), self.value()) {
+                (0, 0) => return Some(d + 1),
+                (_, 1) => return Some(d), // 0^0 = 1
+                (0, _) | (1, _) => return None,
                 _ => (),
             }
 
             // solve x^k = y by baby-step-giant-step algorithm
-            // x^(p * i + q) = y, 0 <= i, q < p  <=>  x^q = y * (x^-p)^i
+            // x^(p * i + j) = y, 0 <= i, j < p  <=>  x^j = y * (x^-p)^i
             let p = (x.modulus() as u32).isqrt() + 1;
 
-            let mut pow_x = barret.mint(1).pow(p);
+            let mut pow_x = x.pow(p);
             let mut lhs = FxHashMap::default();
             lhs.reserve(p as usize);
             // insert items in descending order for smaller *q*.
-            for q in (0..p).rev() {
+            for j in (0..p).rev() {
                 pow_x *= inv_x;
-                lhs.insert(pow_x, q);
+                lhs.insert(pow_x, j);
             }
 
             let mut rhs = y;
             let pow_inv_x = inv_x.pow(p);
             for i in 0..p {
-                if let Some(q) = lhs.get(&rhs) {
-                    return Some(p * i + q + d);
+                if let Some(j) = lhs.get(&rhs) {
+                    return Some(p * i + j + d);
                 }
                 rhs *= pow_inv_x
             }
