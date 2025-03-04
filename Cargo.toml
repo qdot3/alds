@@ -4,10 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-forward_ref = "1.0.0"
-itertools = "0.14.0"
-num-traits = "0.2.19"
 proconio = { version = "0.5.0", features = ["derive"] }
-rustc-hash = "2.1.1"
-stash = "0.1.6"
-thiserror = "2.0.11"
+
+# original crates
+mod_int = { path = "crates/mod_int" }
+union_find = { path = "crates/union_find" }
+
+[workspace]
+members = [
+    "crates/mod_int",
+    "crates/union_find",
+]
+
+exclude = [
+    "archive"
+]
+

@@ -5,6 +5,7 @@
         "cbrt",
         "cipolla",
         "thiserror",
+        "unionfind",
         "unop"
     ]
 }

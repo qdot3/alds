@@ -4,9 +4,7 @@
 mod normal;
 mod partially_persistent;
 mod potential;
-mod weighted;
 
-pub use normal::UnionFind;
+pub use normal::{Groups, UnionFind};
 pub use partially_persistent::PartiallyPersistentUnionFind;
 pub use potential::{Group, UnionFindWithPotential};
-pub use weighted::WeightedUnionFind;

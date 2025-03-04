@@ -1,9 +1,8 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/unionfind_with_potential
 
-use alds::{
-    modint::SMint,
-    union_find::{Group, UnionFindWithPotential},
-};
+use mod_int::SMint;
+use union_find::{Group, UnionFindWithPotential};
+
 use proconio::{fastout, input};
 
 const MOD: u64 = 998_244_353;

@@ -53,7 +53,7 @@ macro_rules! forward_ref_mint_binop {
     };
 }
 
-pub(super) use forward_ref_mint_binop;
+pub(crate) use forward_ref_mint_binop;
 
 macro_rules! forward_ref_mint_op_assign {
     // dynamic mint
@@ -74,7 +74,7 @@ macro_rules! forward_ref_mint_op_assign {
     };
 }
 
-pub(super) use forward_ref_mint_op_assign;
+pub(crate) use forward_ref_mint_op_assign;
 
 macro_rules! forward_ref_mint_unop {
     // dynamic mint
@@ -99,4 +99,4 @@ macro_rules! forward_ref_mint_unop {
     };
 }
 
-pub(super) use forward_ref_mint_unop;
+pub(crate) use forward_ref_mint_unop;

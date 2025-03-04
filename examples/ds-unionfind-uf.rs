@@ -1,7 +1,7 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/unionfind
 
-use alds::union_find::UnionFind;
 use proconio::{fastout, input};
+use union_find::UnionFind;
 
 #[fastout]
 fn main() {

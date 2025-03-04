@@ -43,5 +43,6 @@ mod montgomery_dynamic_modint;
 mod static_modint;
 
 pub use barret_dynamic_modint::{BDMint, Barret};
+pub(crate) use inv_gcd::inv_gcd;
 pub use montgomery_dynamic_modint::{MDMint, Montgomery};
 pub use static_modint::SMint;

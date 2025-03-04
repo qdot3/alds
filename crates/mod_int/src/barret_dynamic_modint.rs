@@ -7,7 +7,7 @@ use std::{
 use rustc_hash::FxHashMap;
 
 use super::{
-    inv_gcd::inv_gcd,
+    inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
 };
 

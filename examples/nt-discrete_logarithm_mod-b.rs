@@ -1,6 +1,6 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/discrete_logarithm_mod
 
-use alds::modint::Barret;
+use mod_int::Barret;
 use proconio::{fastout, input};
 
 #[fastout]

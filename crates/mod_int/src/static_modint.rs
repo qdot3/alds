@@ -5,7 +5,7 @@ use std::{
 };
 
 use super::{
-    inv_gcd::inv_gcd,
+    inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
     Barret,
 };
