@@ -4,7 +4,7 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::{
+use crate::{
     inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
     Barret,
@@ -67,7 +67,7 @@ impl<const MOD: u64> SMint<MOD> {
     /// # Note
     ///
     /// * `0^0` is defined to be `1`.
-    /// * wrapper of [`BDMint::log`]
+    /// * Wrapper of [`BDMint::log()`](crate::BDMint::log)
     pub fn log(self, base: Self) -> Option<u32> {
         let barret = Barret::new(MOD as u32);
         let x = barret.mint(base.value);

@@ -6,7 +6,7 @@ use std::{
 
 use rustc_hash::FxHashMap;
 
-use super::{
+use crate::{
     inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
 };
@@ -23,9 +23,28 @@ pub struct Barret {
 impl Barret {
     /// Creates a new [`Barret`] with the given `modulus`.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// use mod_int::{Barret, BDMint};
+    ///
+    /// let barret = Barret::new(123_456);
+    /// let x = barret.mint(123);
+    /// let y = barret.mint(456);
+    /// let z = barret.mint(123 * 456);
+    ///
+    /// assert_eq!(x * y, z);
+    /// ```
+    ///
     /// # Panics
     ///
     /// Panics if `modulus` is zero.
+    ///
+    /// ```should_panic
+    /// use mod_int::{Barret, BDMint};
+    ///
+    /// let modulus_must_be_more_than_zero = Barret::new(0);
+    /// ```
     pub const fn new(modulus: u32) -> Self {
         assert!(modulus != 0);
 
@@ -39,6 +58,16 @@ impl Barret {
     }
 
     /// Creates a new [`BDMint`] instance with the given `value` and the fixed modulus.
+    ///
+    /// ```
+    /// use mod_int::{Barret, BDMint};
+    ///
+    /// let barret = Barret::new(1);
+    /// let any = barret.mint(123_456_789);
+    /// let zero = barret.mint(0);
+    ///
+    /// assert_eq!(any, zero);
+    /// ```
     pub const fn mint(&self, value: u64) -> BDMint {
         let value = if value < self.modulus * self.modulus {
             self.reduce(value)
@@ -78,10 +107,40 @@ impl Barret {
 /// Modular integer with a runtime-specified modulus based on
 /// [Barret reduction](https://en.wikipedia.org/wiki/Barrett_reduction) algorithm.
 ///
-/// Any binary operations are restricted to elements with the same owner
-/// to ensure that they share the same modulus.
+//  TODO
+//  Any operations are restricted to elements with the same owner
+//  to ensure that they share the same modulus.
+///
+/// Operations between elements with different moduli are currently allowed but meaningless.
+/// It is possible to prohibit such operations by using unique constant parameters,
+/// but manually setting them is cumbersome.
+///
+/// ```
+/// use mod_int::{Barret, BDMint};
+///
+/// let modulus = 123_456;
+/// let barret1 = Barret::new(123);
+/// let v1 = barret1.mint(1);
+///
+/// let barret2 = Barret::new(456);
+/// let v2 = barret2.mint(4);
+///
+/// let allowed_but_meaningless = v1 + v2;
+/// ```
 ///
 /// To use [`BDMint`] with a different modulus, create a new [`Barret`] instance.
+///
+/// ```
+/// use mod_int::{Barret, BDMint};
+///
+/// let barret1 = Barret::new(123);
+/// let v1 = barret1.mint(4);
+///
+/// let barret2 = Barret::new(567);
+/// let v2 = barret2.mint(8);
+///
+/// let not_allowed = v1 * v2;
+/// ```
 #[derive(Clone, Copy)]
 pub struct BDMint<'a> {
     value: u64,

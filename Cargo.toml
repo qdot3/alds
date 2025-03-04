@@ -9,10 +9,12 @@ proconio = { version = "0.5.0", features = ["derive"] }
 # original crates
 mod_int = { path = "crates/mod_int" }
 union_find = { path = "crates/union_find" }
+segment_tree = { path = "crates/segment_tree" }
 
 [workspace]
 members = [
     "crates/mod_int",
+    "crates/segment_tree",
     "crates/union_find",
 ]
 

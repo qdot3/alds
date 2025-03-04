@@ -4,7 +4,7 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::{
+use crate::{
     inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
 };
@@ -89,8 +89,13 @@ impl Montgomery {
 /// Modular integer with a runtime-specified modulus based on
 /// [Montgomery reduction](https://en.wikipedia.org/wiki/Montgomery_modular_multiplication) algorithm.
 ///
-/// Any binary operations are restricted to elements with the same owner
-/// to ensure that they share the same modulus.
+// TODO
+// Any binary operations are restricted to elements with the same owner
+// to ensure that they share the same modulus.
+///
+/// Operations between elements with different moduli are currently allowed but meaningless.
+/// It is possible to prohibit such operations by using unique constant parameters,
+/// but manually setting them is cumbersome.
 ///
 /// To use [`MDMint`] with a different modulus, create a new [`Montgomery`] instance.
 #[derive(Clone, Copy)]

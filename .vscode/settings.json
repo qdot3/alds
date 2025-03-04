@@ -4,6 +4,7 @@
         "binop",
         "cbrt",
         "cipolla",
+        "monoid",
         "thiserror",
         "unionfind",
         "unop"
