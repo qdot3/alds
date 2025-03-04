@@ -1,3 +1,5 @@
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/staticrmq
+
 use proconio::{fastout, input};
 use segment_tree::{Monoid, SegmentTree};
 
@@ -5,9 +7,7 @@ use segment_tree::{Monoid, SegmentTree};
 fn main() {
     input! { n: usize, q: usize, a: [u32; n], query: [(usize, usize); q], }
 
-    let seg_tree = SegmentTree::from(
-        Vec::from_iter(a.into_iter().map(|a| M(a)))
-    );
+    let seg_tree = SegmentTree::from(Vec::from_iter(a.into_iter().map(|a| M(a))));
 
     for (l, r) in query {
         println!("{}", seg_tree.query(l..r).0)

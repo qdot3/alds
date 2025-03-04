@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, ops::Range};
+use std::{
+    cmp::Ordering,
+    ops::{Range, RangeBounds},
+};
 
 use crate::Monoid;
 
@@ -6,6 +9,7 @@ use crate::Monoid;
 #[derive(Clone, Debug)]
 pub struct SegmentTree<T: Monoid> {
     data: Box<[T]>,
+    len: usize,
     buf_len: usize,
 }
 
@@ -14,31 +18,47 @@ impl<T: Monoid> SegmentTree<T> {
     ///
     /// Use [`from`](Self::from) if you have initial values.
     pub fn new(n: usize) -> Self {
-        let buf_len = n.saturating_sub(1);
-        let data = Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n + buf_len))
-            .into_boxed_slice();
+        let buf_len = n.next_power_of_two(); // non-commutative monoid
+        let data =
+            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n + n % 2 + buf_len))
+                .into_boxed_slice();
 
-        Self { data, buf_len }
+        Self {
+            data,
+            len: n,
+            buf_len,
+        }
     }
 
     const fn inner_index(&self, i: usize) -> usize {
         self.buf_len + i
     }
 
-    fn inner_range(&self, range: Range<usize>) -> Range<usize> {
-        let Range { mut start, mut end } = range;
-        start = self.inner_index(start).min(self.data.len());
-        end = self.inner_index(end).min(self.data.len());
+    ///`[l, r)`
+    fn inner_range<R>(&self, range: R) -> (usize, usize)
+    where
+        R: RangeBounds<usize>,
+    {
+        let l = match range.start_bound() {
+            std::ops::Bound::Included(&l) => l,
+            std::ops::Bound::Excluded(l) => l + 1,
+            std::ops::Bound::Unbounded => 0,
+        };
+        let r = match range.end_bound() {
+            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Excluded(&r) => r,
+            std::ops::Bound::Unbounded => self.len,
+        };
 
-        start..end
+        (self.inner_index(l), self.inner_index(r))
     }
 
     pub fn update(&mut self, i: usize, value: T) {
         let mut i = self.inner_index(i);
         self.data[i] = value;
-        while i > 0 {
-            i = (i - 1) / 2;
-            self.data[i] = self.data[i * 2 + 1].binary_operation(&self.data[i * 2 + 2])
+        while i > 1 {
+            i = i / 2;
+            self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
         }
     }
 
@@ -46,24 +66,21 @@ impl<T: Monoid> SegmentTree<T> {
     where
         T: Clone,
     {
-        let Range {
-            start: mut l,
-            end: mut r,
-        } = range;
+        let (mut l, mut r) = self.inner_range(range);
         self.data[l..r].fill(value);
 
-        (l, r) = ((l - 1) / 2, (r - 1) / 2);
+        (l, r) = (l / 2, r / 2);
         while l < r {
             for i in l..r {
-                self.data[i] = self.data[i * 2 + 1].binary_operation(&self.data[i * 2 + 2])
+                self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
             }
-            (l, r) = ((l - 1) / 2, (r - 1) / 2);
+            (l, r) = (l / 2, r / 2);
         }
 
         assert_eq!(l, r);
-        while l > 0 {
-            l = (l - 1) / 2;
-            self.data[l] = self.data[l * 2 + 1].binary_operation(&self.data[l * 2 + 2])
+        while l > 1 {
+            l /= 2;
+            self.data[l] = self.data[l * 2].binary_operation(&self.data[l * 2 + 1])
         }
     }
 
@@ -73,28 +90,29 @@ impl<T: Monoid> SegmentTree<T> {
     }
 
     pub fn query(&self, range: Range<usize>) -> T {
-        let Range {
-            start: mut l,
-            end: mut r,
-        } = self.inner_range(range);
+        let (mut l, mut r) = self.inner_range(range);
 
-        // calculate result on [l, r)
-        let mut res = T::identity();
-        while l < r {
-            if l % 2 == 0 {
-                res = res.binary_operation(&self.data[l]);
-                l += 1;
-            }
-            if r % 2 == 0 {
-                r -= 1;
-                res = res.binary_operation(&self.data[r]);
-            }
-
-            l /= 2; // = (l - 1) / 2 because `l` is odd
-            r /= 2; // = (r - 1) / 2
+        if l == self.buf_len && r == self.data.len() {
+            return T::identity().binary_operation(&self.data[1]);
         }
 
-        res
+        // calculate result on [l, r)
+        let (mut res_l, mut res_r) = (T::identity(), T::identity());
+        while l < r {
+            if l % 2 == 1 {
+                res_l = res_l.binary_operation(&self.data[l]);
+                l += 1;
+            }
+            if r % 2 == 1 {
+                r -= 1;
+                res_r = self.data[r].binary_operation(&res_r);
+            }
+
+            l /= 2;
+            r /= 2;
+        }
+
+        res_l.binary_operation(&res_r)
     }
 
     pub fn binary_search(&self, x: &T) -> Result<usize, usize>
@@ -134,21 +152,26 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
         if values.is_empty() {
             return Self {
                 data: Box::new([]),
+                len: 0,
                 buf_len: 0,
             };
         }
 
-        let buf_len = values.len() - 1;
+        let len = values.len();
+        let buf_len = values.len().next_power_of_two(); // non-commutative monoid
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| T::identity())
                 .take(buf_len)
-                .chain(values),
+                .chain(values)
+                .chain(std::iter::repeat_with(|| T::identity()).take(len % 2)),
         )
         .into_boxed_slice();
-        for i in (0..buf_len).rev() {
-            data[i] = data[2 * i + 1].binary_operation(&data[2 * i + 2])
+        for i in (1..buf_len).rev() {
+            if i * 2 + 1 < len + buf_len {
+                data[i] = data[2 * i].binary_operation(&data[2 * i + 1])
+            }
         }
 
-        Self { data, buf_len }
+        Self { data, len, buf_len }
     }
 }
