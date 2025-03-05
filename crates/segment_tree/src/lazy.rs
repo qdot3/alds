@@ -1,12 +1,9 @@
-use std::{
-    fmt::{Debug, Display},
-    ops::RangeBounds,
-};
+use std::{fmt::Debug, ops::RangeBounds};
 
-use crate::{Map, Monoid};
+use crate::{MapMonoid, Monoid};
 
 #[derive(Debug, Clone)]
-pub struct LazySegmentTree<T: Monoid, F: Map<T>> {
+pub struct LazySegmentTree<T: Monoid, F: MapMonoid<T>> {
     data: Box<[T]>,
     /// store pending operations
     lazy: Box<[F]>,
@@ -15,7 +12,7 @@ pub struct LazySegmentTree<T: Monoid, F: Map<T>> {
     height: u32,
 }
 
-impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
+impl<T: Monoid, F: MapMonoid<T>> LazySegmentTree<T, F> {
     pub fn new(n: usize) -> Self {
         assert!(n > 0 && n < usize::MAX);
 
@@ -64,11 +61,10 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
     }
 
     fn apply_map(&mut self, i: usize, map: F) {
-        let size = 1 << (self.height - (usize::BITS - i.leading_zeros()));
-        self.data[i] = map.apply(&self.data[i], size);
+        self.data[i] = map.apply(&self.data[i]);
         if i < self.buf_len {
             // apply `map` after `lazy[i]`
-            self.lazy[i] = map.compose(&self.lazy[i])
+            self.lazy[i] = map.composite(&self.lazy[i])
         }
     }
 
@@ -189,7 +185,7 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
     }
 }
 
-impl<T: Monoid, F: Map<T>> From<Vec<T>> for LazySegmentTree<T, F> {
+impl<T: Monoid, F: MapMonoid<T>> From<Vec<T>> for LazySegmentTree<T, F> {
     fn from(values: Vec<T>) -> Self {
         let len = values.len();
         let buf_len = len.next_power_of_two(); // non-commutative monoid
@@ -217,15 +213,5 @@ impl<T: Monoid, F: Map<T>> From<Vec<T>> for LazySegmentTree<T, F> {
             buf_len,
             height,
         }
-    }
-}
-
-impl<T: Monoid + Debug, F: Map<T>> Display for LazySegmentTree<T, F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{:?}", &self.data[0])?;
-        for i in 1..self.height {
-            writeln!(f, "{:?}", &self.data[(1 << i - 1)..(1 << i)])?
-        }
-        write!(f, "{:?}", &self.data[(1 << self.height - 1)..])
     }
 }

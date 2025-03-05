@@ -1,7 +1,9 @@
-mod traits;
-mod normal;
+mod dual;
 mod lazy;
+mod normal;
+mod traits;
 
-pub use traits::{Monoid, Map};
-pub use normal::SegmentTree;
+pub use dual::DualSegmentTree;
 pub use lazy::LazySegmentTree;
+pub use normal::SegmentTree;
+pub use traits::{MapMonoid, Monoid};

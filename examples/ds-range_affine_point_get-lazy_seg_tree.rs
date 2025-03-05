@@ -2,16 +2,15 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, Map, Monoid};
+use segment_tree::{DualSegmentTree, MapMonoid};
 
 #[fastout]
 fn main() {
     input! { n: usize, q: usize, a: [u64; n], }
 
     const MOD: u64 = 998_244_353;
-    let mut lst = LazySegmentTree::<NoneOp<MOD>, Affine<MOD>>::from(Vec::from_iter(
-        a.into_iter().map(|a| NoneOp(SMint::new(a))),
-    ));
+    let mut dst =
+        DualSegmentTree::from(Vec::from_iter(a.into_iter().map(|a| SMint::<MOD>::new(a))));
 
     for _ in 0..q {
         input! { flag: u8, }
@@ -19,30 +18,19 @@ fn main() {
         if flag == 0 {
             input! { l: usize, r: usize, b: u64, c: u64, }
 
-            lst.apply(l..r, Affine::new(b, c));
+            dst.apply(l..r, Affine::new(b, c));
         } else if flag == 1 {
             input! { i: usize, }
 
-            println!("{}", lst.get(i).0)
+            println!("{}", dst.get(i));
+            // println!("{:#?}", dst)
         } else {
             unreachable!()
         }
     }
 }
 
-struct NoneOp<const MOD: u64>(SMint<MOD>);
-
-impl<const MOD: u64> Monoid for NoneOp<MOD> {
-    fn identity() -> Self {
-        Self(SMint::new(0))
-    }
-
-    fn binary_operation(&self, _rhs: &Self) -> Self {
-        Self::identity()
-    }
-}
-
-#[derive(Clone)]
+#[derive(Debug,Clone)]
 struct Affine<const MOD: u64> {
     tilt: SMint<MOD>,
     offset: SMint<MOD>,
@@ -57,16 +45,16 @@ impl<const MOD: u64> Affine<MOD> {
     }
 }
 
-impl<const MOD: u64> Map<NoneOp<MOD>> for Affine<MOD> {
+impl<const MOD: u64> MapMonoid<SMint<MOD>> for Affine<MOD> {
     fn identity() -> Self {
         Self::new(1, 0)
     }
 
-    fn apply(&self, x: &NoneOp<MOD>, _size: usize) -> NoneOp<MOD> {
-        NoneOp(self.tilt * x.0 + self.offset)
+    fn apply(&self, arg: &SMint<MOD>) -> SMint<MOD> {
+        self.tilt * arg + self.offset
     }
 
-    fn compose(&self, rhs: &Self) -> Self {
+    fn composite(&self, rhs: &Self) -> Self {
         Self {
             tilt: self.tilt * rhs.tilt,
             offset: self.tilt * rhs.offset + self.offset,

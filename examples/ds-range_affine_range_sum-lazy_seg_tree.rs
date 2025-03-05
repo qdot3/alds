@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, Map, Monoid};
+use segment_tree::{LazySegmentTree, MapMonoid, Monoid};
 
 #[fastout]
 fn main() {
@@ -10,7 +10,7 @@ fn main() {
 
     const MOD: u64 = 998_244_353;
     let mut lst = LazySegmentTree::<SUM<MOD>, Affine<MOD>>::from(Vec::from_iter(
-        a.into_iter().map(|a| SUM(SMint::new(a))),
+        a.into_iter().map(|a| SUM::new(a)),
     ));
 
     for _ in 0..q {
@@ -23,7 +23,7 @@ fn main() {
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", lst.query(l..r).0);
+            println!("{}", lst.query(l..r).sum);
         } else {
             unreachable!()
         }
@@ -31,15 +31,33 @@ fn main() {
 }
 
 #[derive(Debug)]
-struct SUM<const MOD: u64>(SMint<MOD>);
+struct SUM<const MOD: u64> {
+    sum: SMint<MOD>,
+    size: SMint<MOD>,
+}
+
+impl<const MOD: u64> SUM<MOD> {
+    fn new(value: u64) -> Self {
+        Self {
+            sum: SMint::new(value),
+            size: SMint::new(1),
+        }
+    }
+}
 
 impl<const MOD: u64> Monoid for SUM<MOD> {
     fn identity() -> Self {
-        Self(SMint::new(0))
+        Self {
+            sum: SMint::new(0),
+            size: SMint::new(0),
+        }
     }
 
     fn binary_operation(&self, rhs: &Self) -> Self {
-        Self(self.0 + rhs.0)
+        Self {
+            sum: self.sum + rhs.sum,
+            size: self.size + rhs.size,
+        }
     }
 }
 
@@ -58,16 +76,19 @@ impl<const MOD: u64> Affine<MOD> {
     }
 }
 
-impl<const MOD: u64> Map<SUM<MOD>> for Affine<MOD> {
+impl<const MOD: u64> MapMonoid<SUM<MOD>> for Affine<MOD> {
     fn identity() -> Self {
         Self::new(1, 0)
     }
 
-    fn apply(&self, x: &SUM<MOD>, size: usize) -> SUM<MOD> {
-        SUM(self.tilt * x.0 + self.offset * SMint::new(size as u64))
+    fn apply(&self, arg: &SUM<MOD>) -> SUM<MOD> {
+        SUM {
+            sum: self.tilt * arg.sum + self.offset * arg.size,
+            size: arg.size,
+        }
     }
 
-    fn compose(&self, rhs: &Self) -> Self {
+    fn composite(&self, rhs: &Self) -> Self {
         Self {
             tilt: self.tilt * rhs.tilt,
             offset: self.tilt * rhs.offset + self.offset,
