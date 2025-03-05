@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering,
-    ops::{Range, RangeBounds},
-};
+use std::{cmp::Ordering, ops::RangeBounds};
 
 use crate::Monoid;
 
@@ -62,9 +59,10 @@ impl<T: Monoid> SegmentTree<T> {
         }
     }
 
-    pub fn fill(&mut self, range: Range<usize>, value: T)
+    pub fn fill<R>(&mut self, range: R, value: T)
     where
         T: Clone,
+        R: RangeBounds<usize>,
     {
         let (mut l, mut r) = self.inner_range(range);
         self.data[l..r].fill(value);
@@ -89,7 +87,10 @@ impl<T: Monoid> SegmentTree<T> {
         self.data.get(i)
     }
 
-    pub fn query(&self, range: Range<usize>) -> T {
+    pub fn query<R>(&self, range: R) -> T
+    where
+        R: RangeBounds<usize>,
+    {
         let (mut l, mut r) = self.inner_range(range);
 
         if l == self.buf_len && r == self.data.len() {

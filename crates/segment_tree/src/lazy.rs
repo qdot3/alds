@@ -1,11 +1,16 @@
-use std::ops::Range;
+use std::{
+    fmt::{Debug, Display},
+    ops::RangeBounds,
+};
 
 use crate::{Map, Monoid};
 
+#[derive(Debug, Clone)]
 pub struct LazySegmentTree<T: Monoid, F: Map<T>> {
     data: Box<[T]>,
     /// store pending operations
     lazy: Box<[F]>,
+    len: usize,
     buf_len: usize,
     height: u32,
 }
@@ -14,16 +19,18 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
     pub fn new(n: usize) -> Self {
         assert!(n > 0 && n < usize::MAX);
 
-        let buf_len = n; // one-based indexing
-        let data = Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n + buf_len))
-            .into_boxed_slice();
+        let buf_len = n.next_power_of_two(); // non-commutative monoid
+        let height = buf_len.trailing_zeros() + 1;
+        let data =
+            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n + n % 2 + buf_len)) // save space
+                .into_boxed_slice();
         let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
             .into_boxed_slice();
-        let height = (n + buf_len).next_power_of_two().trailing_zeros();
 
         Self {
             data,
             lazy,
+            len: n,
             buf_len,
             height,
         }
@@ -33,12 +40,31 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
         self.buf_len + i
     }
 
+    /// Returns `[l, r)`
+    fn inner_range<R>(&self, range: R) -> (usize, usize)
+    where
+        R: RangeBounds<usize>,
+    {
+        let l = match range.start_bound() {
+            std::ops::Bound::Included(&l) => l,
+            std::ops::Bound::Excluded(l) => l + 1,
+            std::ops::Bound::Unbounded => 0,
+        };
+        let r = match range.end_bound() {
+            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Excluded(&r) => r,
+            std::ops::Bound::Unbounded => self.len,
+        };
+
+        (self.inner_index(l), self.inner_index(r))
+    }
+
     fn update_node(&mut self, i: usize) {
         self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
     }
 
     fn apply_map(&mut self, i: usize, map: F) {
-        let size = 1 << (self.height - i.ilog2());
+        let size = 1 << (self.height - (usize::BITS - i.leading_zeros()));
         self.data[i] = map.apply(&self.data[i], size);
         if i < self.buf_len {
             // apply `map` after `lazy[i]`
@@ -56,11 +82,8 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
         let i = self.inner_index(i);
 
         // apply pending operations
-        for d in (1..self.height).rev() {
-            let i = i >> d;
-            if i > 0 {
-                self.apply_pending_map(i);
-            }
+        for d in (1..=self.height).rev() {
+            self.apply_pending_map(i >> d);
         }
 
         &self.data[i]
@@ -71,40 +94,31 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
         self.get(i);
 
         // update data
-        let mut i = self.inner_index(i);
+        let i = self.inner_index(i);
         self.data[i] = value;
-        for _ in 1..self.height {
-            i /= 2;
-            self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
+        for d in 1..=self.height {
+            self.update_node(i >> d);
         }
     }
 
-    fn inner_range(&self, range: Range<usize>) -> Range<usize> {
-        let Range { mut start, mut end } = range;
-        start = self.inner_index(start).min(self.data.len() - 1);
-        end = self.inner_index(end).min(self.data.len());
-
-        start..end
-    }
-
-    pub fn update(&mut self, range: Range<usize>, map: F) {
-        let Range { start: l, end: r } = self.inner_range(range);
-
-        if l == r {
-            return;
-        }
+    pub fn apply<R>(&mut self, range: R, map: F)
+    where
+        R: RangeBounds<usize>,
+    {
+        let (l, r) = self.inner_range(range);
 
         // apply pending operations
-        for d in (1..self.height).rev() {
-            if l >> d > 0 {
+        for d in (1..=self.height).rev() {
+            // avoid unnecessary propagation
+            if (l >> d) << d != l {
                 self.apply_pending_map(l >> d);
             }
-            if (r - 1) >> d > 0 {
+            if (r >> d) << d != r {
                 self.apply_pending_map((r - 1) >> d);
             }
         }
 
-        // apply `map` in lazy way
+        // apply `map` in a lazy way
         {
             let (mut l, mut r) = (l, r);
             while l < r {
@@ -123,29 +137,35 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
         }
 
         // update parents of modified nodes
-        for d in 1..self.height {
-            self.update_node(l >> d);
-            self.update_node(r >> d);
+        for d in 1..=self.height {
+            // avoid updating node with children which has not been updated
+            if (l >> d) << d != l {
+                self.update_node(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.update_node((r - 1) >> d);
+            }
         }
     }
 
-    pub fn query(&mut self, range: Range<usize>) -> T {
-        let Range {
-            start: mut l,
-            end: mut r,
-        } = self.inner_range(range);
+    pub fn query<R>(&mut self, range: R) -> T
+    where
+        R: RangeBounds<usize>,
+    {
+        let (mut l, mut r) = self.inner_range(range);
 
         if l == r {
             return T::identity();
         }
 
         // apply pending operations
-        for d in (1..self.height).rev() {
-            if l >> d > 0 {
+        for d in (1..=self.height).rev() {
+            // avoid unnecessary propagation
+            if (l >> d) << d != l {
                 self.apply_pending_map(l >> d);
             }
-            if (r - 1) >> d > 0 {
-                self.apply_pending_map((r - 1) >> d);
+            if (r >> d) << d != r {
+                self.apply_pending_map(r >> d); // `(r >> d) % 2 = 1`
             }
         }
 
@@ -171,28 +191,41 @@ impl<T: Monoid, F: Map<T>> LazySegmentTree<T, F> {
 
 impl<T: Monoid, F: Map<T>> From<Vec<T>> for LazySegmentTree<T, F> {
     fn from(values: Vec<T>) -> Self {
-        let buf_len = values.len(); // one-based indexing
-
+        let len = values.len();
+        let buf_len = len.next_power_of_two(); // non-commutative monoid
+        let height = buf_len.trailing_zeros() + 1;
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| T::identity())
                 .take(buf_len)
-                .chain(values),
+                .chain(values)
+                .chain(std::iter::repeat_with(|| T::identity()).take(len % 2)), // save space
         )
         .into_boxed_slice();
-        for i in (0..buf_len).rev() {
-            data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
+        for i in (1..buf_len).rev() {
+            if i * 2 + 1 < len + len % 2 + buf_len {
+                data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
+            }
         }
 
         let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
             .into_boxed_slice();
 
-        let height = data.len().next_power_of_two().trailing_zeros();
-
         Self {
             data,
             lazy,
+            len,
             buf_len,
             height,
         }
+    }
+}
+
+impl<T: Monoid + Debug, F: Map<T>> Display for LazySegmentTree<T, F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{:?}", &self.data[0])?;
+        for i in 1..self.height {
+            writeln!(f, "{:?}", &self.data[(1 << i - 1)..(1 << i)])?
+        }
+        write!(f, "{:?}", &self.data[(1 << self.height - 1)..])
     }
 }
