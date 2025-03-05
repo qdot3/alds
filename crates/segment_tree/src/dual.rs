@@ -10,6 +10,10 @@ pub struct DualSegmentTree<T, F: MapMonoid<T>> {
 }
 
 impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
+    const fn inner_index(&self, i: usize) -> usize {
+        self.maps.len() + i
+    }
+
     /// Returns `[l, r)`.
     fn inner_range<R>(&self, range: R) -> (usize, usize)
     where
@@ -26,7 +30,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             std::ops::Bound::Unbounded => self.data.len(),
         };
 
-        (l + self.maps.len(), r + self.maps.len())
+        (self.inner_index(l), self.inner_index(r))
     }
 
     fn shift_down(&mut self, i: usize) {
@@ -52,31 +56,38 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         R: RangeBounds<usize>,
     {
         let (mut l, mut r) = self.inner_range(range);
+        if l >= r {
+            return;
+        }
 
+        let map_len = self.maps.len();
         // apply pending maps
-        for d in (1..=self.maps.len().trailing_zeros()).rev() {
-            self.shift_down(l >> d);
-            self.shift_down((r - 1) >> d);
+        for d in (1..=map_len.ilog2()).rev() {
+            if (l >> d) << d != l {
+                self.shift_down(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.shift_down((r - 1) >> d);
+            }
         }
 
         if l % 2 == 1 {
-            self.data[l - self.maps.len()] = map.apply(&self.data[l - self.maps.len()]);
+            self.data[l - map_len] = map.apply(&self.data[l - map_len]);
             l += 1
         }
         if r % 2 == 1 {
             r -= 1;
-            self.data[r - self.maps.len()] = map.apply(&self.data[r - self.maps.len()]);
+            self.data[r - map_len] = map.apply(&self.data[r - map_len]);
         }
         (l, r) = (l / 2, r / 2);
-
         while l < r {
             if l % 2 == 1 {
-                self.maps[l] = map.clone();
+                self.maps[l] = map.composite(&self.maps[l]);
                 l += 1
             }
             if r % 2 == 1 {
                 r -= 1;
-                self.maps[r] = map.clone()
+                self.maps[r] = map.composite(&self.maps[l])
             }
 
             l /= 2;
@@ -87,11 +98,12 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     pub fn get(&mut self, i: usize) -> &T {
         // apply pending maps
         {
-            let i = i + self.maps.len();
-            for d in (1..=self.maps.len().trailing_zeros()).rev() {
+            let i = self.inner_index(i);
+            for d in (1..=i.ilog2()).rev() {
                 self.shift_down(i >> d);
             }
         }
+
         &self.data[i]
     }
 }
