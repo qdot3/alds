@@ -66,7 +66,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             }
             if r % 2 == 1 {
                 r -= 1;
-                self.maps[r] = map.composite(&self.maps[l])
+                self.maps[r] = map.composite(&self.maps[r])
             }
 
             l /= 2;
@@ -81,7 +81,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
 
             (i, self.maps[i].apply(arg))
         };
-        while i > 2 {
+        while i > 1 {
             i /= 2;
             res = self.maps[i].apply(&res)
         }
