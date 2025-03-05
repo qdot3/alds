@@ -30,7 +30,7 @@ fn main() {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct Affine<const MOD: u64> {
     tilt: SMint<MOD>,
     offset: SMint<MOD>,

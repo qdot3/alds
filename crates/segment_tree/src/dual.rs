@@ -33,7 +33,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     fn shift_down(&mut self, i: usize) {
         let n = self.maps.len();
 
-        if 2 * i < self.maps.len() {
+        if 2 * i < n {
             self.maps[2 * i] = self.maps[i].composite(&self.maps[2 * i]);
         } else {
             self.data[2 * i - n] = self.maps[i].apply(&self.data[2 * i - n]);
@@ -41,7 +41,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
 
         if 2 * i + 1 < n {
             self.maps[2 * i + 1] = self.maps[i].composite(&self.maps[2 * i + 1])
-        } else {
+        } else if 2 * i + 1 < n + self.data.len() {
             self.data[2 * i + 1 - n] = self.maps[i].apply(&self.data[2 * i + 1 - n]);
         }
 
@@ -105,9 +105,10 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
 impl<T, F: MapMonoid<T>> From<Vec<T>> for DualSegmentTree<T, F> {
     fn from(data: Vec<T>) -> Self {
         let data = data.into_boxed_slice();
-        // only support point get query, so minimal buffer is okay
-        let maps = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(data.len()))
-            .into_boxed_slice();
+        let maps = Vec::from_iter(
+            std::iter::repeat_with(|| F::identity()).take(data.len().next_power_of_two()),
+        )
+        .into_boxed_slice();
         let map_height = usize::BITS - maps.len().leading_zeros();
 
         Self {
