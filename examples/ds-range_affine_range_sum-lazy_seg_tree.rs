@@ -30,6 +30,7 @@ fn main() {
     }
 }
 
+#[derive(Debug)]
 struct SUM<const MOD: u64>(SMint<MOD>);
 
 impl<const MOD: u64> Monoid for SUM<MOD> {
@@ -63,7 +64,7 @@ impl<const MOD: u64> Map<SUM<MOD>> for Affine<MOD> {
     }
 
     fn apply(&self, x: &SUM<MOD>, size: usize) -> SUM<MOD> {
-        SUM(self.offset * x.0 + self.tilt * SMint::new(size as u64))
+        SUM(self.tilt * x.0 + self.offset * SMint::new(size as u64))
     }
 
     fn compose(&self, rhs: &Self) -> Self {
