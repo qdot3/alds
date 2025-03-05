@@ -7,7 +7,6 @@ pub struct DualSegmentTree<T, F: MapMonoid<T>> {
     data: Box<[T]>,
     /// one-based indexing buffer of pending maps
     maps: Box<[F]>,
-    map_height: u32,
 }
 
 impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
@@ -55,14 +54,9 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         let (mut l, mut r) = self.inner_range(range);
 
         // apply pending maps
-        for d in (1..self.map_height).rev() {
-            // avoid unnecessary propagation
-            if (l >> d) << d != l {
-                self.shift_down(l >> d);
-            }
-            if (r >> d) << d != r {
-                self.shift_down((r - 1) >> d);
-            }
+        for d in (1..=self.maps.len().trailing_zeros()).rev() {
+            self.shift_down(l >> d);
+            self.shift_down((r - 1) >> d);
         }
 
         if l % 2 == 1 {
@@ -94,7 +88,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         // apply pending maps
         {
             let i = i + self.maps.len();
-            for d in (1..self.map_height).rev() {
+            for d in (1..=self.maps.len().trailing_zeros()).rev() {
                 self.shift_down(i >> d);
             }
         }
@@ -105,16 +99,8 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
 impl<T, F: MapMonoid<T>> From<Vec<T>> for DualSegmentTree<T, F> {
     fn from(data: Vec<T>) -> Self {
         let data = data.into_boxed_slice();
-        let maps = Vec::from_iter(
-            std::iter::repeat_with(|| F::identity()).take(data.len().next_power_of_two()),
-        )
-        .into_boxed_slice();
-        let map_height = usize::BITS - maps.len().leading_zeros();
+        let maps = vec![F::identity(); data.len().next_power_of_two()].into_boxed_slice();
 
-        Self {
-            data,
-            maps,
-            map_height,
-        }
+        Self { data, maps }
     }
 }
