@@ -7,11 +7,12 @@ pub struct DualSegmentTree<T, F: MapMonoid<T>> {
     data: Box<[T]>,
     /// one-based indexing buffer of pending maps
     maps: Box<[F]>,
+    buf_len: usize,
 }
 
 impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     const fn inner_index(&self, i: usize) -> usize {
-        self.maps.len() + i
+        self.buf_len + i
     }
 
     /// Returns `[l, r)`.
@@ -34,20 +35,8 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     }
 
     fn shift_down(&mut self, i: usize) {
-        let n = self.maps.len();
-
-        if 2 * i < n {
-            self.maps[2 * i] = self.maps[i].composite(&self.maps[2 * i]);
-        } else {
-            self.data[2 * i - n] = self.maps[i].apply(&self.data[2 * i - n]);
-        }
-
-        if 2 * i + 1 < n {
-            self.maps[2 * i + 1] = self.maps[i].composite(&self.maps[2 * i + 1])
-        } else if 2 * i + 1 < n + self.data.len() {
-            self.data[2 * i + 1 - n] = self.maps[i].apply(&self.data[2 * i + 1 - n]);
-        }
-
+        self.maps[2 * i] = self.maps[i].composite(&self.maps[2 * i]);
+        self.maps[2 * i + 1] = self.maps[i].composite(&self.maps[2 * i + 1]);
         self.maps[i] = F::identity()
     }
 
@@ -71,15 +60,6 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             }
         }
 
-        if l % 2 == 1 {
-            self.data[l - map_len] = map.apply(&self.data[l - map_len]);
-            l += 1
-        }
-        if r % 2 == 1 {
-            r -= 1;
-            self.data[r - map_len] = map.apply(&self.data[r - map_len]);
-        }
-        (l, r) = (l / 2, r / 2);
         while l < r {
             if l % 2 == 1 {
                 self.maps[l] = map.composite(&self.maps[l]);
@@ -95,7 +75,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         }
     }
 
-    pub fn get(&mut self, i: usize) -> &T {
+    pub fn get(&mut self, i: usize) -> T {
         // apply pending maps
         {
             let i = self.inner_index(i);
@@ -104,15 +84,20 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             }
         }
 
-        &self.data[i]
+        self.maps[self.inner_index(i)].apply(&self.data[i])
     }
 }
 
 impl<T, F: MapMonoid<T>> From<Vec<T>> for DualSegmentTree<T, F> {
     fn from(data: Vec<T>) -> Self {
         let data = data.into_boxed_slice();
-        let maps = vec![F::identity(); data.len().next_power_of_two()].into_boxed_slice();
+        let buf_len: usize = data.len().next_power_of_two();
+        let maps = vec![F::identity(); buf_len + (data.len() + 1) / 2 * 2].into_boxed_slice();
 
-        Self { data, maps }
+        Self {
+            data,
+            maps,
+            buf_len,
+        }
     }
 }
