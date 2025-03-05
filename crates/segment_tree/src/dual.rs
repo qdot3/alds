@@ -35,9 +35,9 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     }
 
     fn shift_down(&mut self, i: usize) {
-        self.maps[2 * i] = self.maps[i].composite(&self.maps[2 * i]);
-        self.maps[2 * i + 1] = self.maps[i].composite(&self.maps[2 * i + 1]);
-        self.maps[i] = F::identity()
+        let map = std::mem::replace(&mut self.maps[i], F::identity());
+        self.maps[2 * i] = map.composite(&self.maps[2 * i]);
+        self.maps[2 * i + 1] = map.composite(&self.maps[2 * i + 1]);
     }
 
     pub fn apply<R>(&mut self, range: R, map: F)
@@ -49,9 +49,8 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             return;
         }
 
-        let map_len = self.maps.len();
         // apply pending maps
-        for d in (1..=map_len.ilog2()).rev() {
+        for d in (1..=self.buf_len.trailing_zeros()).rev() {
             if (l >> d) << d != l {
                 self.shift_down(l >> d);
             }
@@ -76,15 +75,18 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     }
 
     pub fn get(&mut self, i: usize) -> T {
-        // apply pending maps
-        {
+        let (mut i, mut res) = {
+            let arg = &self.data[i];
             let i = self.inner_index(i);
-            for d in (1..=i.ilog2()).rev() {
-                self.shift_down(i >> d);
-            }
+
+            (i, self.maps[i].apply(arg))
+        };
+        while i > 2 {
+            i /= 2;
+            res = self.maps[i].apply(&res)
         }
 
-        self.maps[self.inner_index(i)].apply(&self.data[i])
+        res
     }
 }
 
