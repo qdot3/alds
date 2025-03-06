@@ -1,3 +1,5 @@
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/range_set_range_composite
+
 use std::cell::RefCell;
 
 use mod_int::SMint;
