@@ -147,7 +147,7 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
     /// Propagates all pending updates and brings all nodes to their latest state.
     ///
     /// This is useful in scenarios where lazy propagation might be expensive,
-    /// such as in [Range Set Range Composite](https://judge.yosupo.jp/problem/range_set_range_composite).
+    /// such as in [Range Set Range Composite (Library Checker)](https://judge.yosupo.jp/problem/range_set_range_composite).
     /// Periodically applying all updates helps maintain efficiency by reducing memory overhead.
     pub fn apply_all(&mut self) {
         for i in 1..self.data.len() / 2 {
