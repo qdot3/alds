@@ -62,9 +62,9 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             return;
         }
 
-        if F::IS_COMMUTATIVE {
+        if !F::IS_COMMUTATIVE {
             // propagate pending operations
-            for d in ((l | r).trailing_zeros().max(1)..=self.buf_len.trailing_zeros()).rev() {
+            for d in (1..=self.buf_len.trailing_zeros()).rev() {
                 if (l >> d) << d != l {
                     self.push(l >> d);
                 }
