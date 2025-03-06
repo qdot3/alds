@@ -207,10 +207,8 @@ impl<T: Monoid, F: MonoidAction<T>> From<Vec<T>> for LazySegmentTree<T, F> {
                 .chain(std::iter::repeat_with(|| T::identity()).take(len % 2)), // save space
         )
         .into_boxed_slice();
-        for i in (1..buf_len).rev() {
-            if i * 2 + 1 < len + len % 2 + buf_len {
-                data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
-            }
+        for i in (1..data.len() / 2).rev() {
+            data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
         }
 
         let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
