@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{DualSegmentTree, MapMonoid};
+use segment_tree::{DualSegmentTree, MonoidAction};
 
 #[fastout]
 fn main() {
@@ -44,7 +44,7 @@ impl<const MOD: u64> Affine<MOD> {
     }
 }
 
-impl<const MOD: u64> MapMonoid<SMint<MOD>> for Affine<MOD> {
+impl<const MOD: u64> MonoidAction<SMint<MOD>> for Affine<MOD> {
     const IS_COMMUTATIVE: bool = false;
     
     fn identity() -> Self {

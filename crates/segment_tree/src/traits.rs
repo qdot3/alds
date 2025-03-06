@@ -10,7 +10,7 @@ pub trait Monoid {
 }
 
 /// Defines a set of maps which forms a monoid
-pub trait MapMonoid<Arg> {
+pub trait MonoidAction<Arg> {
     /// If maps are commutative, then it should be set `true`. Otherwise `false`.
     const IS_COMMUTATIVE: bool;
 

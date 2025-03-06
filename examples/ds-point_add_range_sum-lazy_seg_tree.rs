@@ -1,7 +1,7 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
 
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, MapMonoid, Monoid};
+use segment_tree::{LazySegmentTree, MonoidAction, Monoid};
 
 #[fastout]
 fn main() {
@@ -57,7 +57,7 @@ impl Monoid for M {
 #[derive(Clone)]
 struct F(u64);
 
-impl MapMonoid<M> for F {
+impl MonoidAction<M> for F {
     const IS_COMMUTATIVE: bool = true;
 
     fn identity() -> Self {

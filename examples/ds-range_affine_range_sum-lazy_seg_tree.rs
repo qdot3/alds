@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, MapMonoid, Monoid};
+use segment_tree::{LazySegmentTree, MonoidAction, Monoid};
 
 #[fastout]
 fn main() {
@@ -76,7 +76,7 @@ impl<const MOD: u64> Affine<MOD> {
     }
 }
 
-impl<const MOD: u64> MapMonoid<SUM<MOD>> for Affine<MOD> {
+impl<const MOD: u64> MonoidAction<SUM<MOD>> for Affine<MOD> {
     const IS_COMMUTATIVE: bool = false;
 
     fn identity() -> Self {

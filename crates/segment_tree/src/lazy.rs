@@ -1,18 +1,18 @@
 use std::{fmt::Debug, ops::RangeBounds};
 
-use crate::{MapMonoid, Monoid};
+use crate::{Monoid, MonoidAction};
 
 #[derive(Debug, Clone)]
-pub struct LazySegmentTree<T: Monoid, F: MapMonoid<T>> {
+pub struct LazySegmentTree<T: Monoid, F: MonoidAction<T>> {
     data: Box<[T]>,
-    /// store pending operations
+    /// store pending actions
     lazy: Box<[F]>,
     len: usize,
     buf_len: usize,
     height: u32,
 }
 
-impl<T: Monoid, F: MapMonoid<T> + Clone> LazySegmentTree<T, F> {
+impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
     pub fn new(n: usize) -> Self {
         assert!(n > 0 && n < usize::MAX);
 
@@ -60,33 +60,33 @@ impl<T: Monoid, F: MapMonoid<T> + Clone> LazySegmentTree<T, F> {
         self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
     }
 
-    fn apply_map(&mut self, i: usize, map: F) {
-        self.data[i] = map.apply(&self.data[i]);
+    fn apply_action(&mut self, i: usize, action: F) {
+        self.data[i] = action.apply(&self.data[i]);
         if i < self.buf_len {
-            // apply `map` after `lazy[i]`
-            self.lazy[i] = map.composite(&self.lazy[i])
+            // apply `action` after `lazy[i]`
+            self.lazy[i] = action.composite(&self.lazy[i])
         }
     }
 
-    fn apply_pending_map(&mut self, i: usize) {
-        self.apply_map(i * 2, self.lazy[i].clone());
-        self.apply_map(i * 2 + 1, self.lazy[i].clone());
+    fn apply_pending_action(&mut self, i: usize) {
+        self.apply_action(i * 2, self.lazy[i].clone());
+        self.apply_action(i * 2 + 1, self.lazy[i].clone());
         self.lazy[i] = F::identity()
     }
 
     pub fn get(&mut self, i: usize) -> &T {
         let i = self.inner_index(i);
 
-        // apply pending operations
+        // apply pending actions
         for d in (1..=self.height).rev() {
-            self.apply_pending_map(i >> d);
+            self.apply_pending_action(i >> d);
         }
 
         &self.data[i]
     }
 
     pub fn set(&mut self, i: usize, value: T) {
-        // apply pending operations
+        // apply pending actions
         self.get(i);
 
         // update data
@@ -97,34 +97,34 @@ impl<T: Monoid, F: MapMonoid<T> + Clone> LazySegmentTree<T, F> {
         }
     }
 
-    pub fn apply<R>(&mut self, range: R, map: F)
+    pub fn apply<R>(&mut self, range: R, action: F)
     where
         R: RangeBounds<usize>,
     {
         let (l, r) = self.inner_range(range);
 
-        // apply pending operations
+        // apply pending actions
         for d in (1..=self.height).rev() {
             // avoid unnecessary propagation
             if (l >> d) << d != l {
-                self.apply_pending_map(l >> d);
+                self.apply_pending_action(l >> d);
             }
             if (r >> d) << d != r {
-                self.apply_pending_map((r - 1) >> d);
+                self.apply_pending_action((r - 1) >> d);
             }
         }
 
-        // apply `map` in a lazy way
+        // apply `action` in a lazy way
         {
             let (mut l, mut r) = (l, r);
             while l < r {
                 if l % 2 == 1 {
-                    self.apply_map(l, map.clone());
+                    self.apply_action(l, action.clone());
                     l += 1;
                 }
                 if r % 2 == 1 {
                     r -= 1;
-                    self.apply_map(r, map.clone());
+                    self.apply_action(r, action.clone());
                 }
 
                 l /= 2;
@@ -154,14 +154,14 @@ impl<T: Monoid, F: MapMonoid<T> + Clone> LazySegmentTree<T, F> {
             return T::identity();
         }
 
-        // apply pending operations
+        // apply pending actions
         for d in (1..=self.height).rev() {
             // avoid unnecessary propagation
             if (l >> d) << d != l {
-                self.apply_pending_map(l >> d);
+                self.apply_pending_action(l >> d);
             }
             if (r >> d) << d != r {
-                self.apply_pending_map(r >> d); // `(r >> d) % 2 = 1`
+                self.apply_pending_action(r >> d); // `(r >> d) % 2 = 1`
             }
         }
 
@@ -185,7 +185,7 @@ impl<T: Monoid, F: MapMonoid<T> + Clone> LazySegmentTree<T, F> {
     }
 }
 
-impl<T: Monoid, F: MapMonoid<T>> From<Vec<T>> for LazySegmentTree<T, F> {
+impl<T: Monoid, F: MonoidAction<T>> From<Vec<T>> for LazySegmentTree<T, F> {
     fn from(values: Vec<T>) -> Self {
         let len = values.len();
         let buf_len = len.next_power_of_two(); // non-commutative monoid
