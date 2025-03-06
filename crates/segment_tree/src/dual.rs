@@ -52,6 +52,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         self.maps[2 * i + 1] = map.composite(&self.maps[2 * i + 1]);
     }
 
+    /// Applies `map` to elements in the given `range`.
     pub fn apply<R>(&mut self, range: R, map: F)
     where
         R: RangeBounds<usize>,
@@ -61,7 +62,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             return;
         }
 
-        if !F::IS_COMMUTATIVE {
+        if F::IS_COMMUTATIVE {
             // propagate pending operations
             for d in ((l | r).trailing_zeros().max(1)..=self.buf_len.trailing_zeros()).rev() {
                 if (l >> d) << d != l {
@@ -88,6 +89,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         }
     }
 
+    /// Returns `i`-th element.
     pub fn get(&self, i: usize) -> T {
         // maps may be non-commutative
         let (mut i, mut res) = {
@@ -104,15 +106,17 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         res
     }
 
-    pub fn set(&mut self, i: usize, value: T) {
-        self.data[i] = value;
-
-        // cancel pending operations for `data[i]`
-        let i = self.inner_index(i);
+    /// Overrides `i`-th element with the given `value` and returns the previous result.
+    pub fn set(&mut self, i: usize, value: T) -> T {
+        // propagate pending operations
+        let ii = self.inner_index(i);
         for d in (1..=self.buf_len.trailing_zeros()).rev() {
-            self.push(i >> d);
+            self.push(ii >> d);
         }
-        self.maps[i] = F::identity();
+
+        // override and return
+        std::mem::replace(&mut self.maps[ii], F::identity())
+            .apply(&std::mem::replace(&mut self.data[i], value))
     }
 }
 
