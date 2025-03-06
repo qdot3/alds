@@ -144,13 +144,23 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
         }
     }
 
+    /// Applies all pending actions and updates the node state.
+    pub fn apply_all(&mut self) {
+        for i in 1..self.data.len() / 2 {
+            self.apply_pending_action(i);
+        }
+        for i in (1..self.data.len() / 2).rev() {
+            self.update_node(i);
+        }
+    }
+
     pub fn eval<R>(&mut self, range: R) -> T
     where
         R: RangeBounds<usize>,
     {
         let (mut l, mut r) = self.inner_range(range);
 
-        if l == r {
+        if l >= r {
             return T::identity();
         }
 
