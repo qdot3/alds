@@ -1,5 +1,7 @@
 /// Defines a set of elements which forms a monoid
 pub trait Monoid {
+    // TODO: const IS_COMMUTATIVE: bool;
+
     /// Returns the identity element.
     fn identity() -> Self;
 
@@ -9,6 +11,7 @@ pub trait Monoid {
 
 /// Defines a set of maps which forms a monoid
 pub trait MapMonoid<Arg> {
+    /// If maps are commutative, then it should be set `true`. Otherwise `false`.
     const IS_COMMUTATIVE: bool;
 
     /// Returns the identity map.
