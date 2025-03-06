@@ -1,3 +1,5 @@
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/range_set_range_composite
+
 use mod_int::SMint;
 use proconio::{fastout, input};
 use segment_tree::{AssignSegmentTree, MonoidAct};
