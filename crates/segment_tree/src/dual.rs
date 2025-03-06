@@ -2,7 +2,12 @@ use std::ops::RangeBounds;
 
 use crate::MapMonoid;
 
-/// 
+/// A data structure that efficiently applies (non-commutative) functions (or maps) to consecutive elements
+/// and retrieves a single element.
+///
+/// # Multiple Functions
+///
+/// If multiple different functions can be composed, you can use [`DualSegmentTree`].
 #[derive(Debug, Clone)]
 pub struct DualSegmentTree<T, F: MapMonoid<T>> {
     data: Box<[T]>,
@@ -36,7 +41,12 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         (self.inner_index(l), self.inner_index(r))
     }
 
-    fn shift_down(&mut self, i: usize) {
+    /// Propagates pending operations to the children.
+    ///
+    /// # Panics
+    ///
+    /// Assume two children exist.
+    fn push(&mut self, i: usize) {
         let map = std::mem::replace(&mut self.maps[i], F::identity());
         self.maps[2 * i] = map.composite(&self.maps[2 * i]);
         self.maps[2 * i + 1] = map.composite(&self.maps[2 * i + 1]);
@@ -52,13 +62,13 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         }
 
         if !F::IS_COMMUTATIVE {
-            // apply pending maps
+            // propagate pending operations
             for d in ((l | r).trailing_zeros().max(1)..=self.buf_len.trailing_zeros()).rev() {
                 if (l >> d) << d != l {
-                    self.shift_down(l >> d);
+                    self.push(l >> d);
                 }
                 if (r >> d) << d != r {
-                    self.shift_down((r - 1) >> d);
+                    self.push((r - 1) >> d);
                 }
             }
         }
@@ -79,6 +89,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     }
 
     pub fn get(&self, i: usize) -> T {
+        // maps may be non-commutative
         let (mut i, mut res) = {
             let arg = &self.data[i];
             let i = self.inner_index(i);
@@ -96,9 +107,10 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
     pub fn set(&mut self, i: usize, value: T) {
         self.data[i] = value;
 
+        // cancel pending operations for `data[i]`
         let i = self.inner_index(i);
         for d in (1..=self.buf_len.trailing_zeros()).rev() {
-            self.shift_down(i >> d);
+            self.push(i >> d);
         }
         self.maps[i] = F::identity();
     }
@@ -107,9 +119,9 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
 impl<T, F: MapMonoid<T>> From<Vec<T>> for DualSegmentTree<T, F> {
     fn from(data: Vec<T>) -> Self {
         let data = data.into_boxed_slice();
-        let buf_len: usize = data.len();//.next_power_of_two();
+        let buf_len: usize = data.len().next_power_of_two();
         let maps = Vec::from_iter(
-            std::iter::repeat_with(|| F::identity()).take(buf_len + data.len()),
+            std::iter::repeat_with(|| F::identity()).take(buf_len + (data.len() + 1) / 2 * 2),
         )
         .into_boxed_slice();
 
