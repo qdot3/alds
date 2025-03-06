@@ -20,11 +20,11 @@ fn main() {
         if flag == 0 {
             input! { p: usize, c: u64, d: u64, }
 
-            seg_tree.update(p, LinearFunction::new(c, d));
+            seg_tree.set(p, LinearFunction::new(c, d));
         } else if flag == 1 {
             input! { l: usize, r: usize, x: u64, }
 
-            let res = seg_tree.query(l..r).calc(SMint::new(x));
+            let res = seg_tree.eval(l..r).calc(SMint::new(x));
             println!("{}", res)
         } else {
             unreachable!()

@@ -8,7 +8,9 @@ pub trait Monoid {
 }
 
 /// Defines a set of maps which forms a monoid
-pub trait MapMonoid<Arg>: Clone {
+pub trait MapMonoid<Arg> {
+    const IS_COMMUTATIVE: bool;
+
     /// Returns the identity map.
     fn identity() -> Self;
 

@@ -12,7 +12,7 @@ pub struct LazySegmentTree<T: Monoid, F: MapMonoid<T>> {
     height: u32,
 }
 
-impl<T: Monoid, F: MapMonoid<T>> LazySegmentTree<T, F> {
+impl<T: Monoid, F: MapMonoid<T> + Clone> LazySegmentTree<T, F> {
     pub fn new(n: usize) -> Self {
         assert!(n > 0 && n < usize::MAX);
 
@@ -144,7 +144,7 @@ impl<T: Monoid, F: MapMonoid<T>> LazySegmentTree<T, F> {
         }
     }
 
-    pub fn query<R>(&mut self, range: R) -> T
+    pub fn eval<R>(&mut self, range: R) -> T
     where
         R: RangeBounds<usize>,
     {

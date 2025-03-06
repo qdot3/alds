@@ -2,15 +2,17 @@ use std::ops::RangeBounds;
 
 use crate::MapMonoid;
 
+/// 
 #[derive(Debug, Clone)]
 pub struct DualSegmentTree<T, F: MapMonoid<T>> {
     data: Box<[T]>,
-    /// one-based indexing buffer of pending maps
+    /// one-based indexing buffer for pending maps.
     maps: Box<[F]>,
     buf_len: usize,
 }
 
 impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
+    /// Converts index of `data` to the corresponding index of `maps`.
     const fn inner_index(&self, i: usize) -> usize {
         self.buf_len + i
     }
@@ -49,13 +51,15 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
             return;
         }
 
-        // apply pending maps
-        for d in (1..=self.buf_len.trailing_zeros()).rev() {
-            if (l >> d) << d != l {
-                self.shift_down(l >> d);
-            }
-            if (r >> d) << d != r {
-                self.shift_down((r - 1) >> d);
+        if !F::IS_COMMUTATIVE {
+            // apply pending maps
+            for d in ((l | r).trailing_zeros().max(1)..=self.buf_len.trailing_zeros()).rev() {
+                if (l >> d) << d != l {
+                    self.shift_down(l >> d);
+                }
+                if (r >> d) << d != r {
+                    self.shift_down((r - 1) >> d);
+                }
             }
         }
 
@@ -74,7 +78,7 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
         }
     }
 
-    pub fn get(&mut self, i: usize) -> T {
+    pub fn get(&self, i: usize) -> T {
         let (mut i, mut res) = {
             let arg = &self.data[i];
             let i = self.inner_index(i);
@@ -88,13 +92,26 @@ impl<T, F: MapMonoid<T>> DualSegmentTree<T, F> {
 
         res
     }
+
+    pub fn set(&mut self, i: usize, value: T) {
+        self.data[i] = value;
+
+        let i = self.inner_index(i);
+        for d in (1..=self.buf_len.trailing_zeros()).rev() {
+            self.shift_down(i >> d);
+        }
+        self.maps[i] = F::identity();
+    }
 }
 
 impl<T, F: MapMonoid<T>> From<Vec<T>> for DualSegmentTree<T, F> {
     fn from(data: Vec<T>) -> Self {
         let data = data.into_boxed_slice();
-        let buf_len: usize = data.len().next_power_of_two();
-        let maps = vec![F::identity(); buf_len + (data.len() + 1) / 2 * 2].into_boxed_slice();
+        let buf_len: usize = data.len();//.next_power_of_two();
+        let maps = Vec::from_iter(
+            std::iter::repeat_with(|| F::identity()).take(buf_len + data.len()),
+        )
+        .into_boxed_slice();
 
         Self {
             data,

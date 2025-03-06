@@ -16,11 +16,11 @@ fn main() {
             input! { p: usize, x: u64, }
 
             let value = M(x + seg_tree.get(p).unwrap().0);
-            seg_tree.update(p, value);
+            seg_tree.set(p, value);
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", seg_tree.query(l..r).0)
+            println!("{}", seg_tree.eval(l..r).0)
         } else {
             unreachable!()
         }

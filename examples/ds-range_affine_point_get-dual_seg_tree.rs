@@ -30,7 +30,6 @@ fn main() {
     }
 }
 
-#[derive(Debug, Clone)]
 struct Affine<const MOD: u64> {
     tilt: SMint<MOD>,
     offset: SMint<MOD>,
@@ -46,6 +45,8 @@ impl<const MOD: u64> Affine<MOD> {
 }
 
 impl<const MOD: u64> MapMonoid<SMint<MOD>> for Affine<MOD> {
+    const IS_COMMUTATIVE: bool = false;
+    
     fn identity() -> Self {
         Self::new(1, 0)
     }

@@ -22,7 +22,7 @@ fn main() {
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", seg_tree.query(l..r).value)
+            println!("{}", seg_tree.eval(l..r).value)
         } else {
             unreachable!()
         }
@@ -58,6 +58,8 @@ impl Monoid for M {
 struct F(u64);
 
 impl MapMonoid<M> for F {
+    const IS_COMMUTATIVE: bool = true;
+
     fn identity() -> Self {
         F(0)
     }

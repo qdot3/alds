@@ -23,7 +23,7 @@ fn main() {
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", lst.query(l..r).sum);
+            println!("{}", lst.eval(l..r).sum);
         } else {
             unreachable!()
         }
@@ -77,6 +77,8 @@ impl<const MOD: u64> Affine<MOD> {
 }
 
 impl<const MOD: u64> MapMonoid<SUM<MOD>> for Affine<MOD> {
+    const IS_COMMUTATIVE: bool = false;
+
     fn identity() -> Self {
         Self::new(1, 0)
     }

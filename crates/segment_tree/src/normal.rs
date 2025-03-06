@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, ops::RangeBounds};
+use std::ops::RangeBounds;
 
 use crate::Monoid;
 
@@ -50,7 +50,7 @@ impl<T: Monoid> SegmentTree<T> {
         (self.inner_index(l), self.inner_index(r))
     }
 
-    pub fn update(&mut self, i: usize, value: T) {
+    pub fn set(&mut self, i: usize, value: T) {
         let mut i = self.inner_index(i);
         self.data[i] = value;
         while i > 1 {
@@ -87,7 +87,7 @@ impl<T: Monoid> SegmentTree<T> {
         self.data.get(i)
     }
 
-    pub fn query<R>(&self, range: R) -> T
+    pub fn eval<R>(&self, range: R) -> T
     where
         R: RangeBounds<usize>,
     {
@@ -114,35 +114,6 @@ impl<T: Monoid> SegmentTree<T> {
         }
 
         res_l.binary_operation(&res_r)
-    }
-
-    pub fn binary_search(&self, x: &T) -> Result<usize, usize>
-    where
-        T: Ord,
-    {
-        self.data[self.buf_len..].binary_search(x)
-    }
-
-    pub fn binary_search_by<'a, F>(&'a self, f: F) -> Result<usize, usize>
-    where
-        F: FnMut(&'a T) -> Ordering,
-    {
-        self.data[self.buf_len..].binary_search_by(f)
-    }
-
-    pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, f: F) -> Result<usize, usize>
-    where
-        B: Ord,
-        F: FnMut(&'a T) -> B,
-    {
-        self.data[self.buf_len..].binary_search_by_key(b, f)
-    }
-
-    pub fn partition_point<P>(&self, pred: P) -> usize
-    where
-        P: FnMut(&T) -> bool,
-    {
-        self.data[self.buf_len..].partition_point(pred)
     }
 }
 
