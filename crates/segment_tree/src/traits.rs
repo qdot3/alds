@@ -23,3 +23,11 @@ pub trait MonoidAction<Arg> {
     /// Applies the map to the element.
     fn apply(&self, arg: &Arg) -> Arg;
 }
+
+pub trait MonoidAct {
+    type Arg;
+
+    fn identity() -> Self;
+    fn composite(&self, rhs: &Self) -> Self;
+    fn apply(&self, arg: &Self::Arg) -> Self::Arg;
+}

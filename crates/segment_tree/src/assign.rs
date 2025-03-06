@@ -1,0 +1,190 @@
+use std::ops::RangeBounds;
+
+use crate::MonoidAct;
+
+pub struct AssignSegmentTree<F: MonoidAct + Clone> {
+    /// `data.len()` will be even for simplicity.
+    data: Box<[F]>,
+    /// `lazy[i] = lazy_pow[lazy_map[i]]`
+    lazy_map: Box<[usize]>,
+    /// `[(T, 0), (T, 1), .., (T, d)|(U, 0), .., (U, d)|(V, 0)..]`, where `(T, n) -> T^(2^n)`
+    lazy_pow: Vec<F>,
+    /// number of `data`, excluding at most one extended element.
+    len: usize,
+}
+
+impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
+    const NULL_ID: usize = !0;
+
+    const fn inner_index(&self, i: usize) -> usize {
+        self.lazy_map.len() + i
+    }
+
+    /// Returns `[l, r)`
+    fn inner_range<R>(&self, range: R) -> (usize, usize)
+    where
+        R: RangeBounds<usize>,
+    {
+        let l = match range.start_bound() {
+            std::ops::Bound::Included(l) => *l,
+            std::ops::Bound::Excluded(l) => l + 1,
+            std::ops::Bound::Unbounded => 0,
+        };
+        let r = match range.end_bound() {
+            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Excluded(r) => *r,
+            std::ops::Bound::Unbounded => self.len,
+        };
+
+        (self.inner_index(l), self.inner_index(r))
+    }
+
+    /// Rebuilds `data[i]`.
+    fn rebuild(&mut self, i: usize) {
+        self.data[i] = self.data[2 * i].composite(&self.data[2 * i + 1])
+    }
+
+    /// Rebuilds all `data` **without** pending operations.
+    fn rebuild_all(&mut self) {
+        for i in (1..self.data.len() / 2).rev() {
+            self.rebuild(i);
+        }
+    }
+
+    /// Applies `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
+    fn apply(&mut self, i: usize, act_id: usize) {
+        self.data[i] = self.lazy_pow[act_id].clone();
+        if let Some(prev) = self.lazy_map.get_mut(i) {
+            *prev = act_id
+        }
+    }
+
+    /// Propagates pending operation stored in `lazy[i]`.
+    fn propagate(&mut self, i: usize) {
+        let act_id = std::mem::replace(&mut self.lazy_map[i], Self::NULL_ID);
+        if act_id != Self::NULL_ID {
+            self.apply(2 * i, act_id - 1);
+            self.apply(2 * i + 1, act_id - 1);
+        }
+    }
+
+    pub fn update<R>(&mut self, range: R, act: F)
+    where
+        R: RangeBounds<usize>,
+    {
+        let (l, r) = self.inner_range(range);
+
+        // 1. propagate pending updates if necessary.
+        // 2. calculate power of given `act`
+        let mut id = self.lazy_pow.len();
+        let mut pow_act = act;
+        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+            if (l >> d) << d != l {
+                self.propagate(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.propagate((r - 1) >> d);
+            }
+
+            self.lazy_pow.push(pow_act.clone());
+            pow_act = pow_act.composite(&pow_act)
+        }
+
+        // put correct `act_id` to `lazy_map`
+        {
+            let (mut l, mut r) = (l, r);
+            while l < r {
+                if l % 2 == 1 {
+                    self.apply(l, id);
+                    l += 1;
+                }
+                if r % 2 == 1 {
+                    r -= 1;
+                    self.apply(r, id);
+                }
+                l /= 2;
+                r /= 2;
+                id += 1;
+            }
+        }
+
+        // update `data`
+        if self.lazy_pow.len() < self.data.len() {
+            for d in 1..=self.lazy_map.len().trailing_zeros() {
+                if (l >> d) << d != l {
+                    self.rebuild(l >> d);
+                }
+                if (r >> d) << d != r {
+                    self.rebuild((r - 1) >> d);
+                }
+            }
+        } else {
+            for i in (1..self.data.len() / 2).rev() {
+                self.propagate(i);
+            }
+            self.rebuild_all();
+            self.lazy_pow.clear();
+        }
+    }
+
+    pub fn product<R>(&mut self, range: R) -> F
+    where
+        R: RangeBounds<usize>,
+    {
+        let (l, r) = self.inner_range(range);
+
+        if l >= r {
+            return F::identity();
+        }
+
+        // 1. propagate pending updates if necessary.
+        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+            if (l >> d) << d != l {
+                self.propagate(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.propagate((r - 1) >> d);
+            }
+        }
+
+        let (mut l, mut r) = (l, r);
+        let (mut res_l, mut res_r) = (F::identity(), F::identity());
+        while l < r {
+            if l % 2 == 1 {
+                res_l = res_l.composite(&self.data[l]);
+                l += 1;
+            }
+            if r % 2 == 1 {
+                r -= 1;
+                res_r = self.data[r].composite(&res_r);
+            }
+            l /= 2;
+            r /= 2;
+        }
+        res_l.composite(&res_r)
+    }
+}
+
+impl<F: MonoidAct + Clone> From<Vec<F>> for AssignSegmentTree<F> {
+    fn from(values: Vec<F>) -> Self {
+        let len = values.len();
+        let buf_len = len.next_power_of_two();
+        let data = Vec::from_iter(
+            std::iter::repeat_with(|| F::identity())
+                .take(buf_len)
+                .chain(values)
+                .chain(std::iter::repeat_with(|| F::identity()).take(len % 2)),
+        )
+        .into_boxed_slice();
+
+        let mut res = Self {
+            data,
+            lazy_map: vec![Self::NULL_ID; buf_len].into_boxed_slice(),
+            lazy_pow: Vec::with_capacity(buf_len),
+            len,
+        };
+        res.rebuild_all();
+
+        res
+    }
+}

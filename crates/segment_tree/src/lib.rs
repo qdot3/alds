@@ -13,8 +13,10 @@ mod dual;
 mod lazy;
 mod normal;
 mod traits;
+mod assign;
 
 pub use dual::DualSegmentTree;
 pub use lazy::LazySegmentTree;
 pub use normal::SegmentTree;
-pub use traits::{MonoidAction, Monoid};
+pub use traits::{MonoidAction, Monoid, MonoidAct};
+pub use assign::AssignSegmentTree;
