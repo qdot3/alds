@@ -5,7 +5,7 @@ use crate::MonoidAct;
 /// A data structure that efficiently assigns functions to consecutive elements and composes them over a range.
 ///
 /// Compared to [`LazySegmentTree`](crate::LazySegmentTree), this structure offers a simpler API
-/// and potentially better performance when the cost of composing `n` functions is high.
+/// and potentially better performance when the cost of n-fold composition is high.
 #[derive(Debug, Clone)]
 pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     /// `data.len()` will be even for simplicity.
