@@ -9,12 +9,14 @@ use crate::MonoidAct;
 #[derive(Debug, Clone)]
 pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     /// `data.len()` will be even for simplicity.
+    /// If ths size of given `data` is odd, `F::identity()` will be attached.
     data: Box<[F]>,
-    /// `lazy[i] = lazy_pow[lazy_map[i]]`
+    /// `lazy[i] = lazy_pow[lazy_map[i]]`.
+    /// Ths size will be `len.next_power_of_two()`.
     lazy_map: Box<[usize]>,
     /// `[(T, 0), (T, 1), .., (T, d)|(U, 0), .., (U, d)|..|(V, 0), .., (V, d)]`, where `(T, n)` represents `T^(2^n)`
     lazy_pow: Vec<F>,
-    /// number of `data`, excluding at most one extended identity element.
+    /// Number of `data`, excluding at most one extended identity element.
     len: usize,
 }
 
@@ -44,20 +46,20 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         (self.inner_index(l), self.inner_index(r))
     }
 
-    /// Rebuilds `data[i]`.
-    fn rebuild(&mut self, i: usize) {
+    /// Updates `data[i]`.
+    fn update(&mut self, i: usize) {
         self.data[i] = self.data[2 * i].composite(&self.data[2 * i + 1])
     }
 
-    /// Rebuilds all `data` **without** pending operations.
-    fn rebuild_all(&mut self) {
+    /// Updates all `data` **without** pending operations.
+    fn update_all(&mut self) {
         for i in (1..self.data.len() / 2).rev() {
-            self.rebuild(i);
+            self.update(i);
         }
     }
 
-    /// Applies `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
-    fn apply(&mut self, i: usize, act_id: usize) {
+    /// Assign `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
+    fn push(&mut self, i: usize, act_id: usize) {
         if act_id != Self::NULL_ID {
             self.data[i] = self.lazy_pow[act_id];
             if let Some(prev) = self.lazy_map.get_mut(i) {
@@ -70,8 +72,8 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     fn propagate(&mut self, i: usize) {
         let act_id = std::mem::replace(&mut self.lazy_map[i], Self::NULL_ID);
         if act_id != Self::NULL_ID {
-            self.apply(2 * i, act_id - 1);
-            self.apply(2 * i + 1, act_id - 1);
+            self.push(2 * i, act_id - 1);
+            self.push(2 * i + 1, act_id - 1);
         }
     }
 
@@ -146,7 +148,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // updates data
         for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
-            self.rebuild(i >> d);
+            self.update(i >> d);
         }
 
         prev
@@ -180,12 +182,12 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
             let (mut l, mut r) = (l, r);
             while l < r {
                 if l % 2 == 1 {
-                    self.apply(l, id);
+                    self.push(l, id);
                     l += 1;
                 }
                 if r % 2 == 1 {
                     r -= 1;
-                    self.apply(r, id);
+                    self.push(r, id);
                 }
                 l /= 2;
                 r /= 2;
@@ -197,15 +199,15 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         if self.lazy_pow.len() < self.data.len() {
             for d in 1..=self.lazy_map.len().trailing_zeros() {
                 if (l >> d) << d != l {
-                    self.rebuild(l >> d);
+                    self.update(l >> d);
                 }
                 if (r >> d) << d != r {
-                    self.rebuild((r - 1) >> d);
+                    self.update((r - 1) >> d);
                 }
             }
         } else {
             self.propagate_all();
-            self.rebuild_all();
+            self.update_all();
             self.lazy_pow.clear();
         }
     }
@@ -229,7 +231,7 @@ impl<F: MonoidAct + Copy> From<Vec<F>> for AssignSegmentTree<F> {
             lazy_pow: Vec::with_capacity(buf_len + len),
             len,
         };
-        res.rebuild_all();
+        res.update_all();
 
         res
     }
