@@ -25,7 +25,7 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     data: Box<[F]>,
     /// `lazy[i] = lazy_pow[lazy_map[i]]`.
     /// Ths size will be `len.next_power_of_two()`.
-    lazy_map: Box<[u32]>,
+    lazy_map: Box<[usize]>,
     /// `[(T, 0), (T, 1), .., (T, d)|(U, 0), .., (U, d)|..|(V, 0), .., (V, d)]`, where `(T, n)` represents `T^(2^n)`
     lazy_pow: Vec<F>,
     /// Number of `data`, excluding at most one extended identity element.
@@ -35,16 +35,14 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
 }
 
 impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
-    const NULL_ID: u32 = !0;
+    const NULL_ID: usize = !0;
 
-    #[inline]
     const fn inner_index(&self, i: usize) -> usize {
         // `self.lazy_map.len()` = 2^d >= i
         self.lazy_map.len() + i
     }
 
     /// Returns `[l, r)`
-    #[inline]
     fn inner_range<R>(&self, range: R) -> (usize, usize)
     where
         R: RangeBounds<usize>,
@@ -64,13 +62,11 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Updates `data[i]`.
-    #[inline]
     fn update(&mut self, i: usize) {
         self.data[i] = self.data[i << 1].composite(&self.data[(i << 1) | 1])
     }
 
     /// Updates all `data` **without** pending operations.
-    #[inline]
     fn update_all(&mut self) {
         for i in (1..self.data.len() >> 1).rev() {
             self.update(i);
@@ -78,8 +74,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Assign `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
-    #[inline]
-    fn push(&mut self, i: usize, act_id: u32) {
+    fn push(&mut self, i: usize, act_id: usize) {
         if act_id != Self::NULL_ID {
             self.data[i] = self.lazy_pow[act_id as usize];
             if let Some(prev) = self.lazy_map.get_mut(i) {
@@ -89,7 +84,6 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Propagates pending operation stored in `lazy[i]`.
-    #[inline]
     fn propagate(&mut self, i: usize) {
         let act_id = std::mem::replace(&mut self.lazy_map[i], Self::NULL_ID);
         if act_id != Self::NULL_ID {
@@ -99,7 +93,6 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Propagates all pending operations but updates **no** `data`.
-    #[inline]
     fn propagate_all(&mut self) {
         for i in 1..self.data.len() >> 1 {
             self.propagate(i);
@@ -183,7 +176,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // 1. propagate pending updates if necessary.
         // 2. calculate `act.pow(block_size)`
-        let mut id = self.lazy_pow.len() as u32;
+        let mut id = self.lazy_pow.len();
         let mut pow_act = act;
         for d in (1..=self.height).rev() {
             if (l >> d) << d != l {
