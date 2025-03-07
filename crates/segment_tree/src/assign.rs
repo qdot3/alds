@@ -7,9 +7,9 @@ pub struct AssignSegmentTree<F: MonoidAct + Clone> {
     data: Box<[F]>,
     /// `lazy[i] = lazy_pow[lazy_map[i]]`
     lazy_map: Box<[usize]>,
-    /// `[(T, 0), (T, 1), .., (T, d)|(U, 0), .., (U, d)|(V, 0)..]`, where `(T, n) -> T^(2^n)`
+    /// `[(T, 0), (T, 1), .., (T, d)|(U, 0), .., (U, d)|..|(V, 0), .., (V, d)]`, where `(T, n)` represents `T^(2^n)`
     lazy_pow: Vec<F>,
-    /// number of `data`, excluding at most one extended element.
+    /// number of `data`, excluding at most one extended identity element.
     len: usize,
 }
 
@@ -119,7 +119,7 @@ impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
                 }
             }
         } else {
-            for i in (1..self.data.len() / 2).rev() {
+            for i in 1..self.data.len() / 2 {
                 self.propagate(i);
             }
             self.rebuild_all();
@@ -143,7 +143,7 @@ impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
                 self.propagate(l >> d);
             }
             if (r >> d) << d != r {
-                self.propagate((r - 1) >> d);
+                self.propagate(r >> d);
             }
         }
 
@@ -180,7 +180,7 @@ impl<F: MonoidAct + Clone> From<Vec<F>> for AssignSegmentTree<F> {
         let mut res = Self {
             data,
             lazy_map: vec![Self::NULL_ID; buf_len].into_boxed_slice(),
-            lazy_pow: Vec::with_capacity(buf_len),
+            lazy_pow: Vec::with_capacity(buf_len + len),
             len,
         };
         res.rebuild_all();
