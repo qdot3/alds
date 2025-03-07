@@ -50,38 +50,6 @@ impl<T: Monoid> SegmentTree<T> {
         (self.inner_index(l), self.inner_index(r))
     }
 
-    pub fn set(&mut self, i: usize, value: T) {
-        let mut i = self.inner_index(i);
-        self.data[i] = value;
-        while i > 1 {
-            i = i / 2;
-            self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
-        }
-    }
-
-    pub fn fill<R>(&mut self, range: R, value: T)
-    where
-        T: Clone,
-        R: RangeBounds<usize>,
-    {
-        let (mut l, mut r) = self.inner_range(range);
-        self.data[l..r].fill(value);
-
-        (l, r) = (l / 2, r / 2);
-        while l < r {
-            for i in l..r {
-                self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
-            }
-            (l, r) = (l / 2, r / 2);
-        }
-
-        assert_eq!(l, r);
-        while l > 1 {
-            l /= 2;
-            self.data[l] = self.data[l * 2].binary_operation(&self.data[l * 2 + 1])
-        }
-    }
-
     pub fn get(&self, i: usize) -> Option<&T> {
         let i = self.inner_index(i);
         self.data.get(i)
@@ -114,6 +82,38 @@ impl<T: Monoid> SegmentTree<T> {
         }
 
         res_l.binary_operation(&res_r)
+    }
+
+    pub fn set(&mut self, i: usize, value: T) {
+        let mut i = self.inner_index(i);
+        self.data[i] = value;
+        while i > 1 {
+            i = i / 2;
+            self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
+        }
+    }
+
+    pub fn fill<R>(&mut self, range: R, value: T)
+    where
+        T: Clone,
+        R: RangeBounds<usize>,
+    {
+        let (mut l, mut r) = self.inner_range(range);
+        self.data[l..r].fill(value);
+
+        (l, r) = (l / 2, r / 2);
+        while l < r {
+            for i in l..r {
+                self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
+            }
+            (l, r) = (l / 2, r / 2);
+        }
+
+        assert_eq!(l, r);
+        while l > 1 {
+            l /= 2;
+            self.data[l] = self.data[l * 2].binary_operation(&self.data[l * 2 + 1])
+        }
     }
 }
 

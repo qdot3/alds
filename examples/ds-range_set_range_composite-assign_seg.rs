@@ -20,11 +20,11 @@ fn main() {
         if flag == 0 {
             input! { l: usize, r: usize, c: u64, d: u64, }
 
-            ast.update(l..r, Affine::new(c, d));
+            ast.assign(l..r, Affine::new(c, d));
         } else if flag == 1 {
             input! { l: usize, r: usize, x: u64, }
 
-            let res = ast.product(l..r).apply(&Mint::new(x));
+            let res = ast.composite(l..r).apply(&Mint::new(x));
             println!("{}", res)
         } else {
             unreachable!()

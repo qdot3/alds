@@ -2,7 +2,7 @@
 //!
 //! # Performance note
 //!
-//! |                     | `get`        | `set`        | `apply`      | `eval`       |
+//! |                     | point query  | point apply  | range query  | range apply  |
 //! |---------------------|--------------|--------------|--------------|--------------|
 //! | [SegmentTree]       | *Θ*(1)       | *O*(log *N*) | N/A          | *O*(log *N*) |
 //! | [DualSegmentTree]   | *O*(log *N*) | *O*(log *N*) | *O*(log *N*) | N/A          |

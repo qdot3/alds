@@ -2,6 +2,10 @@ use std::ops::RangeBounds;
 
 use crate::MonoidAct;
 
+/// A data structure that efficiently assigns functions to consecutive elements and composes them over a range.
+///
+/// Compared to [`LazySegmentTree`](crate::LazySegmentTree), this structure offers a simpler API
+/// and potentially better performance when the cost of composing `n` functions is high.
 #[derive(Debug, Clone)]
 pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     /// `data.len()` will be even for simplicity.
@@ -89,7 +93,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         self.data[i]
     }
 
-    pub fn product<R>(&mut self, range: R) -> F
+    pub fn composite<R>(&mut self, range: R) -> F
     where
         R: RangeBounds<usize>,
     {
@@ -148,7 +152,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         prev
     }
 
-    pub fn update<R>(&mut self, range: R, act: F)
+    pub fn assign<R>(&mut self, range: R, act: F)
     where
         R: RangeBounds<usize>,
     {

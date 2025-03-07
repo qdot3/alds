@@ -2,7 +2,7 @@ use std::ops::RangeBounds;
 
 use crate::MonoidAction;
 
-/// A data structure that efficiently applies (non-commutative) functions (or actions) to consecutive elements
+/// A data structure that efficiently applies (non-commutative) functions (or acts) to consecutive elements
 /// and retrieves a single element.
 ///
 /// # Multiple Functions
