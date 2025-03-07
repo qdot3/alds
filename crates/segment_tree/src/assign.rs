@@ -37,12 +37,14 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
 impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     const NULL_ID: u32 = !0;
 
+    #[inline]
     const fn inner_index(&self, i: usize) -> usize {
         // `self.lazy_map.len()` = 2^d >= i
         self.lazy_map.len() + i
     }
 
     /// Returns `[l, r)`
+    #[inline]
     fn inner_range<R>(&self, range: R) -> (usize, usize)
     where
         R: RangeBounds<usize>,
@@ -62,11 +64,13 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Updates `data[i]`.
+    #[inline]
     fn update(&mut self, i: usize) {
         self.data[i] = self.data[i << 1].composite(&self.data[(i << 1) | 1])
     }
 
     /// Updates all `data` **without** pending operations.
+    #[inline]
     fn update_all(&mut self) {
         for i in (1..self.data.len() >> 1).rev() {
             self.update(i);
@@ -74,6 +78,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Assign `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
+    #[inline]
     fn push(&mut self, i: usize, act_id: u32) {
         if act_id != Self::NULL_ID {
             self.data[i] = self.lazy_pow[act_id as usize];
@@ -84,6 +89,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Propagates pending operation stored in `lazy[i]`.
+    #[inline]
     fn propagate(&mut self, i: usize) {
         let act_id = std::mem::replace(&mut self.lazy_map[i], Self::NULL_ID);
         if act_id != Self::NULL_ID {
@@ -93,6 +99,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Propagates all pending operations but updates **no** `data`.
+    #[inline]
     fn propagate_all(&mut self) {
         for i in 1..self.data.len() >> 1 {
             self.propagate(i);
