@@ -2,6 +2,7 @@ use std::ops::RangeBounds;
 
 use crate::MonoidAct;
 
+#[derive(Debug, Clone)]
 pub struct AssignSegmentTree<F: MonoidAct + Clone> {
     /// `data.len()` will be even for simplicity.
     data: Box<[F]>,
@@ -53,9 +54,11 @@ impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
 
     /// Applies `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
     fn apply(&mut self, i: usize, act_id: usize) {
-        self.data[i] = self.lazy_pow[act_id].clone();
-        if let Some(prev) = self.lazy_map.get_mut(i) {
-            *prev = act_id
+        if act_id != Self::NULL_ID {
+            self.data[i] = self.lazy_pow[act_id].clone();
+            if let Some(prev) = self.lazy_map.get_mut(i) {
+                *prev = act_id
+            }
         }
     }
 
@@ -143,7 +146,7 @@ impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
                 self.propagate(l >> d);
             }
             if (r >> d) << d != r {
-                self.propagate(r >> d);
+                self.propagate((r - 1) >> d);
             }
         }
 
