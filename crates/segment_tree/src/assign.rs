@@ -25,7 +25,7 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     data: Box<[F]>,
     /// `lazy[i] = lazy_pow[lazy_map[i]]`.
     /// Ths size will be `len.next_power_of_two()`.
-    lazy_map: Box<[usize]>,
+    lazy_map: Box<[u32]>,
     /// `[(T, 0), (T, 1), .., (T, d)|(U, 0), .., (U, d)|..|(V, 0), .., (V, d)]`, where `(T, n)` represents `T^(2^n)`
     lazy_pow: Vec<F>,
     /// Number of `data`, excluding at most one extended identity element.
@@ -35,7 +35,7 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
 }
 
 impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
-    const NULL_ID: usize = !0;
+    const NULL_ID: u32 = !0;
 
     const fn inner_index(&self, i: usize) -> usize {
         // `self.lazy_map.len()` = 2^d >= i
@@ -74,9 +74,9 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 
     /// Assign `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
-    fn push(&mut self, i: usize, act_id: usize) {
+    fn push(&mut self, i: usize, act_id: u32) {
         if act_id != Self::NULL_ID {
-            self.data[i] = self.lazy_pow[act_id];
+            self.data[i] = self.lazy_pow[act_id as usize];
             if let Some(prev) = self.lazy_map.get_mut(i) {
                 *prev = act_id
             }
@@ -176,7 +176,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // 1. propagate pending updates if necessary.
         // 2. calculate `act.pow(block_size)`
-        let mut id = self.lazy_pow.len();
+        let mut id = self.lazy_pow.len() as u32;
         let mut pow_act = act;
         for d in (1..=self.height).rev() {
             if (l >> d) << d != l {
