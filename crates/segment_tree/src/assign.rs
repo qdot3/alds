@@ -78,7 +78,7 @@ impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
         let (l, r) = self.inner_range(range);
 
         // 1. propagate pending updates if necessary.
-        // 2. calculate power of given `act`
+        // 2. calculate `act.pow(1 << d-1)`
         let mut id = self.lazy_pow.len();
         let mut pow_act = act;
         for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
@@ -92,6 +92,7 @@ impl<F: MonoidAct + Clone> AssignSegmentTree<F> {
             self.lazy_pow.push(pow_act.clone());
             pow_act = pow_act.composite(&pow_act)
         }
+        self.lazy_pow.push(pow_act);
 
         // put correct `act_id` to `lazy_map`
         {
