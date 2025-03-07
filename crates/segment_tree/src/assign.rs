@@ -2,12 +2,22 @@ use std::ops::RangeBounds;
 
 use crate::MonoidAct;
 
-/// A data structure that efficiently assigns functions to consecutive elements and composes them over a range.
+/// A segment tree specialized for efficiently assigning functions to consecutive elements
+/// and composing them over a range.
 ///
-/// Compared to [`LazySegmentTree`](crate::LazySegmentTree), this structure offers a simpler API
-/// and potentially better performance when the cost of n-fold composition is high.
+/// More precisely, the set of functions with the assignment operation `(F, =)`, where `F`
+/// forms a semigroup, naturally extends to a monoid structure when lifted to `Option<F>`.
+/// [`AssignSegmentTree`] encapsulates this behavior, providing a structured way to
+/// efficiently manage function assignments.
 ///
-/// [`DualSegmentTree`](crate::DualSegmentTree) offers function composition in chronological order.
+/// # Comparison with Other Segment Tree Variants
+///
+/// - [`LazySegmentTree`](crate::LazySegmentTree): While a lazy segment tree supports more general range updates,
+///   [`AssignSegmentTree`] offers a simpler API and can be more efficient when the cost of repeated function
+///   composition is high.
+/// - [`DualSegmentTree`](crate::DualSegmentTree): Unlike [`AssignSegmentTree`], which ensures that
+///   newer assignments override older ones, [`DualSegmentTree`](crate::DualSegmentTree) applies
+///   function composition in chronological order.
 #[derive(Debug, Clone)]
 pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     /// `data.len()` will be even for simplicity.
@@ -20,12 +30,15 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     lazy_pow: Vec<F>,
     /// Number of `data`, excluding at most one extended identity element.
     len: usize,
+    /// Height of `lazy_map`
+    height: u32,
 }
 
 impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     const NULL_ID: usize = !0;
 
     const fn inner_index(&self, i: usize) -> usize {
+        // `self.lazy_map.len()` = 2^d >= i
         self.lazy_map.len() + i
     }
 
@@ -50,12 +63,12 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
     /// Updates `data[i]`.
     fn update(&mut self, i: usize) {
-        self.data[i] = self.data[2 * i].composite(&self.data[2 * i + 1])
+        self.data[i] = self.data[i << 1].composite(&self.data[(i << 1) | 1])
     }
 
     /// Updates all `data` **without** pending operations.
     fn update_all(&mut self) {
-        for i in (1..self.data.len() / 2).rev() {
+        for i in (1..self.data.len() >> 1).rev() {
             self.update(i);
         }
     }
@@ -74,14 +87,14 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     fn propagate(&mut self, i: usize) {
         let act_id = std::mem::replace(&mut self.lazy_map[i], Self::NULL_ID);
         if act_id != Self::NULL_ID {
-            self.push(2 * i, act_id - 1);
-            self.push(2 * i + 1, act_id - 1);
+            self.push(i << 1, act_id - 1);
+            self.push((i << 1) | 1, act_id - 1);
         }
     }
 
     /// Propagates all pending operations but updates **no** `data`.
     fn propagate_all(&mut self) {
-        for i in 1..self.data.len() / 2 {
+        for i in 1..self.data.len() >> 1 {
             self.propagate(i);
         }
     }
@@ -90,7 +103,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         let i = self.inner_index(i);
 
         // propagate pending updates if necessary.
-        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+        for d in (1..=self.height).rev() {
             self.propagate(i >> d);
         }
 
@@ -106,13 +119,12 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         if [l, r] == [self.lazy_map.len(), self.lazy_map.len() + self.len] {
             return self.data[1];
         }
-
         if l >= r {
             return F::identity();
         }
 
         // propagate pending updates if necessary.
-        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+        for d in (1..=self.height).rev() {
             if (l >> d) << d != l {
                 self.propagate(l >> d);
             }
@@ -129,7 +141,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
                 l += 1;
             }
             if r % 2 == 1 {
-                r -= 1;
+                r ^= 1;
                 res_r = self.data[r].composite(&res_r);
             }
             l /= 2;
@@ -142,14 +154,14 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         let i = self.inner_index(i);
 
         // propagate pending updates if necessary.
-        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+        for d in (1..=self.height).rev() {
             self.propagate(i >> d);
         }
 
         let prev = std::mem::replace(&mut self.data[i], act);
 
         // updates data
-        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+        for d in (1..=self.height).rev() {
             self.update(i >> d);
         }
 
@@ -166,7 +178,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         // 2. calculate `act.pow(block_size)`
         let mut id = self.lazy_pow.len();
         let mut pow_act = act;
-        for d in (1..=self.lazy_map.len().trailing_zeros()).rev() {
+        for d in (1..=self.height).rev() {
             if (l >> d) << d != l {
                 self.propagate(l >> d);
             }
@@ -188,7 +200,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
                     l += 1;
                 }
                 if r % 2 == 1 {
-                    r -= 1;
+                    r ^= 1;
                     self.push(r, id);
                 }
                 l /= 2;
@@ -199,7 +211,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // update `data`
         if self.lazy_pow.len() < self.data.len() {
-            for d in 1..=self.lazy_map.len().trailing_zeros() {
+            for d in 1..=self.height {
                 if (l >> d) << d != l {
                     self.update(l >> d);
                 }
@@ -232,6 +244,7 @@ impl<F: MonoidAct + Copy> From<Vec<F>> for AssignSegmentTree<F> {
             lazy_map: vec![Self::NULL_ID; buf_len].into_boxed_slice(),
             lazy_pow: Vec::with_capacity(buf_len + len),
             len,
+            height: buf_len.trailing_zeros(),
         };
         res.update_all();
 

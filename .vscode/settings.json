@@ -5,6 +5,7 @@
         "cbrt",
         "cipolla",
         "monoid",
+        "semigroup",
         "thiserror",
         "unionfind",
         "unop"
