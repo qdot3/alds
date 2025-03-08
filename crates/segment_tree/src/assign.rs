@@ -104,9 +104,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // propagate pending updates if necessary.
         for d in (1..=self.height).rev() {
-            if (i >> d) << d != i {
-                self.propagate(i >> d);
-            }
+            self.propagate(i >> d);
         }
 
         self.data[i]
@@ -166,18 +164,14 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // propagate pending updates if necessary.
         for d in (1..=self.height).rev() {
-            if (i >> d) << d != i {
-                self.propagate(i >> d);
-            }
+            self.propagate(i >> d);
         }
 
         let prev = std::mem::replace(&mut self.data[i], act);
 
         // updates data
         for d in 1..=self.height {
-            if (i >> d) << d != i {
-                self.update(i >> d);
-            }
+            self.update(i >> d);
         }
 
         prev
