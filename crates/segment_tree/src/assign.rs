@@ -12,9 +12,9 @@ use crate::MonoidAct;
 ///
 /// # Comparison with Other Segment Tree Variants
 ///
-/// - [`LazySegmentTree`](crate::LazySegmentTree): While a lazy segment tree supports more general range updates,
-///   [`AssignSegmentTree`] offers a simpler API and can be more efficient when the cost of repeated function
-///   composition is high.
+/// - [`LazySegmentTree`](crate::LazySegmentTree): While a [`LazySegmentTree`](crate::LazySegmentTree) supports
+///   more general range updates, [`AssignSegmentTree`] offers a simpler API and can be more efficient
+///   when the cost of repeated function composition is high.
 /// - [`DualSegmentTree`](crate::DualSegmentTree): Unlike [`AssignSegmentTree`], which ensures that
 ///   newer assignments override older ones, [`DualSegmentTree`](crate::DualSegmentTree) applies
 ///   function composition in chronological order.
@@ -116,6 +116,9 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     {
         let (l, r) = self.inner_range(range);
 
+        if l + 1 == r {
+            return self.get(l - self.lazy_map.len());
+        }
         if [l, r] == [self.lazy_map.len(), self.lazy_map.len() + self.len] {
             return self.data[1];
         }
@@ -124,7 +127,13 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         }
 
         // propagate pending updates if necessary.
-        for d in (1..=self.height).rev() {
+        let each = (l ^ (r - 1)).ilog2(); // no panic
+        for d in (each + 1..=self.height).rev() {
+            if (l >> d) << d != l {
+                self.propagate(l >> d);
+            }
+        }
+        for d in (1..=each).rev() {
             if (l >> d) << d != l {
                 self.propagate(l >> d);
             }
@@ -136,16 +145,16 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         let (mut l, mut r) = (l, r);
         let (mut res_l, mut res_r) = (F::identity(), F::identity());
         while l < r {
-            if l % 2 == 1 {
+            if l & 1 == 1 {
                 res_l = res_l.composite(&self.data[l]);
                 l += 1;
             }
-            if r % 2 == 1 {
+            if r & 1 == 1 {
                 r ^= 1;
                 res_r = self.data[r].composite(&res_r);
             }
-            l /= 2;
-            r /= 2;
+            l >>= 1;
+            r >>= 1;
         }
         res_l.composite(&res_r)
     }
@@ -173,12 +182,25 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         R: RangeBounds<usize>,
     {
         let (l, r) = self.inner_range(range);
+        if l + 1 == r {
+            self.set(l - self.lazy_map.len(), act);
+            return;
+        }
 
         // 1. propagate pending updates if necessary.
         // 2. calculate `act.pow(block_size)`
         let mut id = self.lazy_pow.len();
         let mut pow_act = act;
-        for d in (1..=self.height).rev() {
+        let each = (l ^ (r - 1)).ilog2(); // no panic
+        for d in (each + 1..=self.height).rev() {
+            if (l >> d) << d != l {
+                self.propagate(l >> d);
+            }
+
+            self.lazy_pow.push(pow_act);
+            pow_act = pow_act.composite(&pow_act)
+        }
+        for d in (1..=each).rev() {
             if (l >> d) << d != l {
                 self.propagate(l >> d);
             }
@@ -195,16 +217,16 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         {
             let (mut l, mut r) = (l, r);
             while l < r {
-                if l % 2 == 1 {
+                if l & 1 == 1 {
                     self.push(l, id);
                     l += 1;
                 }
-                if r % 2 == 1 {
+                if r & 1 == 1 {
                     r ^= 1;
                     self.push(r, id);
                 }
-                l /= 2;
-                r /= 2;
+                l >>= 1;
+                r >>= 1;
                 id += 1;
             }
         }
