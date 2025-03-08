@@ -76,7 +76,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     /// Assign `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
     fn push(&mut self, i: usize, act_id: usize) {
         if act_id != Self::NULL_ID {
-            self.data[i] = self.lazy_pow[act_id as usize];
+            self.data[i] = self.lazy_pow[act_id];
             if let Some(prev) = self.lazy_map.get_mut(i) {
                 *prev = act_id
             }
@@ -104,7 +104,9 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // propagate pending updates if necessary.
         for d in (1..=self.height).rev() {
-            self.propagate(i >> d);
+            if (i >> d) << d != i {
+                self.propagate(i >> d);
+            }
         }
 
         self.data[i]
@@ -129,7 +131,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         // propagate pending updates if necessary.
         let each = (l ^ (r - 1)).ilog2(); // no panic
         for d in (each + 1..=self.height).rev() {
-            if (l >> d) << d != l {
+            if (l >> d) << d != l || (r >> d) << d != r {
                 self.propagate(l >> d);
             }
         }
@@ -164,14 +166,18 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
         // propagate pending updates if necessary.
         for d in (1..=self.height).rev() {
-            self.propagate(i >> d);
+            if (i >> d) << d != i {
+                self.propagate(i >> d);
+            }
         }
 
         let prev = std::mem::replace(&mut self.data[i], act);
 
         // updates data
-        for d in (1..=self.height).rev() {
-            self.update(i >> d);
+        for d in 1..=self.height {
+            if (i >> d) << d != i {
+                self.update(i >> d);
+            }
         }
 
         prev
@@ -193,7 +199,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         let mut pow_act = act;
         let each = (l ^ (r - 1)).ilog2(); // no panic
         for d in (each + 1..=self.height).rev() {
-            if (l >> d) << d != l {
+            if (l >> d) << d != l || (r >> d) << d != r {
                 self.propagate(l >> d);
             }
 
