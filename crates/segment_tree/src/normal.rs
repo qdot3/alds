@@ -66,19 +66,23 @@ impl<T: Monoid> SegmentTree<T> {
         }
 
         // calculate result on [l, r)
+        l >>= l.trailing_zeros();
+        r >>= r.trailing_zeros();
         let (mut res_l, mut res_r) = (T::identity(), T::identity());
-        while l < r {
-            if l % 2 == 1 {
+        loop {
+            if l >= r {
                 res_l = res_l.binary_operation(&self.data[l]);
                 l += 1;
-            }
-            if r % 2 == 1 {
+                l >>= l.trailing_zeros()
+            } else {
                 r -= 1;
                 res_r = self.data[r].binary_operation(&res_r);
+                r >>= r.trailing_zeros()
             }
 
-            l /= 2;
-            r /= 2;
+            if l == r {
+                break;
+            }
         }
 
         res_l.binary_operation(&res_r)
