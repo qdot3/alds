@@ -20,11 +20,11 @@ fn main() {
         if flag == 0 {
             input! { p: usize, c: u64, d: u64, }
 
-            seg_tree.set(p, Affine::new(c, d));
+            seg_tree.point_update(p, Affine::new(c, d));
         } else if flag == 1 {
             input! { l: usize, r: usize, x: u64, }
 
-            let res = seg_tree.query(l..r).calc(SMint::new(x));
+            let res = seg_tree.range_query(l..r).calc(SMint::new(x));
             println!("{}", res)
         } else {
             unreachable!()

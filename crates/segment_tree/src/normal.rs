@@ -34,12 +34,12 @@ impl<T: Monoid> SegmentTree<T> {
         (self.inner_index(l), self.inner_index(r))
     }
 
-    pub fn get(&self, i: usize) -> Option<&T> {
+    pub fn point_query(&self, i: usize) -> Option<&T> {
         let i = self.inner_index(i);
         self.data.get(i)
     }
 
-    pub fn query<R>(&self, range: R) -> T
+    pub fn range_query<R>(&self, range: R) -> T
     where
         R: RangeBounds<usize>,
     {
@@ -72,7 +72,7 @@ impl<T: Monoid> SegmentTree<T> {
         res_l.binary_operation(&res_r)
     }
 
-    pub fn set(&mut self, i: usize, value: T) {
+    pub fn point_update(&mut self, i: usize, value: T) {
         let mut i = self.inner_index(i);
         self.data[i] = value;
         while i > 1 {
