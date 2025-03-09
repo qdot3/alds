@@ -27,11 +27,13 @@ impl<T: Monoid> SegmentTree<T> {
         }
     }
 
+    #[inline]
     const fn inner_index(&self, i: usize) -> usize {
         self.buf_len + i
     }
 
     ///`[l, r)`
+    #[inline]
     fn inner_range<R>(&self, range: R) -> (usize, usize)
     where
         R: RangeBounds<usize>,
