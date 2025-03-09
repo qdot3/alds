@@ -4,14 +4,14 @@ use mod_int::SMint;
 use proconio::{fastout, input};
 use segment_tree::{Monoid, SegmentTree};
 
+type Mint = SMint<998_244_353>;
+
 #[fastout]
 fn main() {
     input! { n: usize, q: usize, ab: [(u64, u64); n], }
 
-    const MOD: u64 = 998_244_353;
     let mut seg_tree = SegmentTree::from(Vec::from_iter(
-        ab.into_iter()
-            .map(|(a, b)| LinearFunction::<MOD>::new(a, b)),
+        ab.into_iter().map(|(a, b)| Affine::new(a, b)),
     ));
 
     for _ in 0..q {
@@ -20,7 +20,7 @@ fn main() {
         if flag == 0 {
             input! { p: usize, c: u64, d: u64, }
 
-            seg_tree.set(p, LinearFunction::new(c, d));
+            seg_tree.set(p, Affine::new(c, d));
         } else if flag == 1 {
             input! { l: usize, r: usize, x: u64, }
 
@@ -32,12 +32,12 @@ fn main() {
     }
 }
 
-struct LinearFunction<const MOD: u64> {
-    tilt: SMint<MOD>,
-    offset: SMint<MOD>,
+struct Affine {
+    tilt: Mint,
+    offset: Mint,
 }
 
-impl<const MOD: u64> LinearFunction<MOD> {
+impl Affine {
     fn new(tile: u64, offset: u64) -> Self {
         Self {
             tilt: SMint::new(tile),
@@ -45,16 +45,16 @@ impl<const MOD: u64> LinearFunction<MOD> {
         }
     }
 
-    fn calc(&self, x: SMint<MOD>) -> SMint<MOD> {
+    fn calc(&self, x: Mint) -> Mint {
         self.tilt * x + self.offset
     }
 }
 
-impl<const MOD: u64> Monoid for LinearFunction<MOD> {
+impl Monoid for Affine {
     fn identity() -> Self {
         Self {
-            tilt: SMint::new(1),
-            offset: SMint::new(0),
+            tilt: Mint::new(1),
+            offset: Mint::new(0),
         }
     }
 
