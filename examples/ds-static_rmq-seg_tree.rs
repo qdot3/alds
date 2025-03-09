@@ -10,7 +10,7 @@ fn main() {
     let seg_tree = SegmentTree::from(Vec::from_iter(a.into_iter().map(|a| M(a))));
 
     for (l, r) in query {
-        println!("{}", seg_tree.eval(l..r).0)
+        println!("{}", seg_tree.query(l..r).0)
     }
 }
 

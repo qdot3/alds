@@ -39,13 +39,13 @@ impl<T: Monoid> SegmentTree<T> {
         self.data.get(i)
     }
 
-    pub fn eval<R>(&self, range: R) -> T
+    pub fn query<R>(&self, range: R) -> T
     where
         R: RangeBounds<usize>,
     {
         let (mut l, mut r) = self.inner_range(range);
 
-        if l + 1 == r {
+        if l == r {
             return T::identity();
         }
 
@@ -109,6 +109,7 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial `values` in *O*(*N*) time,
     /// where *N* is the number of elements in `values`.
     fn from(values: Vec<T>) -> Self {
+        // this space optimization is valid even in commutative operation cases.
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| T::identity())
                 .take(values.len())

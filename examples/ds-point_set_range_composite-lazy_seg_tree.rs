@@ -24,7 +24,7 @@ fn main() {
         } else if flag == 1 {
             input! { l: usize, r: usize, x: u64, }
 
-            let res = seg_tree.eval(l..r).calc(SMint::new(x));
+            let res = seg_tree.query(l..r).calc(SMint::new(x));
             println!("{}", res)
         } else {
             unreachable!()

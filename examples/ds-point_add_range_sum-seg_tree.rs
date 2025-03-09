@@ -20,7 +20,7 @@ fn main() {
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", seg_tree.eval(l..r).0)
+            println!("{}", seg_tree.query(l..r).0)
         } else {
             unreachable!()
         }
