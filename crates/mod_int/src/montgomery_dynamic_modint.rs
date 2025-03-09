@@ -159,12 +159,15 @@ impl Display for MDMint<'_> {
 }
 
 impl Hash for MDMint<'_> {
+    #[inline]
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.r_value.hash(state);
+        self.montgomery.modulus.hash(state);
     }
 }
 
 impl PartialEq for MDMint<'_> {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.r_value == other.r_value
     }
@@ -173,12 +176,14 @@ impl PartialEq for MDMint<'_> {
 impl Eq for MDMint<'_> {}
 
 impl PartialOrd for MDMint<'_> {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for MDMint<'_> {
+    #[inline]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.value().cmp(&other.value())
     }
@@ -191,6 +196,7 @@ forward_ref_mint_binop!( impl<'a> Mul, mul for MDMint<'a> );
 impl Add for MDMint<'_> {
     type Output = Self;
 
+    #[inline]
     fn add(mut self, rhs: Self) -> Self::Output {
         self += rhs;
 
@@ -201,6 +207,7 @@ impl Add for MDMint<'_> {
 impl Sub for MDMint<'_> {
     type Output = Self;
 
+    #[inline]
     fn sub(mut self, rhs: Self) -> Self::Output {
         self -= rhs;
 
@@ -211,6 +218,7 @@ impl Sub for MDMint<'_> {
 impl Mul for MDMint<'_> {
     type Output = Self;
 
+    #[inline]
     fn mul(mut self, rhs: Self) -> Self::Output {
         self *= rhs;
 
@@ -223,6 +231,7 @@ forward_ref_mint_op_assign!( impl<'a> SubAssign, sub_assign for MDMint<'a> );
 forward_ref_mint_op_assign!( impl<'a> MulAssign, mul_assign for MDMint<'a> );
 
 impl AddAssign for MDMint<'_> {
+    #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.r_value += rhs.r_value;
         if self.r_value > self.modulus() {
@@ -232,6 +241,7 @@ impl AddAssign for MDMint<'_> {
 }
 
 impl SubAssign for MDMint<'_> {
+    #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.r_value = self.r_value.wrapping_sub(rhs.r_value);
         if self.r_value >= self.modulus() {
@@ -241,6 +251,7 @@ impl SubAssign for MDMint<'_> {
 }
 
 impl MulAssign for MDMint<'_> {
+    #[inline]
     fn mul_assign(&mut self, rhs: Self) {
         // v1 * v2 < m * m < m * r
         self.r_value = self.montgomery.reduce(self.r_value * rhs.r_value)
@@ -252,6 +263,7 @@ forward_ref_mint_unop!( impl<'a> Neg, neg for MDMint<'a> );
 impl Neg for MDMint<'_> {
     type Output = Self;
 
+    #[inline]
     fn neg(mut self) -> Self::Output {
         if self.r_value > 0 {
             self.r_value = self.montgomery.modulus - self.r_value;

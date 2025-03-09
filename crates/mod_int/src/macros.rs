@@ -4,6 +4,7 @@ macro_rules! forward_ref_mint_binop {
         impl<$lt> $trait<&$t> for $t {
             type Output = $t;
 
+            #[inline]
             fn $method(self, rhs: &$t) -> Self::Output {
                 self.$method(*rhs)
             }
@@ -12,6 +13,7 @@ macro_rules! forward_ref_mint_binop {
         impl<$lt> $trait<$t> for &$t {
             type Output = $t;
 
+            #[inline]
             fn $method(self, rhs: $t) -> Self::Output {
                 (*self).$method(rhs)
             }
@@ -20,6 +22,7 @@ macro_rules! forward_ref_mint_binop {
         impl<$lt> $trait<&$t> for &$t {
             type Output = $t;
 
+            #[inline]
             fn $method(self, rhs: &$t) -> Self::Output {
                 (*self).$method(rhs)
             }
@@ -30,6 +33,7 @@ macro_rules! forward_ref_mint_binop {
         impl<const $const_generics: $const_ty> $trait<&$t> for $t {
             type Output = $t;
 
+            #[inline]
             fn $method(self, rhs: &$t) -> Self::Output {
                 self.$method(*rhs)
             }
@@ -38,6 +42,7 @@ macro_rules! forward_ref_mint_binop {
         impl<const $const_generics: $const_ty> $trait<$t> for &$t {
             type Output = $t;
 
+            #[inline]
             fn $method(self, rhs: $t) -> Self::Output {
                 (*self).$method(rhs)
             }
@@ -46,6 +51,7 @@ macro_rules! forward_ref_mint_binop {
         impl<const $const_generics: $const_ty> $trait<&$t> for &$t {
             type Output = $t;
 
+            #[inline]
             fn $method(self, rhs: &$t) -> Self::Output {
                 self.$method(*rhs)
             }
@@ -59,6 +65,7 @@ macro_rules! forward_ref_mint_op_assign {
     // dynamic mint
     ( impl<$lt:lifetime> $trait:ident, $method:ident for $t:ty ) => {
         impl<$lt> $trait<&$t> for $t {
+            #[inline]
             fn $method(&mut self, rhs: &$t) {
                 self.$method(*rhs)
             }
@@ -67,6 +74,7 @@ macro_rules! forward_ref_mint_op_assign {
     // static mint
     ( impl<const $const_generics:ident : $const_ty:ty> $trait:ident, $method:ident for $t:ty ) => {
         impl<const $const_generics: $const_ty> $trait<&$t> for $t {
+            #[inline]
             fn $method(&mut self, rhs: &$t) {
                 self.$method(*rhs)
             }
@@ -82,6 +90,7 @@ macro_rules! forward_ref_mint_unop {
         impl<$lt> $trait for &$t {
             type Output = $t;
 
+            #[inline]
             fn $method(self) -> Self::Output {
                 (*self).$method()
             }
@@ -92,6 +101,7 @@ macro_rules! forward_ref_mint_unop {
         impl<const $const_generics: $const_ty> $trait for &$t {
             type Output = $t;
 
+            #[inline]
             fn $method(self) -> Self::Output {
                 (*self).$method()
             }
