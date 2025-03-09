@@ -45,8 +45,8 @@ impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
     ///
     /// # Panics
     ///
-    /// Assume two children exist.
-    fn push(&mut self, i: usize) {
+    /// Assumes two children exist.
+    fn propagate(&mut self, i: usize) {
         let action = std::mem::replace(&mut self.action[i], F::identity());
         self.action[2 * i] = action.composite(&self.action[2 * i]);
         self.action[2 * i + 1] = action.composite(&self.action[2 * i + 1]);
@@ -66,10 +66,10 @@ impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
             // propagate pending operations
             for d in (1..=self.buf_len.trailing_zeros()).rev() {
                 if (l >> d) << d != l {
-                    self.push(l >> d);
+                    self.propagate(l >> d);
                 }
                 if (r >> d) << d != r {
-                    self.push((r - 1) >> d);
+                    self.propagate((r - 1) >> d);
                 }
             }
         }
@@ -111,7 +111,7 @@ impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
         // propagate pending operations
         let ii = self.inner_index(i);
         for d in (1..=self.buf_len.trailing_zeros()).rev() {
-            self.push(ii >> d);
+            self.propagate(ii >> d);
         }
 
         // override and return
