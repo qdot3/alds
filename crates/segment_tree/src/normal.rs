@@ -48,9 +48,6 @@ impl<T: Monoid> SegmentTree<T> {
         if l + 1 == r {
             return T::identity();
         }
-        if l == self.data.len() / 2 && r == self.data.len() {
-            return T::identity().binary_operation(&self.data[1]);
-        }
 
         // calculate result on [l, r)
         l >>= l.trailing_zeros();
