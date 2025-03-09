@@ -6,30 +6,12 @@ use crate::Monoid;
 #[derive(Clone, Debug)]
 pub struct SegmentTree<T: Monoid> {
     data: Box<[T]>,
-    len: usize,
-    buf_len: usize,
 }
 
 impl<T: Monoid> SegmentTree<T> {
-    /// Creates a new fixed-size segment tree initialized with the identity element.
-    ///
-    /// Use [`from`](Self::from) if you have initial values.
-    pub fn new(n: usize) -> Self {
-        let buf_len = n.next_power_of_two(); // non-commutative monoid
-        let data =
-            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n + n % 2 + buf_len))
-                .into_boxed_slice();
-
-        Self {
-            data,
-            len: n,
-            buf_len,
-        }
-    }
-
     #[inline]
     const fn inner_index(&self, i: usize) -> usize {
-        self.buf_len + i
+        self.data.len() / 2 + i
     }
 
     ///`[l, r)`
@@ -46,7 +28,7 @@ impl<T: Monoid> SegmentTree<T> {
         let r = match range.end_bound() {
             std::ops::Bound::Included(r) => r + 1,
             std::ops::Bound::Excluded(&r) => r,
-            std::ops::Bound::Unbounded => self.len,
+            std::ops::Bound::Unbounded => self.data.len() / 2,
         };
 
         (self.inner_index(l), self.inner_index(r))
@@ -66,7 +48,7 @@ impl<T: Monoid> SegmentTree<T> {
         if l + 1 == r {
             return T::identity();
         }
-        if l == self.buf_len && r == self.data.len() {
+        if l == self.data.len() / 2 && r == self.data.len() {
             return T::identity().binary_operation(&self.data[1]);
         }
 
@@ -130,29 +112,16 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial `values` in *O*(*N*) time,
     /// where *N* is the number of elements in `values`.
     fn from(values: Vec<T>) -> Self {
-        if values.is_empty() {
-            return Self {
-                data: Box::new([]),
-                len: 0,
-                buf_len: 0,
-            };
-        }
-
-        let len = values.len();
-        let buf_len = values.len().next_power_of_two(); // non-commutative monoid
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| T::identity())
-                .take(buf_len)
-                .chain(values)
-                .chain(std::iter::repeat_with(|| T::identity()).take(len % 2)),
+                .take(values.len())
+                .chain(values),
         )
         .into_boxed_slice();
-        for i in (1..buf_len).rev() {
-            if i * 2 + 1 < len + buf_len {
-                data[i] = data[2 * i].binary_operation(&data[2 * i + 1])
-            }
+        for i in (1..data.len() / 2).rev() {
+            data[i] = data[2 * i].binary_operation(&data[2 * i + 1])
         }
 
-        Self { data, len, buf_len }
+        Self { data }
     }
 }
