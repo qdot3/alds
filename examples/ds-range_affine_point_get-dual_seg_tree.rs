@@ -2,15 +2,15 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{DualSegmentTree, MonoidAction};
+use segment_tree::{DualSegmentTree, MonoidAct};
+
+type Mint = SMint<998_244_353>;
 
 #[fastout]
 fn main() {
     input! { n: usize, q: usize, a: [u64; n], }
 
-    const MOD: u64 = 998_244_353;
-    let mut dst =
-        DualSegmentTree::from(Vec::from_iter(a.into_iter().map(|a| SMint::<MOD>::new(a))));
+    let mut dst = DualSegmentTree::new(n);
 
     for _ in 0..q {
         input! { flag: u8, }
@@ -22,7 +22,7 @@ fn main() {
         } else if flag == 1 {
             input! { i: usize, }
 
-            println!("{}", dst.get(i));
+            println!("{}", dst.get(i).apply(&Mint::new(a[i])));
             // println!("{:#?}", dst)
         } else {
             unreachable!()
@@ -30,28 +30,29 @@ fn main() {
     }
 }
 
-struct Affine<const MOD: u64> {
-    tilt: SMint<MOD>,
-    offset: SMint<MOD>,
+struct Affine {
+    tilt: Mint,
+    offset: Mint,
 }
 
-impl<const MOD: u64> Affine<MOD> {
+impl Affine {
     fn new(tilt: u64, offset: u64) -> Self {
         Self {
-            tilt: SMint::new(tilt),
-            offset: SMint::new(offset),
+            tilt: Mint::new(tilt),
+            offset: Mint::new(offset),
         }
     }
 }
 
-impl<const MOD: u64> MonoidAction<SMint<MOD>> for Affine<MOD> {
+impl MonoidAct for Affine {
+    type Arg = Mint;
     const IS_COMMUTATIVE: bool = false;
-    
+
     fn identity() -> Self {
         Self::new(1, 0)
     }
 
-    fn apply(&self, arg: &SMint<MOD>) -> SMint<MOD> {
+    fn apply(&self, arg: &Mint) -> Mint {
         self.tilt * arg + self.offset
     }
 

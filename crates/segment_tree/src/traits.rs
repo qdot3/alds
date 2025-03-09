@@ -27,6 +27,9 @@ pub trait MonoidAction<Arg> {
 pub trait MonoidAct {
     type Arg;
 
+    /// If acts are commutative, then it should be set `true`. Otherwise `false`.
+    const IS_COMMUTATIVE: bool;
+
     fn identity() -> Self;
     fn composite(&self, rhs: &Self) -> Self;
     fn apply(&self, arg: &Self::Arg) -> Self::Arg;

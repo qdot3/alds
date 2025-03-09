@@ -50,6 +50,8 @@ impl Affine {
 impl MonoidAct for Affine {
     type Arg = Mint;
 
+    const IS_COMMUTATIVE: bool = false;
+
     fn identity() -> Self {
         Self::new(1, 0)
     }

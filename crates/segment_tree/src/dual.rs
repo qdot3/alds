@@ -1,6 +1,6 @@
 use std::ops::RangeBounds;
 
-use crate::MonoidAction;
+use crate::MonoidAct;
 
 /// A data structure that efficiently applies (non-commutative) functions (or acts) to consecutive elements
 /// and retrieves a single element.
@@ -9,14 +9,15 @@ use crate::MonoidAction;
 ///
 /// If multiple different functions can be composed, you can use [`DualSegmentTree`].
 #[derive(Debug, Clone)]
-pub struct DualSegmentTree<T, F: MonoidAction<T>> {
-    data: Box<[T]>,
+pub struct DualSegmentTree<F: MonoidAct> {
+    // data: Box<[T]>,
+    len: usize,
     /// one-based indexing buffer for pending actions.
     action: Box<[F]>,
     buf_len: usize,
 }
 
-impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
+impl<F: MonoidAct> DualSegmentTree<F> {
     /// Converts index of `data` to the corresponding index of `action`.
     const fn inner_index(&self, i: usize) -> usize {
         self.buf_len + i
@@ -35,7 +36,7 @@ impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
         let r = match range.end_bound() {
             std::ops::Bound::Included(r) => r + 1,
             std::ops::Bound::Excluded(&r) => r,
-            std::ops::Bound::Unbounded => self.data.len(),
+            std::ops::Bound::Unbounded => self.len,
         };
 
         (self.inner_index(l), self.inner_index(r))
@@ -50,6 +51,20 @@ impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
         let action = std::mem::replace(&mut self.action[i], F::identity());
         self.action[2 * i] = action.composite(&self.action[2 * i]);
         self.action[2 * i + 1] = action.composite(&self.action[2 * i + 1]);
+    }
+
+    pub fn new(n: usize) -> Self {
+        let buf_len: usize = n.next_power_of_two();
+        let action = Vec::from_iter(
+            std::iter::repeat_with(|| F::identity()).take(buf_len + (n + 1) / 2 * 2),
+        )
+        .into_boxed_slice();
+
+        Self {
+            len: n,
+            action,
+            buf_len,
+        }
     }
 
     /// Applies `action` to elements in the given `range`.
@@ -90,49 +105,44 @@ impl<T, F: MonoidAction<T>> DualSegmentTree<T, F> {
     }
 
     /// Returns `i`-th element.
-    pub fn get(&self, i: usize) -> T {
+    pub fn get(&self, i: usize) -> F {
+        let mut res = F::identity();
         // action may be non-commutative
-        let (mut i, mut res) = {
-            let arg = &self.data[i];
-            let i = self.inner_index(i);
-
-            (i, self.action[i].apply(arg))
-        };
-        while i > 1 {
+        let mut i = self.inner_index(i);
+        while i >= 1 {
+            res = self.action[i].composite(&res);
             i /= 2;
-            res = self.action[i].apply(&res)
         }
 
         res
     }
 
-    /// Overrides `i`-th element with the given `value` and returns the previous result.
-    pub fn set(&mut self, i: usize, value: T) -> T {
+    /// Set `i`-th act with the given `act` and returns the previous one.
+    pub fn set(&mut self, i: usize, act: F) -> F {
         // propagate pending operations
-        let ii = self.inner_index(i);
+        let i = self.inner_index(i);
         for d in (1..=self.buf_len.trailing_zeros()).rev() {
-            self.propagate(ii >> d);
+            self.propagate(i >> d);
         }
 
-        // override and return
-        std::mem::replace(&mut self.action[ii], F::identity())
-            .apply(&std::mem::replace(&mut self.data[i], value))
+        // override and return previous one
+        std::mem::replace(&mut self.action[i], act)
     }
 }
 
-impl<T, F: MonoidAction<T>> From<Vec<T>> for DualSegmentTree<T, F> {
-    fn from(data: Vec<T>) -> Self {
-        let data = data.into_boxed_slice();
-        let buf_len: usize = data.len().next_power_of_two();
-        let action = Vec::from_iter(
-            std::iter::repeat_with(|| F::identity()).take(buf_len + (data.len() + 1) / 2 * 2),
-        )
-        .into_boxed_slice();
+// impl<T, F: MonoidAction<T>> From<Vec<T>> for DualSegmentTree<T, F> {
+//     fn from(data: Vec<T>) -> Self {
+//         let data = data.into_boxed_slice();
+//         let buf_len: usize = data.len().next_power_of_two();
+//         let action = Vec::from_iter(
+//             std::iter::repeat_with(|| F::identity()).take(buf_len + (data.len() + 1) / 2 * 2),
+//         )
+//         .into_boxed_slice();
 
-        Self {
-            data,
-            action,
-            buf_len,
-        }
-    }
-}
+//         Self {
+//             data,
+//             action,
+//             buf_len,
+//         }
+//     }
+// }
