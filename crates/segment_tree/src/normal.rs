@@ -63,6 +63,9 @@ impl<T: Monoid> SegmentTree<T> {
     {
         let (mut l, mut r) = self.inner_range(range);
 
+        if l + 1 == r {
+            return T::identity();
+        }
         if l == self.buf_len && r == self.data.len() {
             return T::identity().binary_operation(&self.data[1]);
         }
