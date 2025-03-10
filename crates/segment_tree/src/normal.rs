@@ -45,7 +45,7 @@ impl<T: Monoid> SegmentTree<T> {
     {
         let (mut l, mut r) = self.inner_range(range);
 
-        if l == r {
+        if l >= r {
             return T::identity();
         }
 
