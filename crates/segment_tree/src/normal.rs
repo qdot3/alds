@@ -1,4 +1,4 @@
-use std::ops::RangeBounds;
+use std::ops::{Index, RangeBounds};
 
 use crate::Monoid;
 
@@ -78,7 +78,7 @@ impl<T: Monoid> SegmentTree<T> {
         self.data.len() / 2 + i
     }
 
-    ///  Returns `[l, r)`
+    /// Returns `[l, r)`
     #[inline]
     fn inner_range<R>(&self, range: R) -> (usize, usize)
     where
@@ -106,6 +106,10 @@ impl<T: Monoid> SegmentTree<T> {
     }
 
     /// Returns the result of combining elements over the 'given' range.
+    ///
+    /// # Panics
+    ///
+    /// Panics if given `range` is out of bounds.
     pub fn range_query<R>(&self, range: R) -> T
     where
         R: RangeBounds<usize>,
@@ -140,6 +144,11 @@ impl<T: Monoid> SegmentTree<T> {
     }
 
     /// Replace a single element with a given one.
+    ///
+    ///
+    /// # Panics
+    ///
+    /// Panics if given index is out of bounds.
     pub fn point_update(&mut self, i: usize, element: T) -> T {
         let mut i = self.inner_index(i);
         let old = std::mem::replace(&mut self.data[i], element);
@@ -152,7 +161,8 @@ impl<T: Monoid> SegmentTree<T> {
         old
     }
 
-    pub fn fill<R>(&mut self, range: R, value: T)
+    #[allow(dead_code)]
+    fn fill<R>(&mut self, range: R, value: T)
     where
         T: Clone,
         R: RangeBounds<usize>,
@@ -192,5 +202,37 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
         }
 
         Self { data }
+    }
+}
+
+impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let (min, max) = iter.size_hint();
+        if Some(min) == max {
+            // same as `from()`
+            let mut data = Vec::from_iter(
+                std::iter::repeat_with(|| T::identity())
+                    .take(min)
+                    .chain(iter),
+            )
+            .into_boxed_slice();
+            for i in (1..min).rev() {
+                data[i] = data[2 * i].binary_operation(&data[2 * i + 1])
+            }
+
+            Self { data }
+        } else {
+            Self::from(Vec::from_iter(iter))
+        }
+    }
+}
+
+impl<T: Monoid> Index<usize> for SegmentTree<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        let i = self.inner_index(index);
+        &self.data[i]
     }
 }
