@@ -2,7 +2,66 @@ use std::ops::RangeBounds;
 
 use crate::Monoid;
 
-/// Fixed-sized segment tree.
+/// A data structure that supports point updates and range queries.
+///
+/// # Example
+///
+/// ## Basic Usage
+///
+/// ```
+/// use segment_tree::{Monoid, SegmentTree};
+///
+/// // range minimum query
+/// struct RMQ(i32);
+///
+/// impl Monoid for RMQ {
+///     fn identity() -> Self {
+///         RMQ(i32::MAX)
+///     }
+///
+///     fn binary_operation(&self, rhs: &Self) -> Self {
+///         RMQ(self.0.min(rhs.0))
+///     }
+/// }
+///
+/// let mut seg_tree = SegmentTree::from(Vec::from_iter((0..6).map(|i| RMQ(i))));
+/// // [(0, 1, 2, 3, 4, 5)]
+/// assert_eq!(seg_tree.range_query(..).0, 0);
+/// assert_eq!(seg_tree.range_query(2..6).0, 2);
+///
+/// seg_tree.point_update(4, RMQ(-10));
+/// // [0, 1, 2, 3, -10, 5]
+/// assert_eq!(seg_tree.range_query(..).0, -10);
+///
+/// ```
+///
+/// ## Multiple range queries
+///
+/// ```
+/// use segment_tree::{Monoid, SegmentTree};
+///
+/// struct MinMax(i32, i32);
+///
+/// impl Monoid for MinMax {
+///     fn identity() -> Self {
+///         Self(i32::MAX, i32::MIN)
+///     }
+///
+///     fn binary_operation(&self, rhs: &Self) -> Self {
+///         Self(self.0.min(rhs.0), self.1.max(rhs.1))
+///     }
+/// }
+///
+/// let mut seg_tree = SegmentTree::from(Vec::from_iter((0..6).map(|i| MinMax(5 - i, i))));
+/// // [(5, 0), (4, 1), (3, 2), (2, 3), (1, 4), (0, 5)]
+/// assert_eq!(seg_tree.range_query(..).0, 0);
+/// assert_eq!(seg_tree.range_query(2..3).1, 2);
+///
+/// seg_tree.point_update(4, MinMax(100, 100));
+/// // [(5, 0), (4, 1), (3, 2), (2, 3), (-100, -100), (0, 5)]
+/// assert_eq!(seg_tree.range_query(3..).0, 0);
+/// assert_eq!(seg_tree.range_query(3..).1, 100);
+/// ```
 #[derive(Clone, Debug)]
 pub struct SegmentTree<T: Monoid> {
     data: Box<[T]>,
@@ -14,7 +73,7 @@ impl<T: Monoid> SegmentTree<T> {
         self.data.len() / 2 + i
     }
 
-    ///`[l, r)`
+    ///  Returns `[l, r)`
     #[inline]
     fn inner_range<R>(&self, range: R) -> (usize, usize)
     where
@@ -34,11 +93,14 @@ impl<T: Monoid> SegmentTree<T> {
         (self.inner_index(l), self.inner_index(r))
     }
 
+    /// Returns a reference to a single element.
+    #[inline]
     pub fn point_query(&self, i: usize) -> Option<&T> {
         let i = self.inner_index(i);
         self.data.get(i)
     }
 
+    /// Returns the result of combining elements over the 'given' range.
     pub fn range_query<R>(&self, range: R) -> T
     where
         R: RangeBounds<usize>,
@@ -72,13 +134,16 @@ impl<T: Monoid> SegmentTree<T> {
         res_l.binary_operation(&res_r)
     }
 
-    pub fn point_update(&mut self, i: usize, value: T) {
+    /// Replace a single element with a given one.
+    pub fn point_update(&mut self, i: usize, element: T) -> T {
         let mut i = self.inner_index(i);
-        self.data[i] = value;
+        let old = std::mem::replace(&mut self.data[i], element);
         while i > 1 {
             i = i / 2;
             self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
         }
+
+        old
     }
 
     pub fn fill<R>(&mut self, range: R, value: T)
@@ -106,14 +171,14 @@ impl<T: Monoid> SegmentTree<T> {
 }
 
 impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
-    /// Creates a new segment tree with the given initial `values` in *O*(*N*) time,
-    /// where *N* is the number of elements in `values`.
-    fn from(values: Vec<T>) -> Self {
+    /// Creates a new segment tree with the given initial `elements` in *O*(*N*) time,
+    /// where *N* is the number of elements in `elements`.
+    fn from(elements: Vec<T>) -> Self {
         // this space optimization is valid even in commutative operation cases.
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| T::identity())
-                .take(values.len())
-                .chain(values),
+                .take(elements.len())
+                .chain(elements),
         )
         .into_boxed_slice();
         for i in (1..data.len() / 2).rev() {
