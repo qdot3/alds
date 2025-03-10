@@ -145,7 +145,6 @@ impl<T: Monoid> SegmentTree<T> {
 
     /// Replace a single element with a given one.
     ///
-    ///
     /// # Panics
     ///
     /// Panics if given index is out of bounds.
