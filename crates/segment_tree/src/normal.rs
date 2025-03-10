@@ -152,7 +152,7 @@ impl<T: Monoid> SegmentTree<T> {
     pub fn point_update(&mut self, i: usize, element: T) -> T {
         let mut i = self.inner_index(i);
         let old = std::mem::replace(&mut self.data[i], element);
-        // TODO: remove updates on invalid node
+        // TODO: remove updates on invalid nodes
         while i > 1 {
             i = i / 2;
             self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
@@ -225,6 +225,16 @@ impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
         } else {
             Self::from(Vec::from_iter(iter))
         }
+    }
+}
+
+impl<T: Monoid> IntoIterator for SegmentTree<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let n = self.data.len() / 2;
+        self.data.into_vec().split_off(n).into_iter()
     }
 }
 
