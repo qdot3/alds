@@ -120,7 +120,7 @@ impl<T: Monoid> SegmentTree<T> {
             return T::identity();
         }
 
-        // calculate result on [l, r)
+        // calculate result over [l, r)
         l >>= l.trailing_zeros();
         r >>= r.trailing_zeros();
         let (mut res_l, mut res_r) = (T::identity(), T::identity());
@@ -159,6 +159,8 @@ impl<T: Monoid> SegmentTree<T> {
 
         old
     }
+
+    // TODO: impl max_right() & max_left()
 
     #[allow(dead_code)]
     fn fill<R>(&mut self, range: R, value: T)
@@ -205,6 +207,8 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
 }
 
 impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
+    /// Creates a new segment tree with the given initial elements in *O*(*N*) time,
+    /// where *N* is the number of them.
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let (min, max) = iter.size_hint();
