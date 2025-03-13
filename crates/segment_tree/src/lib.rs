@@ -10,14 +10,16 @@
 //! | [AssignSegmentTree] | *O*(log *N*) | *O*(log *N*) | *O*(log *N*) | *O*(log *N*) |
 //!
 //! * *N* is the number of elements.
+mod assign;
 mod dual;
+mod dynamic;
 mod lazy;
 mod normal;
 mod traits;
-mod assign;
 
+pub use assign::AssignSegmentTree;
 pub use dual::DualSegmentTree;
+pub use dynamic::DynamicSegmentTree;
 pub use lazy::LazySegmentTree;
 pub use normal::SegmentTree;
-pub use traits::{MonoidAction, Monoid, MonoidAct};
-pub use assign::AssignSegmentTree;
+pub use traits::{Monoid, MonoidAct, MonoidAction};

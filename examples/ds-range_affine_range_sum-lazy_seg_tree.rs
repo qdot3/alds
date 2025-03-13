@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, MonoidAction, Monoid};
+use segment_tree::{LazySegmentTree, Monoid, MonoidAction};
 
 #[fastout]
 fn main() {
