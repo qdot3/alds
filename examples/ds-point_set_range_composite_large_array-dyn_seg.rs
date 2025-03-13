@@ -22,7 +22,7 @@ fn main() {
         } else if flag == 1 {
             input! { l: isize, r: isize, x: u64, }
 
-            println!("{}", dst.range_query(l..r).apply(Mint::new(x)))
+            println!("{}", dst.range_query(l..r).apply(Mint::new(x)));
         } else {
             unreachable!()
         }

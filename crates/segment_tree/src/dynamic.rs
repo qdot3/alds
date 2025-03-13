@@ -27,58 +27,68 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             return;
         }
 
-        let mut p = 0;
-        let n = self.arena.len();
-        let Range { mut start, mut end } = self.range;
-        while let Some(node) = self.arena.get_mut(p) {
-            self.reusable_buf.push(p);
+        let Self {
+            arena,
+            range,
+            reusable_buf,
+        } = self;
 
-            if node.index == i {
-                node.value = value;
+        let mut p = 0;
+        let Range { mut start, mut end } = range;
+        loop {
+            reusable_buf.push(p);
+
+            if arena[p].index == i {
+                arena[p].value = value;
                 break;
             }
 
-            if i < (start + end) >> 1 {
-                if i > node.index {
+            let mid = (start + end) >> 1;
+            if i < mid {
+                if i > arena[p].index {
                     // `product` will be broken but recalculated after
-                    std::mem::swap(&mut i, &mut node.index);
-                    std::mem::swap(&mut value, &mut node.value);
+                    std::mem::swap(&mut i, &mut arena[p].index);
+                    std::mem::swap(&mut value, &mut arena[p].value);
                 }
 
-                if let Some(c) = node.left {
-                    p = c;
-                    end = (start + end) >> 1;
+                if let Some(l) = arena[p].left {
+                    p = l;
+                    end = mid;
+                    continue;
                 } else {
-                    node.left.replace(n);
-                    self.arena.push(Node::new(i, value));
+                    let n = arena.len();
+                    arena[p].left.replace(n);
+                    arena.push(Node::new(i, value));
                     break;
                 }
             } else {
-                if i < node.index {
-                    std::mem::swap(&mut i, &mut node.index);
-                    std::mem::swap(&mut value, &mut node.value);
+                if i < arena[p].index {
+                    std::mem::swap(&mut i, &mut arena[p].index);
+                    std::mem::swap(&mut value, &mut arena[p].value);
                 }
 
-                if let Some(c) = node.right {
-                    p = c;
-                    start = (start + end) >> 1;
+                if let Some(r) = arena[p].right {
+                    p = r;
+                    start = mid;
+                    continue;
                 } else {
-                    node.right.replace(n);
-                    self.arena.push(Node::new(i, value));
+                    let n = arena.len();
+                    arena[p].right.replace(n);
+                    arena.push(Node::new(i, value));
                     break;
                 }
             }
         }
 
         // recalculate product
-        for i in self.reusable_buf.drain(..).rev() {
-            self.arena[i].product = match (self.arena[i].left, self.arena[i].right) {
-                (None, Some(r)) => self.arena[i].value.binary_operation(&self.arena[r].product),
-                (Some(l), None) => self.arena[l].product.binary_operation(&self.arena[i].value),
-                (Some(l), Some(r)) => (self.arena[l].product)
-                    .binary_operation(&self.arena[i].value)
-                    .binary_operation(&self.arena[r].product),
-                (None, None) => self.arena[i].value.clone(),
+        for i in reusable_buf.drain(..).rev() {
+            arena[i].product = match (arena[i].left, arena[i].right) {
+                (None, Some(r)) => arena[i].value.binary_operation(&arena[r].product),
+                (Some(l), None) => arena[l].product.binary_operation(&arena[i].value),
+                (Some(l), Some(r)) => (arena[l].product)
+                    .binary_operation(&arena[i].value)
+                    .binary_operation(&arena[r].product),
+                (None, None) => arena[i].value.clone(),
             };
         }
     }
@@ -87,6 +97,10 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
     where
         R: RangeBounds<isize>,
     {
+        if self.arena.is_empty() {
+            return T::identity();
+        }
+
         let Range { start, end } = self.range;
         let l = match range.start_bound() {
             std::ops::Bound::Included(l) => *l,
@@ -110,39 +124,23 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
     }
 
     fn rec_query(&self, i: usize, l: isize, r: isize, start: isize, end: isize) -> T {
+        if l >= end || r < start {
+            return T::identity();
+        }
+
         if let Some(node) = self.arena.get(i) {
             if l == start && r == end {
                 return node.product.clone();
             }
 
             let mid = (start + end) >> 1;
-            if r <= mid {
-                if let Some(i) = node.left {
-                    return self.rec_query(i, l, r, start, mid);
-                } else if (l..r).contains(&node.index) {
-                    return node.value.clone();
-                } else {
-                    return T::identity();
-                }
-            } else if l >= mid {
-                if let Some(i) = node.right {
-                    return self.rec_query(i, l, r, mid, end);
-                } else if (l..r).contains(&node.index) {
-                    return node.value.clone();
-                } else {
-                    return T::identity();
-                }
+            let mut res = self.rec_query(node.left.unwrap_or(usize::MAX), l, mid, start, mid);
+            if (l..r).contains(&node.index) {
+                res = res.binary_operation(&node.value)
             }
-
-            (self.rec_query(node.left.unwrap_or(usize::MAX), l, mid, start, mid))
-                .binary_operation(&node.value)
-                .binary_operation(&self.rec_query(
-                    node.right.unwrap_or(usize::MAX),
-                    mid,
-                    r,
-                    mid,
-                    end,
-                ))
+            res.binary_operation(
+                &(self.rec_query(node.right.unwrap_or(usize::MAX), mid, r, mid, end)),
+            )
         } else {
             T::identity()
         }
