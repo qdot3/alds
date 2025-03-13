@@ -124,22 +124,22 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
     }
 
     fn rec_query(&self, i: usize, l: isize, r: isize, start: isize, end: isize) -> T {
-        if l >= end || r < start {
+        if l >= end || r <= start {
             return T::identity();
         }
 
         if let Some(node) = self.arena.get(i) {
-            if l == start && r == end {
+            if l <= start && end <= r{
                 return node.product.clone();
             }
 
             let mid = (start + end) >> 1;
-            let mut res = self.rec_query(node.left.unwrap_or(usize::MAX), l, mid, start, mid);
+            let mut res = self.rec_query(node.left.unwrap_or(usize::MAX), l, r, start, mid);
             if (l..r).contains(&node.index) {
                 res = res.binary_operation(&node.value)
             }
             res.binary_operation(
-                &(self.rec_query(node.right.unwrap_or(usize::MAX), mid, r, mid, end)),
+                &(self.rec_query(node.right.unwrap_or(usize::MAX), l, r, mid, end)),
             )
         } else {
             T::identity()
