@@ -95,7 +95,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
         }
     }
 
-    pub fn range_query<R>(&self, range: R) -> T
+    pub fn range_query<R>(&mut self, range: R) -> T
     where
         R: RangeBounds<isize>,
     {
@@ -103,7 +103,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             return T::identity();
         }
 
-        let Range { mut start,mut end } = self.range;
+        let Range { mut start, mut end } = self.range;
         let l = match range.start_bound() {
             std::ops::Bound::Included(l) => *l,
             std::ops::Bound::Excluded(l) => l + 1,
@@ -134,7 +134,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                 if l >= mid {
                     if let Some(l) = node.left {
                         p = l;
-                        end = mid;
+                        start = mid;
                         continue;
                     } else if (l..r).contains(&node.index) {
                         return node.value.clone();
@@ -144,7 +144,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                 } else if r <= mid {
                     if let Some(r) = node.left {
                         p = r;
-                        start = mid;
+                        end = mid;
                         continue;
                     } else if (l..r).contains(&node.index) {
                         return node.value.clone();
@@ -171,7 +171,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                         if let Some(c) = node.right {
                             res_l = self.arena[c].product.binary_operation(&res_l)
                         }
-                        if (l..mid).contains(&node.index) {
+                        if (l..r).contains(&node.index) {
                             res_l = node.value.binary_operation(&res_l)
                         }
 
@@ -183,8 +183,8 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                             break;
                         }
                     } else {
-                        if (l..mid).contains(&node.index) {
-                            res_l = node.value.binary_operation(&res_l)
+                        if (l..r).contains(&node.index) {
+                            self.reusable_buf.push(p);
                         }
 
                         if let Some(c) = node.right {
@@ -201,12 +201,15 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             } else {
                 T::identity()
             };
+            while let Some(i) = self.reusable_buf.pop() {
+                res_l = self.arena[i].value.binary_operation(&res_l)
+            }
 
             if (l..r).contains(&self.arena[p].index) {
                 res_l = res_l.binary_operation(&self.arena[p].value)
             }
 
-            let res_r = if let Some(mut p) = self.arena[p].right {
+            let mut res_r = if let Some(mut p) = self.arena[p].right {
                 let mut res_r = T::identity();
                 start = mid;
                 while let Some(node) = self.arena.get(p) {
@@ -218,7 +221,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                     mid = (start + end) >> 1;
                     if r <= mid {
                         if (l..r).contains(&node.index) {
-                            res_r = res_r.binary_operation(&node.value)
+                            self.reusable_buf.push(p);
                         }
 
                         if let Some(c) = node.left {
@@ -249,11 +252,16 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             } else {
                 T::identity()
             };
+            while let Some(i) = self.reusable_buf.pop() {
+                res_r = res_r.binary_operation(&self.arena[i].value)
+            }
 
             res_l.binary_operation(&res_r)
         }
     }
 
+    // recursive version
+    #[allow(dead_code)]
     fn rec_query(&self, i: usize, l: isize, r: isize, start: isize, end: isize) -> T {
         if l >= end || r <= start {
             return T::identity();
