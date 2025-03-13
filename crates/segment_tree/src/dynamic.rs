@@ -9,6 +9,7 @@ use crate::Monoid;
 pub struct DynamicSegmentTree<T: Monoid> {
     arena: Vec<Node<T>>,
     range: Range<isize>,
+    /// avoid reallocation. O(log |range|)
     reusable_buf: Vec<usize>,
 }
 
@@ -45,6 +46,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
 
             let mid = (start + end) >> 1;
             if i < mid {
+                // index of left child should be less than that of parent
                 if i > arena[p].index {
                     // `product` will be broken but recalculated after
                     std::mem::swap(&mut i, &mut arena[p].index);
@@ -80,7 +82,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             }
         }
 
-        // recalculate product
+        // recalculate `product`
         while let Some(i) = reusable_buf.pop() {
             arena[i].product = match (arena[i].left, arena[i].right) {
                 (None, Some(r)) => arena[i].value.binary_operation(&arena[r].product),
@@ -101,7 +103,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             return T::identity();
         }
 
-        let Range { start, end } = self.range;
+        let Range { mut start,mut end } = self.range;
         let l = match range.start_bound() {
             std::ops::Bound::Included(l) => *l,
             std::ops::Bound::Excluded(l) => l + 1,
@@ -120,17 +122,135 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             return T::identity();
         }
 
-        return self.rec_query(0, l, r, start, end);
+        // return self.rec_query(0, l, r, start, end);
 
         // non-recursive version
         #[allow(unreachable_code)]
         {
             let mut p = 0;
+            let mut mid = 0;
             while let Some(node) = self.arena.get(p) {
-                let mid = (start + end) / 2;
-                if l >= mid {}
+                mid = (start + end) >> 1;
+                if l >= mid {
+                    if let Some(l) = node.left {
+                        p = l;
+                        end = mid;
+                        continue;
+                    } else if (l..r).contains(&node.index) {
+                        return node.value.clone();
+                    } else {
+                        return T::identity();
+                    }
+                } else if r <= mid {
+                    if let Some(r) = node.left {
+                        p = r;
+                        start = mid;
+                        continue;
+                    } else if (l..r).contains(&node.index) {
+                        return node.value.clone();
+                    } else {
+                        return T::identity();
+                    }
+                } else {
+                    break;
+                }
             }
-            todo!()
+
+            // start <= l < mid < r <= end
+            let mut res_l = if let Some(mut p) = self.arena[p].left {
+                let mut res_l = T::identity();
+                let mut end = mid;
+                while let Some(node) = self.arena.get(p) {
+                    if l <= start && end <= r {
+                        res_l = node.product.binary_operation(&res_l);
+                        break;
+                    }
+
+                    let mid = (start + end) >> 1;
+                    if l < mid {
+                        if let Some(c) = node.right {
+                            res_l = self.arena[c].product.binary_operation(&res_l)
+                        }
+                        if (l..mid).contains(&node.index) {
+                            res_l = node.value.binary_operation(&res_l)
+                        }
+
+                        if let Some(c) = node.left {
+                            p = c;
+                            end = mid;
+                            continue;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        if (l..mid).contains(&node.index) {
+                            res_l = node.value.binary_operation(&res_l)
+                        }
+
+                        if let Some(c) = node.right {
+                            p = c;
+                            start = mid;
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                res_l
+            } else {
+                T::identity()
+            };
+
+            if (l..r).contains(&self.arena[p].index) {
+                res_l = res_l.binary_operation(&self.arena[p].value)
+            }
+
+            let res_r = if let Some(mut p) = self.arena[p].right {
+                let mut res_r = T::identity();
+                start = mid;
+                while let Some(node) = self.arena.get(p) {
+                    if l <= start && end <= r {
+                        res_r = res_r.binary_operation(&node.product);
+                        break;
+                    }
+
+                    mid = (start + end) >> 1;
+                    if r <= mid {
+                        if (l..r).contains(&node.index) {
+                            res_r = res_r.binary_operation(&node.value)
+                        }
+
+                        if let Some(c) = node.left {
+                            p = c;
+                            end = mid
+                        } else {
+                            break;
+                        }
+                    } else {
+                        if let Some(c) = node.left {
+                            res_r = res_r.binary_operation(&self.arena[c].product)
+                        }
+                        if (l..r).contains(&node.index) {
+                            res_r = res_r.binary_operation(&node.value)
+                        }
+
+                        if let Some(c) = node.right {
+                            p = c;
+                            start = mid;
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                res_r
+            } else {
+                T::identity()
+            };
+
+            res_l.binary_operation(&res_r)
         }
     }
 
@@ -168,6 +288,9 @@ struct Node<T> {
 }
 
 impl<T: Clone> Node<T> {
+    /// Since maximum capacity of [Vec] is [isize::MAX], [usize::MAX] can be used as `None`
+    const NULL_CHILD: usize = usize::MAX;
+
     fn new(index: isize, value: T) -> Self {
         Self {
             index,
