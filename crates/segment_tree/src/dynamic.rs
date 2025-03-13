@@ -16,8 +16,8 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
     pub fn with_capacity(capacity: usize, range: Range<isize>) -> Self {
         Self {
             arena: Vec::with_capacity(capacity),
+            reusable_buf: Vec::with_capacity(range.len().max(1).ilog2() as usize + 1),
             range,
-            reusable_buf: Vec::new(),
         }
     }
 
@@ -81,7 +81,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
         }
 
         // recalculate product
-        for i in reusable_buf.drain(..).rev() {
+        while let Some(i) = reusable_buf.pop() {
             arena[i].product = match (arena[i].left, arena[i].right) {
                 (None, Some(r)) => arena[i].value.binary_operation(&arena[r].product),
                 (Some(l), None) => arena[l].product.binary_operation(&arena[i].value),
@@ -120,7 +120,18 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             return T::identity();
         }
 
-        self.rec_query(0, l, r, start, end)
+        return self.rec_query(0, l, r, start, end);
+
+        // non-recursive version
+        #[allow(unreachable_code)]
+        {
+            let mut p = 0;
+            while let Some(node) = self.arena.get(p) {
+                let mid = (start + end) / 2;
+                if l >= mid {}
+            }
+            todo!()
+        }
     }
 
     fn rec_query(&self, i: usize, l: isize, r: isize, start: isize, end: isize) -> T {
@@ -129,7 +140,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
         }
 
         if let Some(node) = self.arena.get(i) {
-            if l <= start && end <= r{
+            if l <= start && end <= r {
                 return node.product.clone();
             }
 
