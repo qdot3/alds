@@ -132,8 +132,8 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             while let Some(node) = self.arena.get(p) {
                 mid = (start + end) >> 1;
                 if l >= mid {
-                    if let Some(l) = node.left {
-                        p = l;
+                    if let Some(r) = node.right {
+                        p = r;
                         start = mid;
                         continue;
                     } else if (l..r).contains(&node.index) {
@@ -142,8 +142,8 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                         return T::identity();
                     }
                 } else if r <= mid {
-                    if let Some(r) = node.left {
-                        p = r;
+                    if let Some(l) = node.left {
+                        p = l;
                         end = mid;
                         continue;
                     } else if (l..r).contains(&node.index) {
