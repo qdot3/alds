@@ -148,6 +148,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                 } else if r <= mid {
                     if let Some(c) = node.left {
                         if (l..r).contains(&self.arena[p].index) {
+                            // Since maximum size of [Vec] is [isize::MAX], `!p` >= [usize::MAX] / 2 > 'p'
                             self.reusable_buf.push(!p);
                         }
                         p = c;
@@ -209,10 +210,6 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             } else {
                 T::identity()
             };
-            while self.reusable_buf.len() > n {
-                let i = self.reusable_buf.pop().unwrap();
-                res_l = self.arena[i].value.binary_operation(&res_l)
-            }
 
             if (l..r).contains(&self.arena[p].index) {
                 res_l = res_l.binary_operation(&self.arena[p].value)
@@ -230,7 +227,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                     mid = (start + end) >> 1;
                     if r <= mid {
                         if (l..r).contains(&node.index) {
-                            self.reusable_buf.push(p);
+                            self.reusable_buf.push(!p);
                         }
 
                         if let Some(c) = node.left {
@@ -261,15 +258,12 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             } else {
                 T::identity()
             };
-            while self.reusable_buf.len() > n {
-                let i = self.reusable_buf.pop().unwrap();
-                res_r = res_r.binary_operation(&self.arena[i].value)
-            }
+
             while let Some(i) = self.reusable_buf.pop() {
-                if i < usize::MAX >> 1 {
+                if i < usize::MAX / 2 {
                     res_l = self.arena[i].value.binary_operation(&res_l)
                 } else {
-                    res_r = res_r.binary_operation(&self.arena[i].value)
+                    res_r = res_r.binary_operation(&self.arena[!i].value)
                 }
             }
 
