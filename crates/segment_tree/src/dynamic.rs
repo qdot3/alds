@@ -140,31 +140,50 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                         p = c;
                         start = mid;
                         continue;
-                    } else if (l..r).contains(&node.index) {
-                        return node.value.clone();
-                    } else {
-                        return T::identity();
                     }
+
+                    let mut res = if (l..r).contains(&node.index) {
+                        node.value.clone()
+                    } else {
+                        T::identity()
+                    };
+                    while let Some(p) = self.reusable_buf.pop() {
+                        if p < usize::MAX / 2 {
+                            res = self.arena[p].value.binary_operation(&res)
+                        } else {
+                            res = res.binary_operation(&self.arena[!p].value)
+                        }
+                    }
+                    return res;
                 } else if r <= mid {
                     if let Some(c) = node.left {
                         if (l..r).contains(&self.arena[p].index) {
-                            // Since maximum size of [Vec] is [isize::MAX], `!p` >= [usize::MAX] / 2 > 'p'
+                            // Since maximum size of [Vec] is [isize::MAX], `!p` > [usize::MAX] / 2 >= 'p'
                             self.reusable_buf.push(!p);
                         }
                         p = c;
                         end = mid;
                         continue;
-                    } else if (l..r).contains(&node.index) {
-                        return node.value.clone();
-                    } else {
-                        return T::identity();
                     }
+
+                    let mut res = if (l..r).contains(&node.index) {
+                        node.value.clone()
+                    } else {
+                        T::identity()
+                    };
+                    while let Some(p) = self.reusable_buf.pop() {
+                        if p < usize::MAX / 2 {
+                            res = self.arena[p].value.binary_operation(&res)
+                        } else {
+                            res = res.binary_operation(&self.arena[!p].value)
+                        }
+                    }
+                    return res;
                 } else {
                     break;
                 }
             }
 
-            let n = self.reusable_buf.len();
             // start <= l < mid < r <= end
             let mut res_l = if let Some(mut p) = self.arena[p].left {
                 let mut res_l = T::identity();
@@ -259,11 +278,11 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                 T::identity()
             };
 
-            while let Some(i) = self.reusable_buf.pop() {
-                if i < usize::MAX / 2 {
-                    res_l = self.arena[i].value.binary_operation(&res_l)
+            while let Some(p) = self.reusable_buf.pop() {
+                if p < usize::MAX / 2 {
+                    res_l = self.arena[p].value.binary_operation(&res_l)
                 } else {
-                    res_r = res_r.binary_operation(&self.arena[!i].value)
+                    res_r = res_r.binary_operation(&self.arena[!p].value)
                 }
             }
 
