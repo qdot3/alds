@@ -122,6 +122,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             return T::identity();
         }
 
+        // recursive version
         // return self.rec_query(0, l, r, start, end);
 
         // non-recursive version
@@ -132,8 +133,11 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             while let Some(node) = self.arena.get(p) {
                 mid = (start + end) >> 1;
                 if l >= mid {
-                    if let Some(r) = node.right {
-                        p = r;
+                    if let Some(c) = node.right {
+                        if (l..r).contains(&self.arena[p].index) {
+                            self.reusable_buf.push(p);
+                        }
+                        p = c;
                         start = mid;
                         continue;
                     } else if (l..r).contains(&node.index) {
@@ -142,8 +146,11 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                         return T::identity();
                     }
                 } else if r <= mid {
-                    if let Some(l) = node.left {
-                        p = l;
+                    if let Some(c) = node.left {
+                        if (l..r).contains(&self.arena[p].index) {
+                            self.reusable_buf.push(!p);
+                        }
+                        p = c;
                         end = mid;
                         continue;
                     } else if (l..r).contains(&node.index) {
@@ -156,6 +163,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                 }
             }
 
+            let n = self.reusable_buf.len();
             // start <= l < mid < r <= end
             let mut res_l = if let Some(mut p) = self.arena[p].left {
                 let mut res_l = T::identity();
@@ -201,7 +209,8 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             } else {
                 T::identity()
             };
-            while let Some(i) = self.reusable_buf.pop() {
+            while self.reusable_buf.len() > n {
+                let i = self.reusable_buf.pop().unwrap();
                 res_l = self.arena[i].value.binary_operation(&res_l)
             }
 
@@ -252,8 +261,16 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
             } else {
                 T::identity()
             };
-            while let Some(i) = self.reusable_buf.pop() {
+            while self.reusable_buf.len() > n {
+                let i = self.reusable_buf.pop().unwrap();
                 res_r = res_r.binary_operation(&self.arena[i].value)
+            }
+            while let Some(i) = self.reusable_buf.pop() {
+                if i < usize::MAX >> 1 {
+                    res_l = self.arena[i].value.binary_operation(&res_l)
+                } else {
+                    res_r = res_r.binary_operation(&self.arena[i].value)
+                }
             }
 
             res_l.binary_operation(&res_r)
