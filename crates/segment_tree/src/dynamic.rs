@@ -9,7 +9,7 @@ use crate::Monoid;
 pub struct DynamicSegmentTree<T: Monoid> {
     arena: Vec<Node<T>>,
     range: Range<isize>,
-    /// avoid reallocation. O(log |range|)
+    /// save allocation cost. O(log |range|)
     reusable_buf: Vec<usize>,
 }
 
@@ -17,7 +17,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
     pub fn with_capacity(capacity: usize, range: Range<isize>) -> Self {
         Self {
             arena: Vec::with_capacity(capacity),
-            reusable_buf: Vec::with_capacity(range.len().max(1).ilog2() as usize + 1),
+            reusable_buf: Vec::with_capacity(range.len().max(2).ilog2() as usize * 2),
             range,
         }
     }
@@ -59,7 +59,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                     continue;
                 } else {
                     let n = arena.len();
-                    arena[p].replace_left(n);
+                    arena[p].set_left(n);
                     arena.push(Node::new(i, value));
                     break;
                 }
@@ -75,7 +75,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
                     continue;
                 } else {
                     let n = arena.len();
-                    arena[p].replace_right(n);
+                    arena[p].set_right(n);
                     arena.push(Node::new(i, value));
                     break;
                 }
@@ -359,12 +359,12 @@ impl<T: Clone> Node<T> {
     }
 
     #[inline]
-    fn replace_left(&mut self, left: usize) {
+    fn set_left(&mut self, left: usize) {
         self.left = left
     }
 
     #[inline]
-    fn replace_right(&mut self, right: usize) {
+    fn set_right(&mut self, right: usize) {
         self.right = right
     }
 }
