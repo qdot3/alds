@@ -327,7 +327,7 @@ struct Node<T> {
 
 impl<T: Clone> Node<T> {
     /// Since maximum capacity of [Vec] is [isize::MAX], [usize::MAX] can be used as `None`
-    const NULL_CHILD: usize = usize::MAX;
+    // const NULL_CHILD: usize = usize::MAX;
 
     fn new(index: isize, value: T) -> Self {
         Self {
