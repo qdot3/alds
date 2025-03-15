@@ -2,6 +2,11 @@ use std::{fmt::Debug, ops::RangeBounds};
 
 use crate::{Monoid, MonoidAction};
 
+/// A segment tree that supports range updates and range queries.
+///
+/// # Size dependent operations
+/// 
+/// If 
 #[derive(Debug, Clone)]
 pub struct LazySegmentTree<T: Monoid, F: MonoidAction<T>> {
     data: Box<[T]>,

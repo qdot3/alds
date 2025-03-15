@@ -2,7 +2,7 @@ use std::ops::RangeBounds;
 
 use crate::Monoid;
 
-/// A data structure that supports range updates and point queries.
+/// A segment tree that supports range updates and point queries.
 ///
 /// # Performs binary operations in reversed order.
 ///
@@ -103,10 +103,16 @@ impl<T: Monoid> DualSegmentTree<T> {
 
     /// Returns `i`-th element.
     ///
+    /// # Panics
+    ///
+    /// Panics if given index is out of bounds.
+    ///
     /// # Time complexity
     ///
     /// *O*(log *N*)
     pub fn point_query(&self, i: usize) -> T {
+        debug_assert!(i < self.len);
+
         let mut res = T::identity();
         // operation may be non-commutative
         let mut i = self.inner_index(i);
@@ -121,10 +127,16 @@ impl<T: Monoid> DualSegmentTree<T> {
     /// Update `i`-th element using the binary operation defined in the [Monoid] trait.
     /// More precisely, performs `a[i] = elem ∘ a[i]`.
     ///
+    /// # Panics
+    ///
+    /// Panics if given index is out of bounds.
+    ///
     /// # Time complexity
     ///
     /// *O*(log *N*)
     pub fn point_update(&mut self, i: usize, elem: T) -> T {
+        debug_assert!(i < self.len);
+
         // propagate pending operations
         let i = self.inner_index(i);
         for d in (1..=self.buf_len.trailing_zeros()).rev() {
@@ -152,6 +164,11 @@ impl<T: Monoid> DualSegmentTree<T> {
             lazy,
             buf_len,
         }
+    }
+
+    /// Returns the number of elements.
+    pub fn len(&self) -> usize {
+        self.len
     }
 
     /// Returns the results of updates.
