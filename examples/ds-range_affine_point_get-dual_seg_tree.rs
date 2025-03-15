@@ -18,11 +18,11 @@ fn main() {
         if flag == 0 {
             input! { l: usize, r: usize, b: u64, c: u64, }
 
-            dst.apply(l..r, Affine::new(b, c));
+            dst.range_update(l..r, Affine::new(b, c));
         } else if flag == 1 {
             input! { i: usize, }
 
-            println!("{}", dst.get(i).apply(Mint::new(a[i])));
+            println!("{}", dst.point_query(i).apply(Mint::new(a[i])));
             // println!("{:#?}", dst)
         } else {
             unreachable!()
@@ -57,8 +57,8 @@ impl Monoid for Affine {
 
     fn binary_operation(&self, rhs: &Self) -> Self {
         Self {
-            tilt: self.tilt * rhs.tilt,
-            offset: self.tilt * rhs.offset + self.offset,
+            tilt: rhs.tilt * self.tilt,
+            offset: rhs.tilt * self.offset + rhs.offset,
         }
     }
 }
