@@ -142,7 +142,7 @@ impl<T: Monoid> SegmentTree<T> {
         res_l.binary_operation(&res_r)
     }
 
-    /// Replace a single element with the given one.
+    /// Replace the `i`-th element with the given one.
     ///
     /// # Panics
     ///
@@ -160,6 +160,21 @@ impl<T: Monoid> SegmentTree<T> {
     }
 
     // TODO: impl max_right() & max_left()
+}
+
+impl<T: Monoid> SegmentTree<T> {
+    pub fn new(n: usize) -> Self {
+        let data = Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n << 1))
+            .into_boxed_slice();
+
+        Self { data }
+    }
+
+    pub fn into_vec(self) -> Vec<T> {
+        let n = self.data.len() >> 1;
+
+        self.data.into_vec().split_off(n)
+    }
 
     #[allow(dead_code)]
     fn fill<R>(&mut self, range: R, value: T)
@@ -232,11 +247,10 @@ impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
 
 impl<T: Monoid> IntoIterator for SegmentTree<T> {
     type Item = T;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        let n = self.data.len() / 2;
-        self.data.into_vec().split_off(n).into_iter()
+        self.into_vec().into_iter()
     }
 }
 

@@ -12,8 +12,8 @@ use crate::Monoid;
 ///
 #[derive(Debug, Clone)]
 pub struct DualSegmentTree<T: Monoid> {
-    /// one-based indexing & **fixed-sized**
-    lazy: Vec<T>,
+    /// one-based indexing
+    lazy: Box<[T]>,
     /// true size
     len: usize,
     /// size of buffer for lazy propagation
@@ -157,7 +157,8 @@ impl<T: Monoid> DualSegmentTree<T> {
     pub fn new(n: usize) -> Self {
         let buf_len: usize = n.next_power_of_two();
         let lazy =
-            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(buf_len + n + n % 2));
+            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(buf_len + n + n % 2))
+                .into_boxed_slice();
 
         Self {
             len: n,
@@ -176,12 +177,12 @@ impl<T: Monoid> DualSegmentTree<T> {
     /// # Time complexity
     ///
     /// *O*(*N*)
-    pub fn to_vec(mut self) -> Vec<T> {
-        for i in 1..self.lazy.len() / 2 {
+    pub fn into_vec(mut self) -> Vec<T> {
+        for i in 1..self.lazy.len() >> 1 {
             self.propagate(i);
         }
 
-        self.lazy.drain(self.buf_len..).collect()
+        self.lazy.into_vec().split_off(self.buf_len)
     }
 }
 
@@ -190,6 +191,6 @@ impl<T: Monoid> IntoIterator for DualSegmentTree<T> {
     type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.to_vec().into_iter()
+        self.into_vec().into_iter()
     }
 }
