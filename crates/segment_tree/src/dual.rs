@@ -67,7 +67,7 @@ impl<T: Monoid> DualSegmentTree<T> {
     }
 
     /// Updates elements in the given `range` using the binary operation defined in the [Monoid] trait.
-    /// More precisely, performs `a[i] = a[i] ∘ elem` for each `i` in the range.
+    /// More precisely, performs `a[i] = elem ∘ a[i]` for each `i` in the range.
     pub fn range_update<R>(&mut self, range: R, elem: T)
     where
         R: RangeBounds<usize>,
@@ -94,12 +94,12 @@ impl<T: Monoid> DualSegmentTree<T> {
 
         while l < r {
             if l % 2 == 1 {
-                self.lazy[l] = self.lazy[l].binary_operation(&elem);
+                self.lazy[l] = elem.binary_operation(&self.lazy[l]);
                 l += 1
             }
             if r % 2 == 1 {
                 r -= 1;
-                self.lazy[r] = self.lazy[r].binary_operation(&elem);
+                self.lazy[r] = elem.binary_operation(&self.lazy[r]);
             }
 
             l /= 2;
@@ -121,7 +121,7 @@ impl<T: Monoid> DualSegmentTree<T> {
     }
 
     /// Update `i`-th element using the binary operation defined in the [Monoid] trait.
-    /// More precisely, performs `a[i] = a[i] ∘ elem`.
+    /// More precisely, performs `a[i] = elem ∘ a[i]`.
     pub fn point_update(&mut self, i: usize, elem: T) -> T {
         // propagate pending operations
         let i = self.inner_index(i);

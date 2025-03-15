@@ -57,8 +57,8 @@ impl Monoid for Affine {
 
     fn binary_operation(&self, rhs: &Self) -> Self {
         Self {
-            tilt: rhs.tilt * self.tilt,
-            offset: rhs.tilt * self.offset + rhs.offset,
+            tilt: self.tilt * rhs.tilt,
+            offset: self.tilt * rhs.offset + self.offset,
         }
     }
 }
