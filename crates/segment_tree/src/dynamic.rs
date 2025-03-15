@@ -1,7 +1,4 @@
-use std::{
-    ops::{Range, RangeBounds},
-    usize,
-};
+use std::ops::{Range, RangeBounds};
 
 use crate::Monoid;
 

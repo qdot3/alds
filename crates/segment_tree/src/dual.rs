@@ -4,13 +4,16 @@ use crate::Monoid;
 
 /// A data structure that supports range updates and point queries.
 ///
-/// # Multiple Functions
+/// # Performs binary operations in reversed order.
 ///
-/// If multiple different functions can be composed, you can use [`DualSegmentTree`].
+/// Define [Monoid::binary_operation] in reversed order: `rhs ∘ self` instead of `self ∘ rhs`.
+///
+/// # Multiple operations
+///
 #[derive(Debug, Clone)]
 pub struct DualSegmentTree<T: Monoid> {
-    /// one-based indexing buffer for pending operations.
-    lazy: Box<[T]>,
+    /// one-based indexing & **fixed-sized**
+    lazy: Vec<T>,
     /// true size
     len: usize,
     /// size of buffer for lazy propagation
@@ -49,25 +52,16 @@ impl<T: Monoid> DualSegmentTree<T> {
     /// Assumes two children exist.
     fn propagate(&mut self, i: usize) {
         let lazy = std::mem::replace(&mut self.lazy[i], T::identity());
-        self.lazy[2 * i] = lazy.binary_operation(&self.lazy[2 * i]);
-        self.lazy[2 * i + 1] = lazy.binary_operation(&self.lazy[2 * i + 1]);
-    }
-
-    pub fn new(n: usize) -> Self {
-        let buf_len: usize = n.next_power_of_two();
-        let lazy =
-            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(buf_len + n + n % 2))
-                .into_boxed_slice();
-
-        Self {
-            len: n,
-            lazy,
-            buf_len,
-        }
+        self.lazy[i << 1] = lazy.binary_operation(&self.lazy[i << 1]);
+        self.lazy[(i << 1) | 1] = lazy.binary_operation(&self.lazy[(i << 1) | 1]);
     }
 
     /// Updates elements in the given `range` using the binary operation defined in the [Monoid] trait.
     /// More precisely, performs `a[i] = elem ∘ a[i]` for each `i` in the range.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
     pub fn range_update<R>(&mut self, range: R, elem: T)
     where
         R: RangeBounds<usize>,
@@ -102,12 +96,16 @@ impl<T: Monoid> DualSegmentTree<T> {
                 self.lazy[r] = elem.binary_operation(&self.lazy[r]);
             }
 
-            l /= 2;
-            r /= 2;
+            l >>= 1;
+            r >>= 1;
         }
     }
 
     /// Returns `i`-th element.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
     pub fn point_query(&self, i: usize) -> T {
         let mut res = T::identity();
         // operation may be non-commutative
@@ -122,6 +120,10 @@ impl<T: Monoid> DualSegmentTree<T> {
 
     /// Update `i`-th element using the binary operation defined in the [Monoid] trait.
     /// More precisely, performs `a[i] = elem ∘ a[i]`.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
     pub fn point_update(&mut self, i: usize, elem: T) -> T {
         // propagate pending operations
         let i = self.inner_index(i);
@@ -131,5 +133,46 @@ impl<T: Monoid> DualSegmentTree<T> {
 
         // override and return previous one
         std::mem::replace(&mut self.lazy[i], elem)
+    }
+}
+
+impl<T: Monoid> DualSegmentTree<T> {
+    /// Creates a new [DualSegmentTree] instance for the given number of elements.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(*N*)
+    pub fn new(n: usize) -> Self {
+        let buf_len: usize = n.next_power_of_two();
+        let lazy =
+            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(buf_len + n + n % 2));
+
+        Self {
+            len: n,
+            lazy,
+            buf_len,
+        }
+    }
+
+    /// Returns the results of updates.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(*N*)
+    pub fn to_vec(mut self) -> Vec<T> {
+        for i in 1..self.lazy.len() / 2 {
+            self.propagate(i);
+        }
+
+        self.lazy.drain(self.buf_len..).collect()
+    }
+}
+
+impl<T: Monoid> IntoIterator for DualSegmentTree<T> {
+    type Item = T;
+    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.to_vec().into_iter()
     }
 }

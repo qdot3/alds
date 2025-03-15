@@ -152,7 +152,7 @@ impl<T: Monoid> SegmentTree<T> {
         let old = std::mem::replace(&mut self.data[i], element);
         // TODO: remove updates on invalid nodes
         while i > 1 {
-            i = i / 2;
+            i >>= 1;
             self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
         }
 
