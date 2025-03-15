@@ -5,6 +5,7 @@ use std::{
 
 use crate::Monoid;
 
+/// Segment tree for large array.
 #[derive(Debug, Clone)]
 pub struct DynamicSegmentTree<T: Monoid> {
     arena: Vec<Node<T>>,
@@ -14,6 +15,10 @@ pub struct DynamicSegmentTree<T: Monoid> {
 }
 
 impl<T: Monoid + Clone> DynamicSegmentTree<T> {
+    pub fn new(range: Range<isize>) -> Self {
+        Self::with_capacity(0, range)
+    }
+
     pub fn with_capacity(capacity: usize, range: Range<isize>) -> Self {
         Self {
             arena: Vec::with_capacity(capacity),
@@ -126,7 +131,6 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
         // return self.rec_query(0, l, r, start, end);
 
         // non-recursive version
-        #[allow(unreachable_code)]
         {
             let mut p = 0;
             let mut mid = 0;
@@ -290,7 +294,7 @@ impl<T: Monoid + Clone> DynamicSegmentTree<T> {
         }
     }
 
-    // recursive version
+    /// recursive version
     #[allow(dead_code)]
     fn rec_query(&self, i: usize, l: isize, r: isize, start: isize, end: isize) -> T {
         if l >= end || r <= start {

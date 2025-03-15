@@ -1,6 +1,6 @@
 use std::ops::RangeBounds;
 
-use crate::MonoidAct;
+use crate::Monoid;
 
 /// A data structure that efficiently applies (non-commutative) functions (or acts) to consecutive elements
 /// and retrieves a single element.
@@ -9,7 +9,7 @@ use crate::MonoidAct;
 ///
 /// If multiple different functions can be composed, you can use [`DualSegmentTree`].
 #[derive(Debug, Clone)]
-pub struct DualSegmentTree<F: MonoidAct> {
+pub struct DualSegmentTree<F: Monoid> {
     // data: Box<[T]>,
     len: usize,
     /// one-based indexing buffer for pending actions.
@@ -17,7 +17,7 @@ pub struct DualSegmentTree<F: MonoidAct> {
     buf_len: usize,
 }
 
-impl<F: MonoidAct> DualSegmentTree<F> {
+impl<F: Monoid> DualSegmentTree<F> {
     /// Converts index of `data` to the corresponding index of `action`.
     const fn inner_index(&self, i: usize) -> usize {
         self.buf_len + i
@@ -49,8 +49,8 @@ impl<F: MonoidAct> DualSegmentTree<F> {
     /// Assumes two children exist.
     fn propagate(&mut self, i: usize) {
         let action = std::mem::replace(&mut self.action[i], F::identity());
-        self.action[2 * i] = action.composite(&self.action[2 * i]);
-        self.action[2 * i + 1] = action.composite(&self.action[2 * i + 1]);
+        self.action[2 * i] = action.binary_operation(&self.action[2 * i]);
+        self.action[2 * i + 1] = action.binary_operation(&self.action[2 * i + 1]);
     }
 
     pub fn new(n: usize) -> Self {
@@ -91,12 +91,12 @@ impl<F: MonoidAct> DualSegmentTree<F> {
 
         while l < r {
             if l % 2 == 1 {
-                self.action[l] = action.composite(&self.action[l]);
+                self.action[l] = action.binary_operation(&self.action[l]);
                 l += 1
             }
             if r % 2 == 1 {
                 r -= 1;
-                self.action[r] = action.composite(&self.action[r])
+                self.action[r] = action.binary_operation(&self.action[r])
             }
 
             l /= 2;
@@ -110,7 +110,7 @@ impl<F: MonoidAct> DualSegmentTree<F> {
         // action may be non-commutative
         let mut i = self.inner_index(i);
         while i >= 1 {
-            res = self.action[i].composite(&res);
+            res = self.action[i].binary_operation(&res);
             i /= 2;
         }
 

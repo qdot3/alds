@@ -30,6 +30,8 @@ fn main() {
 struct M(u64);
 
 impl Monoid for M {
+    const IS_COMMUTATIVE: bool = true;
+
     fn identity() -> Self {
         Self(0)
     }

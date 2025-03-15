@@ -51,6 +51,8 @@ impl Affine {
 }
 
 impl Monoid for Affine {
+    const IS_COMMUTATIVE: bool = false;
+    
     fn identity() -> Self {
         Self {
             tilt: Mint::new(1),

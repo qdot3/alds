@@ -32,7 +32,6 @@ use crate::Monoid;
 /// seg_tree.point_update(4, RMQ(-10));
 /// // [0, 1, 2, 3, -10, 5]
 /// assert_eq!(seg_tree.range_query(..).0, -10);
-///
 /// ```
 ///
 /// ## Multiple range queries
@@ -143,7 +142,7 @@ impl<T: Monoid> SegmentTree<T> {
         res_l.binary_operation(&res_r)
     }
 
-    /// Replace a single element with a given one.
+    /// Replace a single element with the given one.
     ///
     /// # Panics
     ///
@@ -208,7 +207,7 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
 
 impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial elements in *O*(*N*) time,
-    /// where *N* is the number of them.
+    /// where *N* is the number of elements.
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let (min, max) = iter.size_hint();

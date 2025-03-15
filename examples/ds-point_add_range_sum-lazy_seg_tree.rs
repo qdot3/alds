@@ -42,6 +42,8 @@ impl M {
 }
 
 impl Monoid for M {
+    const IS_COMMUTATIVE: bool = true;
+
     fn identity() -> Self {
         Self::new(0)
     }

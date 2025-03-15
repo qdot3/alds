@@ -46,6 +46,8 @@ impl<const MOD: u64> SUM<MOD> {
 }
 
 impl<const MOD: u64> Monoid for SUM<MOD> {
+    const IS_COMMUTATIVE: bool = true;
+    
     fn identity() -> Self {
         Self {
             sum: SMint::new(0),

@@ -104,6 +104,8 @@ struct Composite {
 }
 
 impl Monoid for Composite {
+    const IS_COMMUTATIVE: bool = false;
+    
     fn identity() -> Self {
         Self {
             composed: Affine::identity(),

@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{DualSegmentTree, MonoidAct};
+use segment_tree::{DualSegmentTree, Monoid};
 
 type Mint = SMint<998_244_353>;
 
@@ -22,7 +22,7 @@ fn main() {
         } else if flag == 1 {
             input! { i: usize, }
 
-            println!("{}", dst.get(i).apply(&Mint::new(a[i])));
+            println!("{}", dst.get(i).apply(Mint::new(a[i])));
             // println!("{:#?}", dst)
         } else {
             unreachable!()
@@ -42,21 +42,20 @@ impl Affine {
             offset: Mint::new(offset),
         }
     }
+
+    fn apply(&self, arg: Mint) -> Mint {
+        self.tilt * arg + self.offset
+    }
 }
 
-impl MonoidAct for Affine {
-    type Arg = Mint;
+impl Monoid for Affine {
     const IS_COMMUTATIVE: bool = false;
 
     fn identity() -> Self {
         Self::new(1, 0)
     }
 
-    fn apply(&self, arg: &Mint) -> Mint {
-        self.tilt * arg + self.offset
-    }
-
-    fn composite(&self, rhs: &Self) -> Self {
+    fn binary_operation(&self, rhs: &Self) -> Self {
         Self {
             tilt: self.tilt * rhs.tilt,
             offset: self.tilt * rhs.offset + self.offset,

@@ -73,7 +73,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         }
     }
 
-    /// Assign `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
+    /// Assigns `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
     fn push(&mut self, i: usize, act_id: usize) {
         if act_id != Self::NULL_ID {
             self.data[i] = self.lazy_pow[act_id];

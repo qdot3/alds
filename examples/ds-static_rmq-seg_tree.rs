@@ -17,6 +17,8 @@ fn main() {
 struct M(u32);
 
 impl Monoid for M {
+    const IS_COMMUTATIVE: bool = true;
+
     fn identity() -> Self {
         M(!0)
     }

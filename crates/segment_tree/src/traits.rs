@@ -1,5 +1,7 @@
 /// Defines a set of elements which forms a monoid
 pub trait Monoid {
+    const IS_COMMUTATIVE: bool;
+
     /// Returns the identity element.
     fn identity() -> Self;
 
