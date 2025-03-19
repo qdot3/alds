@@ -6,10 +6,10 @@ use crate::{Monoid, MonoidAct};
 ///
 /// # Size dependent operations
 ///
-/// If
+/// If the cost of n-folding composition of acts is high, /TODO/ is more suitable.
 pub struct LazySegmentTree<F: MonoidAct + Clone> {
     data: Box<[<F as MonoidAct>::Arg]>,
-    /// store pending actions
+    /// store pending acts
     lazy: Box<[F]>,
     len: usize,
     buf_len: usize,
@@ -17,6 +17,208 @@ pub struct LazySegmentTree<F: MonoidAct + Clone> {
 }
 
 impl<F: MonoidAct + Clone> LazySegmentTree<F> {
+    #[inline]
+    const fn inner_index(&self, i: usize) -> usize {
+        self.buf_len + i
+    }
+
+    /// Returns `[l, r)`
+    #[inline]
+    fn inner_range<R>(&self, range: R) -> (usize, usize)
+    where
+        R: RangeBounds<usize>,
+    {
+        let l = match range.start_bound() {
+            std::ops::Bound::Included(&l) => l,
+            std::ops::Bound::Excluded(l) => l + 1,
+            std::ops::Bound::Unbounded => 0,
+        };
+        let r = match range.end_bound() {
+            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Excluded(&r) => r,
+            std::ops::Bound::Unbounded => self.len,
+        };
+
+        (self.inner_index(l), self.inner_index(r))
+    }
+
+    #[inline]
+    fn update(&mut self, i: usize) {
+        self.data[i] = self.data[i << 1].binary_operation(&self.data[(i << 1) | 1])
+    }
+
+    #[inline]
+    fn push(&mut self, i: usize, act: F) {
+        self.data[i] = act.apply(&self.data[i]);
+        if i < self.buf_len {
+            // apply `act` after `lazy[i]`
+            self.lazy[i] = act.composite(&self.lazy[i])
+        }
+    }
+
+    #[inline]
+    fn propagate(&mut self, i: usize) {
+        let act = std::mem::replace(&mut self.lazy[i], F::identity());
+        self.push(i * 2, act.clone());
+        self.push(i * 2 + 1, act);
+    }
+
+    /// Returns a reference to a single element.
+    ///
+    /// # Panics
+    ///
+    /// Panics if given index is out of bounds.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
+    pub fn point_query(&mut self, i: usize) -> &<F as MonoidAct>::Arg {
+        let i = self.inner_index(i);
+
+        // apply pending acts
+        for d in (1..=self.height).rev() {
+            self.propagate(i >> d);
+        }
+
+        &self.data[i]
+    }
+
+    /// Returns the result of combining elements over the 'given' range.
+    ///
+    /// # Panics
+    ///
+    /// Panics if given range is out of bounds.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
+    pub fn range_query<R>(&mut self, range: R) -> <F as MonoidAct>::Arg
+    where
+        R: RangeBounds<usize>,
+    {
+        let (mut l, mut r) = self.inner_range(range);
+
+        if l >= r {
+            return <F as MonoidAct>::Arg::identity();
+        }
+
+        // apply pending acts
+        for d in (1..=self.height).rev() {
+            // avoid unnecessary propagation
+            if (l >> d) << d != l {
+                self.propagate(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.propagate(r >> d); // `(r >> d) % 2 = 1`
+            }
+        }
+
+        // calculate result
+        let (mut res_l, mut res_r) = (
+            <F as MonoidAct>::Arg::identity(),
+            <F as MonoidAct>::Arg::identity(),
+        );
+        while l < r {
+            if l & 1 == 1 {
+                res_l = res_l.binary_operation(&self.data[l]);
+                l += 1;
+            }
+            if r & 1 == 1 {
+                r -= 1;
+                res_r = self.data[r].binary_operation(&res_r);
+            }
+
+            l >>= 1;
+            r >>= 1;
+        }
+
+        res_l.binary_operation(&res_r)
+    }
+
+    /// Update `i`-th element using the operation defined as [MonoidAct::apply].
+    /// More precisely, performs `a[i] <- act.apply(a[i])`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if given index is out of bounds.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
+    pub fn point_update(&mut self, i: usize, value: <F as MonoidAct>::Arg) {
+        // apply pending acts
+        self.point_query(i);
+
+        // update data
+        let i = self.inner_index(i);
+        self.data[i] = value;
+        for d in 1..=self.height {
+            self.update(i >> d);
+        }
+    }
+
+    /// Updates elements in the given `range` using the operation defined as [MonoidAct::apply].
+    /// More precisely, performs `a[i] <- act.apply(a[i])` for each `i` in the range.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(log *N*)
+    pub fn range_update<R>(&mut self, range: R, act: F)
+    where
+        R: RangeBounds<usize>,
+    {
+        let (l, r) = self.inner_range(range);
+
+        // apply pending acts
+        for d in (1..=self.height).rev() {
+            // avoid unnecessary propagation
+            if (l >> d) << d != l {
+                self.propagate(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.propagate((r - 1) >> d);
+            }
+        }
+
+        // apply `act` in a lazy way
+        {
+            let (mut l, mut r) = (l, r);
+            while l < r {
+                if l & 1 == 1 {
+                    self.push(l, act.clone());
+                    l += 1;
+                }
+                if r & 1 == 1 {
+                    r -= 1;
+                    self.push(r, act.clone());
+                }
+
+                l >>= 1;
+                r >>= 1;
+            }
+        }
+
+        // update parents of modified nodes
+        for d in 1..=self.height {
+            // avoid updating node with children which has not been updated
+            if (l >> d) << d != l {
+                self.update(l >> d);
+            }
+            if (r >> d) << d != r {
+                self.update((r - 1) >> d);
+            }
+        }
+    }
+}
+
+impl<F: MonoidAct + Clone> LazySegmentTree<F> {
+    /// Creates a new [LazySegmentTree] instance initialized with identity elements.
+    ///
+    /// Use [LazySegmentTree::from] for custom initial elements for better performance.
+    ///
+    /// # Time Complexity
+    ///
+    /// *O*(*N*)
     pub fn new(n: usize) -> Self {
         assert!(n > 0 && n < usize::MAX);
 
@@ -38,172 +240,32 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         }
     }
 
-    const fn inner_index(&self, i: usize) -> usize {
-        self.buf_len + i
+    /// Returns the number of elements.
+    pub fn len(&self) -> usize {
+        self.len
     }
 
-    /// Returns `[l, r)`
-    fn inner_range<R>(&self, range: R) -> (usize, usize)
-    where
-        R: RangeBounds<usize>,
-    {
-        let l = match range.start_bound() {
-            std::ops::Bound::Included(&l) => l,
-            std::ops::Bound::Excluded(l) => l + 1,
-            std::ops::Bound::Unbounded => 0,
-        };
-        let r = match range.end_bound() {
-            std::ops::Bound::Included(r) => r + 1,
-            std::ops::Bound::Excluded(&r) => r,
-            std::ops::Bound::Unbounded => self.len,
-        };
-
-        (self.inner_index(l), self.inner_index(r))
-    }
-
-    fn update_node(&mut self, i: usize) {
-        self.data[i] = self.data[i * 2].binary_operation(&self.data[i * 2 + 1])
-    }
-
-    fn apply_action(&mut self, i: usize, action: F) {
-        self.data[i] = action.apply(&self.data[i]);
-        if i < self.buf_len {
-            // apply `action` after `lazy[i]`
-            self.lazy[i] = action.composite(&self.lazy[i])
-        }
-    }
-
-    fn apply_pending_action(&mut self, i: usize) {
-        self.apply_action(i * 2, self.lazy[i].clone());
-        self.apply_action(i * 2 + 1, self.lazy[i].clone());
-        self.lazy[i] = F::identity()
-    }
-
-    pub fn get(&mut self, i: usize) -> &<F as MonoidAct>::Arg {
-        let i = self.inner_index(i);
-
-        // apply pending actions
-        for d in (1..=self.height).rev() {
-            self.apply_pending_action(i >> d);
-        }
-
-        &self.data[i]
-    }
-
-    pub fn set(&mut self, i: usize, value: <F as MonoidAct>::Arg) {
-        // apply pending actions
-        self.get(i);
-
-        // update data
-        let i = self.inner_index(i);
-        self.data[i] = value;
-        for d in 1..=self.height {
-            self.update_node(i >> d);
-        }
-    }
-
-    pub fn apply<R>(&mut self, range: R, action: F)
-    where
-        R: RangeBounds<usize>,
-    {
-        let (l, r) = self.inner_range(range);
-
-        // apply pending actions
-        for d in (1..=self.height).rev() {
-            // avoid unnecessary propagation
-            if (l >> d) << d != l {
-                self.apply_pending_action(l >> d);
-            }
-            if (r >> d) << d != r {
-                self.apply_pending_action((r - 1) >> d);
-            }
-        }
-
-        // apply `action` in a lazy way
-        {
-            let (mut l, mut r) = (l, r);
-            while l < r {
-                if l % 2 == 1 {
-                    self.apply_action(l, action.clone());
-                    l += 1;
-                }
-                if r % 2 == 1 {
-                    r -= 1;
-                    self.apply_action(r, action.clone());
-                }
-
-                l /= 2;
-                r /= 2;
-            }
-        }
-
-        // update parents of modified nodes
-        for d in 1..=self.height {
-            // avoid updating node with children which has not been updated
-            if (l >> d) << d != l {
-                self.update_node(l >> d);
-            }
-            if (r >> d) << d != r {
-                self.update_node((r - 1) >> d);
-            }
-        }
-    }
-
-    /// Propagates all pending updates and brings all nodes to their latest state.
+    /// Returns the results of updates.
     ///
-    /// This is useful in scenarios where lazy propagation might be expensive,
-    /// such as in [Range Set Range Composite (Library Checker)](https://judge.yosupo.jp/problem/range_set_range_composite).
-    /// Periodically applying all updates helps maintain efficiency by reducing memory overhead.
-    pub fn apply_all(&mut self) {
-        for i in 1..self.data.len() / 2 {
-            self.apply_pending_action(i);
+    /// # Time complexity
+    ///
+    /// *O*(*N*)
+    pub fn into_vec(mut self) -> Vec<<F as MonoidAct>::Arg> {
+        // propagate all pending acts
+        for i in 1..self.data.len() >> 1 {
+            self.propagate(i);
         }
-        for i in (1..self.data.len() / 2).rev() {
-            self.update_node(i);
-        }
+
+        self.data.into_vec().split_off(self.buf_len)
     }
+}
 
-    pub fn eval<R>(&mut self, range: R) -> <F as MonoidAct>::Arg
-    where
-        R: RangeBounds<usize>,
-    {
-        let (mut l, mut r) = self.inner_range(range);
+impl<F: MonoidAct + Clone> IntoIterator for LazySegmentTree<F> {
+    type Item = <F as MonoidAct>::Arg;
+    type IntoIter = <Vec<Self::Item> as IntoIterator>::IntoIter;
 
-        if l >= r {
-            return <F as MonoidAct>::Arg::identity();
-        }
-
-        // apply pending actions
-        for d in (1..=self.height).rev() {
-            // avoid unnecessary propagation
-            if (l >> d) << d != l {
-                self.apply_pending_action(l >> d);
-            }
-            if (r >> d) << d != r {
-                self.apply_pending_action(r >> d); // `(r >> d) % 2 = 1`
-            }
-        }
-
-        // calculate result
-        let (mut res_l, mut res_r) = (
-            <F as MonoidAct>::Arg::identity(),
-            <F as MonoidAct>::Arg::identity(),
-        );
-        while l < r {
-            if l % 2 == 1 {
-                res_l = res_l.binary_operation(&self.data[l]);
-                l += 1;
-            }
-            if r % 2 == 1 {
-                r -= 1;
-                res_r = self.data[r].binary_operation(&res_r);
-            }
-
-            l /= 2;
-            r /= 2;
-        }
-
-        res_l.binary_operation(&res_r)
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_vec().into_iter()
     }
 }
 

@@ -98,10 +98,14 @@ impl<T: Monoid> SegmentTree<T> {
     }
 
     /// Returns a reference to a single element.
+    ///
+    /// # Panics
+    ///
+    /// Panics if given `i` is out of bounds.
     #[inline]
-    pub fn point_query(&self, i: usize) -> Option<&T> {
+    pub fn point_query(&self, i: usize) -> &T {
         let i = self.inner_index(i);
-        self.data.get(i)
+        &self.data[i]
     }
 
     /// Returns the result of combining elements over the 'given' range.

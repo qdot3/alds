@@ -57,7 +57,7 @@ impl<T: Monoid> DualSegmentTree<T> {
     }
 
     /// Updates elements in the given `range` using the binary operation defined in the [Monoid] trait.
-    /// More precisely, performs `a[i] = elem ∘ a[i]` for each `i` in the range.
+    /// More precisely, performs `a[i] <- elem ∘ a[i]` for each `i` in the range.
     ///
     /// # Time complexity
     ///
@@ -125,7 +125,7 @@ impl<T: Monoid> DualSegmentTree<T> {
     }
 
     /// Update `i`-th element using the binary operation defined in the [Monoid] trait.
-    /// More precisely, performs `a[i] = elem ∘ a[i]`.
+    /// More precisely, performs `a[i] <- elem ∘ a[i]`.
     ///
     /// # Panics
     ///

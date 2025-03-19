@@ -19,11 +19,11 @@ fn main() {
         if flag == 0 {
             input! { l: usize, r: usize, b: u64, c: u64, }
 
-            lst.apply(l..r, Affine::new(b, c));
+            lst.range_update(l..r, Affine::new(b, c));
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", lst.eval(l..r).sum);
+            println!("{}", lst.range_query(l..r).sum);
         } else {
             unreachable!()
         }

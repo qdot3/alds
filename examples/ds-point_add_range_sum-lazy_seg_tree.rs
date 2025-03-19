@@ -16,12 +16,12 @@ fn main() {
         if flag == 0 {
             input! { p: usize, x: u64, }
 
-            let value = M::new(x + seg_tree.get(p).value);
-            seg_tree.set(p, value);
+            let value = M::new(x + seg_tree.point_query(p).value);
+            seg_tree.point_update(p, value);
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 
-            println!("{}", seg_tree.eval(l..r).value)
+            println!("{}", seg_tree.range_query(l..r).value)
         } else {
             unreachable!()
         }
