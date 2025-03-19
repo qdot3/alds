@@ -11,9 +11,11 @@ seg_lib = { path = "crates/seg_lib" }
 
 # third-party crates
 rustc-hash = "2.1.1"
-
-[dev-dependencies]
 proconio = { version = "0.5.0", features = ["derive"] }
+
+[workspace.dependencies]
+proconio = { version = "0.5.0", features = ["derive"] }
+
 
 [workspace]
 members = [
@@ -26,4 +28,3 @@ exclude = [
     "/archive",
     "/target"
 ]
-

@@ -23,7 +23,6 @@ fn main() {
             input! { i: usize, }
 
             println!("{}", dst.point_query(i).apply(Mint::new(a[i])));
-            // println!("{:#?}", dst)
         } else {
             unreachable!()
         }

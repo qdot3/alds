@@ -4,9 +4,12 @@ use crate::{Monoid, MonoidAct};
 
 /// A segment tree that supports range updates and range queries.
 ///
-/// # Size dependent operations
+/// # Examples
+///
+/// - [range affine range sum](): size-dependent updates
 ///
 /// If the cost of n-folding composition of acts is high, /TODO/ is more suitable.
+#[derive(Clone)]
 pub struct LazySegmentTree<F: MonoidAct + Clone> {
     /// Stores given elements with buffer. The size will be even for simplicity.
     data: Box<[<F as MonoidAct>::Arg]>,
@@ -85,11 +88,11 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         &self.data[i]
     }
 
-    /// Returns the result of combining elements over the 'given' range.
+    /// Returns the result of combining elements over the given 'range'.
     ///
     /// # Panics
     ///
-    /// Panics if given range is out of bounds.
+    /// Panics if given 'range' is out of bounds.
     ///
     /// # Time complexity
     ///
@@ -124,7 +127,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             }
         }
 
-        // calculate result
+        // calculate result over [l, r)
         l >>= l.trailing_zeros();
         r >>= r.trailing_zeros();
 
@@ -301,11 +304,44 @@ impl<F: MonoidAct + Clone> IntoIterator for LazySegmentTree<F> {
     }
 }
 
+impl<F: MonoidAct + Clone> FromIterator<<F as MonoidAct>::Arg> for LazySegmentTree<F> {
+    fn from_iter<T: IntoIterator<Item = <F as MonoidAct>::Arg>>(iter: T) -> Self {
+        let iter = iter.into_iter();
+        let (min, max) = iter.size_hint();
+        if Some(min) == max {
+            let len = min;
+            let buf_len = min.next_power_of_two();
+            let mut data = Vec::from_iter(
+                std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity())
+                    .take(buf_len)
+                    .chain(iter)
+                    .chain(
+                        std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(len % 2),
+                    ), // save space
+            )
+            .into_boxed_slice();
+            for i in (1..data.len() / 2).rev() {
+                data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
+            }
+            let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
+                .into_boxed_slice();
+
+            Self {
+                data,
+                len,
+                lazy,
+                lazy_height: buf_len.trailing_zeros(),
+            }
+        } else {
+            Self::from(Vec::from_iter(iter))
+        }
+    }
+}
+
 impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<F> {
     fn from(values: Vec<<F as MonoidAct>::Arg>) -> Self {
         let len = values.len();
         let buf_len = len.next_power_of_two(); // non-commutative monoid
-        let lazy_height = buf_len.trailing_zeros();
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity())
                 .take(buf_len)
@@ -316,7 +352,6 @@ impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<
         for i in (1..data.len() / 2).rev() {
             data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
         }
-
         let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
             .into_boxed_slice();
 
@@ -324,7 +359,7 @@ impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<
             data,
             lazy,
             len,
-            lazy_height,
+            lazy_height: buf_len.trailing_zeros(),
         }
     }
 }

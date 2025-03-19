@@ -1,4 +1,4 @@
-// verification-helper: PROBLEM https://judge.yosupo.jp/problem/staticrmq
+// verification-helper: PROB/LEM https://judge.yosupo.jp/problem/staticrmq
 
 use proconio::{fastout, input};
 use seg_lib::{Monoid, SegmentTree};

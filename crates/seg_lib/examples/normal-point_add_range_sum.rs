@@ -1,4 +1,5 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
+
 use proconio::{fastout, input};
 use seg_lib::{Monoid, SegmentTree};
 
