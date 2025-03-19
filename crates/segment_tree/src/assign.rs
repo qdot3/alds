@@ -1,6 +1,6 @@
 use std::ops::RangeBounds;
 
-use crate::MonoidAct;
+use crate::Monoid;
 
 /// A segment tree specialized for efficiently assigning functions to consecutive elements
 /// and composing them over a range.
@@ -19,7 +19,7 @@ use crate::MonoidAct;
 ///   newer assignments override older ones, [`DualSegmentTree`](crate::DualSegmentTree) applies
 ///   function composition in chronological order.
 #[derive(Debug, Clone)]
-pub struct AssignSegmentTree<F: MonoidAct + Copy> {
+pub struct AssignSegmentTree<F: Monoid + Clone> {
     /// `data.len()` will be even for simplicity.
     /// If ths size of given `data` is odd, `F::identity()` will be attached.
     data: Box<[F]>,
@@ -34,7 +34,7 @@ pub struct AssignSegmentTree<F: MonoidAct + Copy> {
     height: u32,
 }
 
-impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
+impl<F: Monoid + Clone> AssignSegmentTree<F> {
     const NULL_ID: usize = !0;
 
     const fn inner_index(&self, i: usize) -> usize {
@@ -63,7 +63,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
 
     /// Updates `data[i]`.
     fn update(&mut self, i: usize) {
-        self.data[i] = self.data[i << 1].composite(&self.data[(i << 1) | 1])
+        self.data[i] = self.data[i << 1].binary_operation(&self.data[(i << 1) | 1])
     }
 
     /// Updates all `data` **without** pending operations.
@@ -76,7 +76,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     /// Assigns `lazy_pow[lazy_map[a]]` to `data[i]` and puts propagation toward bottom on hold.
     fn push(&mut self, i: usize, act_id: usize) {
         if act_id != Self::NULL_ID {
-            self.data[i] = self.lazy_pow[act_id];
+            self.data[i] = self.lazy_pow[act_id].clone();
             if let Some(prev) = self.lazy_map.get_mut(i) {
                 *prev = act_id
             }
@@ -99,7 +99,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         }
     }
 
-    pub fn get(&mut self, i: usize) -> F {
+    pub fn get(&mut self, i: usize) -> &F {
         let i = self.inner_index(i);
 
         // propagate pending updates if necessary.
@@ -107,7 +107,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
             self.propagate(i >> d);
         }
 
-        self.data[i]
+        &self.data[i]
     }
 
     pub fn composite<R>(&mut self, range: R) -> F
@@ -117,10 +117,10 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         let (l, r) = self.inner_range(range);
 
         if l + 1 == r {
-            return self.get(l - self.lazy_map.len());
+            return self.get(l - self.lazy_map.len()).clone();
         }
         if [l, r] == [self.lazy_map.len(), self.lazy_map.len() + self.len] {
-            return self.data[1];
+            return self.data[1].clone();
         }
         if l >= r {
             return F::identity();
@@ -146,17 +146,17 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
         let (mut res_l, mut res_r) = (F::identity(), F::identity());
         while l < r {
             if l & 1 == 1 {
-                res_l = res_l.composite(&self.data[l]);
+                res_l = res_l.binary_operation(&self.data[l]);
                 l += 1;
             }
             if r & 1 == 1 {
                 r ^= 1;
-                res_r = self.data[r].composite(&res_r);
+                res_r = self.data[r].binary_operation(&res_r);
             }
             l >>= 1;
             r >>= 1;
         }
-        res_l.composite(&res_r)
+        res_l.binary_operation(&res_r)
     }
 
     pub fn set(&mut self, i: usize, act: F) -> F {
@@ -197,8 +197,8 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
                 self.propagate(l >> d);
             }
 
-            self.lazy_pow.push(pow_act);
-            pow_act = pow_act.composite(&pow_act)
+            self.lazy_pow.push(pow_act.clone());
+            pow_act = pow_act.binary_operation(&pow_act)
         }
         for d in (1..=each).rev() {
             if (l >> d) << d != l {
@@ -208,8 +208,8 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
                 self.propagate((r - 1) >> d);
             }
 
-            self.lazy_pow.push(pow_act);
-            pow_act = pow_act.composite(&pow_act)
+            self.lazy_pow.push(pow_act.clone());
+            pow_act = pow_act.binary_operation(&pow_act)
         }
         self.lazy_pow.push(pow_act);
 
@@ -249,7 +249,7 @@ impl<F: MonoidAct + Copy> AssignSegmentTree<F> {
     }
 }
 
-impl<F: MonoidAct + Copy> From<Vec<F>> for AssignSegmentTree<F> {
+impl<F: Monoid + Clone> From<Vec<F>> for AssignSegmentTree<F> {
     fn from(values: Vec<F>) -> Self {
         let len = values.len();
         let buf_len = len.next_power_of_two();
