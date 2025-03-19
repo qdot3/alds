@@ -1,3 +1,5 @@
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/unionfind_with_potential_non_commutative_group
+
 use std::ops::Deref;
 
 use mod_int::SMint;
