@@ -8,18 +8,20 @@ use crate::{Monoid, MonoidAct};
 ///
 /// If the cost of n-folding composition of acts is high, /TODO/ is more suitable.
 pub struct LazySegmentTree<F: MonoidAct + Clone> {
+    /// Stores given elements with buffer. The size will be even for simplicity.
     data: Box<[<F as MonoidAct>::Arg]>,
-    /// store pending acts
-    lazy: Box<[F]>,
+    /// True size of data (without any buffer).
     len: usize,
-    buf_len: usize,
+    /// Stores pending acts. The size will be `len.next_power_of_two()`
+    lazy: Box<[F]>,
+    /// A shortcut to `lazy.len().trailing_zeros()`.
     lazy_height: u32,
 }
 
 impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     #[inline]
     const fn inner_index(&self, i: usize) -> usize {
-        self.buf_len + i
+        self.lazy.len() + i
     }
 
     /// Returns `[l, r)`
@@ -50,7 +52,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     #[inline]
     fn push(&mut self, i: usize, act: F) {
         self.data[i] = act.apply(&self.data[i]);
-        if i < self.buf_len {
+        if i < self.lazy.len() {
             // apply `act` after `lazy[i]`
             self.lazy[i] = act.composite(&self.lazy[i])
         }
@@ -100,6 +102,9 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
 
         if l >= r {
             return <F as MonoidAct>::Arg::identity();
+        }
+        if l + 1 == r {
+            return self.point_query(l + self.lazy.len()).clone();
         }
 
         // apply pending acts
@@ -182,7 +187,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             return;
         }
         if l + 1 == r {
-            self.point_update(l + self.buf_len, act);
+            self.point_update(l + self.lazy.len(), act);
             return;
         }
 
@@ -262,7 +267,6 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             data,
             lazy,
             len: n,
-            buf_len,
             lazy_height,
         }
     }
@@ -283,7 +287,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             self.propagate(i);
         }
 
-        self.data.into_vec().split_off(self.buf_len)
+        self.data.into_vec().split_off(self.lazy.len())
     }
 }
 
@@ -319,7 +323,6 @@ impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<
             data,
             lazy,
             len,
-            buf_len,
             lazy_height,
         }
     }

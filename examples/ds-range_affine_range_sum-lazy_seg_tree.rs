@@ -30,7 +30,7 @@ fn main() {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct SUM {
     sum: Mint,
     size: Mint,

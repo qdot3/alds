@@ -11,7 +11,7 @@ pub trait Monoid {
 
 /// Defines a set of operations (or acts) on monoid which forms a monoid
 pub trait MonoidAct {
-    type Arg: Monoid;
+    type Arg: Monoid + Clone;
 
     /// If acts are commutative, then it should be set `true`. Otherwise `false`.
     const IS_COMMUTATIVE: bool;
