@@ -22,4 +22,4 @@ pub use dual::DualSegmentTree;
 pub use dynamic::DynamicSegmentTree;
 pub use lazy::LazySegmentTree;
 pub use normal::SegmentTree;
-pub use traits::{Monoid, MonoidAct, MonoidAction};
+pub use traits::{Monoid, MonoidAct};
