@@ -16,8 +16,7 @@ fn main() {
         if flag == 0 {
             input! { p: usize, x: u64, }
 
-            let value = M::new(x + seg_tree.point_query(p).value);
-            seg_tree.point_update(p, value);
+            seg_tree.point_update(p, F(x));
         } else if flag == 1 {
             input! { l: usize, r: usize, }
 

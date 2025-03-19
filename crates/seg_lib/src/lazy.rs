@@ -155,9 +155,9 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     /// # Time complexity
     ///
     /// *O*(log *N*)
-    pub fn point_update(&mut self, i: usize, value: <F as MonoidAct>::Arg) {
+    pub fn point_update(&mut self, i: usize, act: F) {
         // apply pending acts
-        self.point_query(i);
+        let value = act.apply(self.point_query(i));
 
         // update data
         let i = self.inner_index(i);
@@ -178,6 +178,13 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         R: RangeBounds<usize>,
     {
         let (l, r) = self.inner_range(range);
+        if l >= r {
+            return;
+        }
+        if l + 1 == r {
+            self.point_update(l + self.buf_len, act);
+            return;
+        }
 
         // apply pending acts
         let common = (l ^ (r - 1)).ilog2();
