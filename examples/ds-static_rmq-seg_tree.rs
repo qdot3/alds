@@ -1,7 +1,7 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/staticrmq
 
 use proconio::{fastout, input};
-use segment_tree::{Monoid, SegmentTree};
+use seg_lib::{Monoid, SegmentTree};
 
 #[fastout]
 fn main() {

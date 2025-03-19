@@ -9,7 +9,7 @@ use crate::Monoid;
 /// ## Basic Usage
 ///
 /// ```
-/// use segment_tree::{Monoid, SegmentTree};
+/// use seg_lib::{Monoid, SegmentTree};
 ///
 /// // range minimum query
 /// struct RMQ(i32);
@@ -42,7 +42,7 @@ use crate::Monoid;
 /// generally yields better performance.
 ///
 /// ```
-/// use segment_tree::{Monoid, SegmentTree};
+/// use seg_lib::{Monoid, SegmentTree};
 ///
 /// struct MinMax(i32, i32);
 ///

@@ -7,7 +7,7 @@ edition = "2021"
 # original crates
 mod_int = { path = "crates/mod_int" }
 union_find = { path = "crates/union_find" }
-segment_tree = { path = "crates/segment_tree" }
+seg_lib = { path = "crates/seg_lib" }
 
 # third-party crates
 rustc-hash = "2.1.1"
@@ -18,7 +18,7 @@ proconio = { version = "0.5.0", features = ["derive"] }
 [workspace]
 members = [
     "crates/mod_int",
-    "crates/segment_tree",
+    "crates/seg_lib",
     "crates/union_find",
 ]
 

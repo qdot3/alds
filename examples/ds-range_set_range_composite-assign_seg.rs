@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{AssignSegmentTree, Monoid};
+use seg_lib::{AssignSegmentTree, Monoid};
 
 type Mint = SMint<998_244_353>;
 

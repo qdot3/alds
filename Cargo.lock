@@ -9,7 +9,7 @@ dependencies = [
  "mod_int",
  "proconio",
  "rustc-hash",
- "segment_tree",
+ "seg_lib",
  "union_find",
 ]
 
@@ -65,7 +65,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 
 [[package]]
-name = "segment_tree"
+name = "seg_lib"
 version = "0.1.0"
 
 [[package]]

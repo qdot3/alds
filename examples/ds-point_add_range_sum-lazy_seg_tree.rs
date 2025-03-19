@@ -1,7 +1,7 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
 
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, Monoid, MonoidAct};
+use seg_lib::{LazySegmentTree, Monoid, MonoidAct};
 
 #[fastout]
 fn main() {

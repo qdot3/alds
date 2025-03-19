@@ -2,7 +2,7 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{DynamicSegmentTree, Monoid};
+use seg_lib::{DynamicSegmentTree, Monoid};
 
 type Mint = SMint<998_244_353>;
 
@@ -50,7 +50,7 @@ impl Affine {
 
 impl Monoid for Affine {
     const IS_COMMUTATIVE: bool = false;
-    
+
     fn identity() -> Self {
         Self::new(1, 0)
     }
