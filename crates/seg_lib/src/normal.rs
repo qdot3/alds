@@ -67,11 +67,11 @@ use crate::Monoid;
 /// assert_eq!(seg_tree.range_query(3..).1, 100);
 /// ```
 #[derive(Clone, Debug)]
-pub struct SegmentTree<T: Monoid> {
+pub struct SegmentTree<T: Monoid + Clone> {
     data: Box<[T]>,
 }
 
-impl<T: Monoid> SegmentTree<T> {
+impl<T: Monoid + Clone> SegmentTree<T> {
     #[inline]
     const fn inner_index(&self, i: usize) -> usize {
         self.data.len() / 2 + i
@@ -126,7 +126,9 @@ impl<T: Monoid> SegmentTree<T> {
         // calculate result over [l, r)
         l >>= l.trailing_zeros();
         r >>= r.trailing_zeros();
-        debug_assert_ne!(l, r);
+        if l == r {
+            return self.data[l].clone();
+        }
         let (mut res_l, mut res_r) = (T::identity(), T::identity());
         while l != r {
             if l > r {
@@ -163,7 +165,7 @@ impl<T: Monoid> SegmentTree<T> {
     // TODO: impl max_right() & max_left()
 }
 
-impl<T: Monoid> SegmentTree<T> {
+impl<T: Monoid + Clone> SegmentTree<T> {
     pub fn new(n: usize) -> Self {
         let data = Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n << 1))
             .into_boxed_slice();
@@ -202,7 +204,7 @@ impl<T: Monoid> SegmentTree<T> {
     }
 }
 
-impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
+impl<T: Monoid + Clone> From<Vec<T>> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial `elements` in *O*(*N*) time,
     /// where *N* is the number of elements in `elements`.
     fn from(elements: Vec<T>) -> Self {
@@ -221,7 +223,7 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
     }
 }
 
-impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
+impl<T: Monoid + Clone> FromIterator<T> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial elements in *O*(*N*) time,
     /// where *N* is the number of elements.
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
@@ -246,7 +248,7 @@ impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
     }
 }
 
-impl<T: Monoid> IntoIterator for SegmentTree<T> {
+impl<T: Monoid + Clone> IntoIterator for SegmentTree<T> {
     type Item = T;
     type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
 
@@ -255,7 +257,7 @@ impl<T: Monoid> IntoIterator for SegmentTree<T> {
     }
 }
 
-impl<T: Monoid> Index<usize> for SegmentTree<T> {
+impl<T: Monoid + Clone> Index<usize> for SegmentTree<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {

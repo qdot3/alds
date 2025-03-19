@@ -14,6 +14,7 @@ fn main() {
     }
 }
 
+#[derive(Clone)]
 struct M(u32);
 
 impl Monoid for M {
