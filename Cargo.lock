@@ -17,6 +17,7 @@ dependencies = [
 name = "mod_int"
 version = "0.1.0"
 dependencies = [
+ "proconio",
  "rustc-hash",
 ]
 
@@ -92,3 +93,7 @@ checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
 [[package]]
 name = "union_find"
 version = "0.1.0"
+dependencies = [
+ "mod_int",
+ "proconio",
+]

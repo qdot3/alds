@@ -1,5 +1,7 @@
 # alds library
 
+[![Actions Status](https://github.com/beet-aizu/library/workflows/verify/badge.svg)](https://github.com/beet-aizu/library/actions)
+
 競技プログラミング用のコードを実装・検証しています。
 実装は`/crates`、検証用コードは`/examples`にあります。
 `/archive`はファイル構造の変更をサボっているものです。

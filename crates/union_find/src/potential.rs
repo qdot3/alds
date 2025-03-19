@@ -28,15 +28,15 @@ impl<P: Group> UnionFindWithPotential<P> {
     pub fn find(&self, i: usize) -> usize {
         // path compression
         if let Some(p) = self.node[i].get().get_parent() {
-            let ri = self.find(p);
-            // P(i) = Pi @ P(parent) = Pi @ Pp @ P(root)
+            let r = self.find(p);
+            // P(i) = Pi ∘ P(parent) = Pi ∘ Pp ∘ P(root)
             self.node[i].set(Node {
-                par_or_size: ri as i32,
+                par_or_size: r as i32,
                 potential: (self.node[i].get().potential())
                     .binary_operation(self.node[p].get().potential()),
             });
 
-            return ri;
+            return r;
         }
 
         i
@@ -53,7 +53,7 @@ impl<P: Group> UnionFindWithPotential<P> {
             .expect("node should be a root node")
     }
 
-    /// get P_ij of `P(i) = P_ij @ P(j)`
+    /// Returns P_ij of `P(i) = P_ij ∘ P(j)` if determined.
     pub fn potential(&self, i: usize, j: usize) -> Option<P> {
         if !self.same(i, j) {
             return None;
@@ -68,7 +68,7 @@ impl<P: Group> UnionFindWithPotential<P> {
         )
     }
 
-    /// Sets P(i) = P_ij @ P(j) if there is no contradiction
+    /// Sets P(i) = P_ij ∘ P(j) if there is no contradiction.
     pub fn unite(&mut self, i: usize, j: usize, potential_ij: P) -> Result<bool, ()> {
         if let Some(p_ij) = self.potential(i, j) {
             if potential_ij == p_ij {
@@ -109,7 +109,7 @@ impl<P: Group> UnionFindWithPotential<P> {
 #[derive(Debug, Clone, Copy)]
 struct Node<P: Group> {
     par_or_size: i32,
-    /// P(self) = P @ P(parent)
+    /// P(self) = P ∘ P(parent)
     potential: P,
 }
 

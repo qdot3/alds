@@ -32,7 +32,7 @@ fn main() {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct Affine {
     tilt: Mint,
     offset: Mint,
