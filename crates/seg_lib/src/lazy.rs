@@ -61,8 +61,8 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     #[inline]
     fn propagate(&mut self, i: usize) {
         let act = std::mem::replace(&mut self.lazy[i], F::identity());
-        self.push(i * 2, act.clone());
-        self.push(i * 2 + 1, act);
+        self.push(i << 1, act.clone());
+        self.push((i << 1) | 1, act);
     }
 
     /// Returns a reference to a single element.
@@ -104,11 +104,11 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             return <F as MonoidAct>::Arg::identity();
         }
         if l + 1 == r {
-            return self.point_query(l + self.lazy.len()).clone();
+            return self.point_query(l - self.lazy.len()).clone();
         }
 
         // apply pending acts
-        let common = (l ^ (r - 1)).ilog2();
+        let common = (l ^ r).ilog2();
         for d in (common + 1..=self.lazy_height).rev() {
             if (l >> d) << d != l || (r >> d) << d != r {
                 self.propagate(l >> d);
@@ -120,7 +120,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
                 self.propagate(l >> d);
             }
             if (r >> d) << d != r {
-                self.propagate(r >> d); // `(r >> d) % 2 = 1`
+                self.propagate(r >> d);
             }
         }
 
@@ -131,7 +131,8 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         );
         l >>= l.trailing_zeros();
         r >>= r.trailing_zeros();
-        loop {
+        debug_assert_ne!(l, r);
+        while l != r {
             if l >= r {
                 res_l = res_l.binary_operation(&self.data[l]);
                 l += 1;
@@ -140,10 +141,6 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
                 r -= 1;
                 res_r = self.data[r].binary_operation(&res_r);
                 r >>= r.trailing_zeros()
-            }
-
-            if l == r {
-                break;
             }
         }
 
@@ -187,7 +184,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             return;
         }
         if l + 1 == r {
-            self.point_update(l + self.lazy.len(), act);
+            self.point_update(l - self.lazy.len(), act);
             return;
         }
 
@@ -213,7 +210,8 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             let (mut l, mut r) = (l, r);
             l >>= l.trailing_zeros();
             r >>= r.trailing_zeros();
-            loop {
+            debug_assert_eq!(l, r);
+            while l != r {
                 if l >= r {
                     self.push(l, act.clone());
                     l += 1;
@@ -222,10 +220,6 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
                     r -= 1;
                     self.push(r, act.clone());
                     r >>= r.trailing_zeros();
-                }
-
-                if l == r {
-                    break;
                 }
             }
         }
