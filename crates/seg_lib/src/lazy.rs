@@ -13,7 +13,7 @@ pub struct LazySegmentTree<F: MonoidAct + Clone> {
     lazy: Box<[F]>,
     len: usize,
     buf_len: usize,
-    height: u32,
+    lazy_height: u32,
 }
 
 impl<F: MonoidAct + Clone> LazySegmentTree<F> {
@@ -76,7 +76,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         let i = self.inner_index(i);
 
         // apply pending acts
-        for d in (1..=self.height).rev() {
+        for d in (1..=self.lazy_height).rev() {
             self.propagate(i >> d);
         }
 
@@ -103,7 +103,13 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         }
 
         // apply pending acts
-        for d in (1..=self.height).rev() {
+        let common = (l ^ (r - 1)).ilog2();
+        for d in (common + 1..=self.lazy_height).rev() {
+            if (l >> d) << d != l || (r >> d) << d != r {
+                self.propagate(l >> d);
+            }
+        }
+        for d in (1..=common).rev() {
             // avoid unnecessary propagation
             if (l >> d) << d != l {
                 self.propagate(l >> d);
@@ -118,18 +124,22 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             <F as MonoidAct>::Arg::identity(),
             <F as MonoidAct>::Arg::identity(),
         );
-        while l < r {
-            if l & 1 == 1 {
+        l >>= l.trailing_zeros();
+        r >>= r.trailing_zeros();
+        loop {
+            if l >= r {
                 res_l = res_l.binary_operation(&self.data[l]);
                 l += 1;
-            }
-            if r & 1 == 1 {
+                l >>= l.trailing_zeros()
+            } else {
                 r -= 1;
                 res_r = self.data[r].binary_operation(&res_r);
+                r >>= r.trailing_zeros()
             }
 
-            l >>= 1;
-            r >>= 1;
+            if l == r {
+                break;
+            }
         }
 
         res_l.binary_operation(&res_r)
@@ -152,7 +162,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         // update data
         let i = self.inner_index(i);
         self.data[i] = value;
-        for d in 1..=self.height {
+        for d in 1..=self.lazy_height {
             self.update(i >> d);
         }
     }
@@ -170,7 +180,13 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         let (l, r) = self.inner_range(range);
 
         // apply pending acts
-        for d in (1..=self.height).rev() {
+        let common = (l ^ (r - 1)).ilog2();
+        for d in (common + 1..=self.lazy_height).rev() {
+            if (l >> d) << d != l || (r >> d) << d != r {
+                self.propagate(l >> d);
+            }
+        }
+        for d in (1..=common).rev() {
             // avoid unnecessary propagation
             if (l >> d) << d != l {
                 self.propagate(l >> d);
@@ -183,23 +199,27 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         // apply `act` in a lazy way
         {
             let (mut l, mut r) = (l, r);
-            while l < r {
-                if l & 1 == 1 {
+            l >>= l.trailing_zeros();
+            r >>= r.trailing_zeros();
+            loop {
+                if l >= r {
                     self.push(l, act.clone());
                     l += 1;
-                }
-                if r & 1 == 1 {
+                    l >>= l.trailing_zeros();
+                } else {
                     r -= 1;
                     self.push(r, act.clone());
+                    r >>= r.trailing_zeros();
                 }
 
-                l >>= 1;
-                r >>= 1;
+                if l == r {
+                    break;
+                }
             }
         }
 
         // update parents of modified nodes
-        for d in 1..=self.height {
+        for d in 1..=self.lazy_height {
             // avoid updating node with children which has not been updated
             if (l >> d) << d != l {
                 self.update(l >> d);
@@ -223,7 +243,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         assert!(n > 0 && n < usize::MAX);
 
         let buf_len = n.next_power_of_two(); // non-commutative monoid
-        let height = buf_len.trailing_zeros() + 1;
+        let lazy_height = buf_len.trailing_zeros() + 1;
         let data = Vec::from_iter(
             std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(n + n % 2 + buf_len),
         ) // save space
@@ -236,7 +256,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
             lazy,
             len: n,
             buf_len,
-            height,
+            lazy_height,
         }
     }
 
@@ -273,7 +293,7 @@ impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<
     fn from(values: Vec<<F as MonoidAct>::Arg>) -> Self {
         let len = values.len();
         let buf_len = len.next_power_of_two(); // non-commutative monoid
-        let height = buf_len.trailing_zeros() + 1;
+        let lazy_height = buf_len.trailing_zeros();
         let mut data = Vec::from_iter(
             std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity())
                 .take(buf_len)
@@ -293,7 +313,7 @@ impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<
             lazy,
             len,
             buf_len,
-            height,
+            lazy_height,
         }
     }
 }

@@ -31,7 +31,7 @@ pub struct AssignSegmentTree<F: Monoid + Clone> {
     /// Number of `data`, excluding at most one extended identity element.
     len: usize,
     /// Height of `lazy_map`
-    height: u32,
+    lazy_height: u32,
 }
 
 impl<F: Monoid + Clone> AssignSegmentTree<F> {
@@ -103,7 +103,7 @@ impl<F: Monoid + Clone> AssignSegmentTree<F> {
         let i = self.inner_index(i);
 
         // propagate pending updates if necessary.
-        for d in (1..=self.height).rev() {
+        for d in (1..=self.lazy_height).rev() {
             self.propagate(i >> d);
         }
 
@@ -127,13 +127,13 @@ impl<F: Monoid + Clone> AssignSegmentTree<F> {
         }
 
         // propagate pending updates if necessary.
-        let each = (l ^ (r - 1)).ilog2(); // no panic
-        for d in (each + 1..=self.height).rev() {
+        let common = (l ^ (r - 1)).ilog2(); // no panic
+        for d in (common + 1..=self.lazy_height).rev() {
             if (l >> d) << d != l || (r >> d) << d != r {
                 self.propagate(l >> d);
             }
         }
-        for d in (1..=each).rev() {
+        for d in (1..=common).rev() {
             if (l >> d) << d != l {
                 self.propagate(l >> d);
             }
@@ -163,14 +163,14 @@ impl<F: Monoid + Clone> AssignSegmentTree<F> {
         let i = self.inner_index(i);
 
         // propagate pending updates if necessary.
-        for d in (1..=self.height).rev() {
+        for d in (1..=self.lazy_height).rev() {
             self.propagate(i >> d);
         }
 
         let prev = std::mem::replace(&mut self.data[i], act);
 
         // updates data
-        for d in 1..=self.height {
+        for d in 1..=self.lazy_height {
             self.update(i >> d);
         }
 
@@ -191,8 +191,8 @@ impl<F: Monoid + Clone> AssignSegmentTree<F> {
         // 2. calculate `act.pow(block_size)`
         let mut id = self.lazy_pow.len();
         let mut pow_act = act;
-        let each = (l ^ (r - 1)).ilog2(); // no panic
-        for d in (each + 1..=self.height).rev() {
+        let common = (l ^ (r - 1)).ilog2(); // no panic
+        for d in (common + 1..=self.lazy_height).rev() {
             if (l >> d) << d != l || (r >> d) << d != r {
                 self.propagate(l >> d);
             }
@@ -200,7 +200,7 @@ impl<F: Monoid + Clone> AssignSegmentTree<F> {
             self.lazy_pow.push(pow_act.clone());
             pow_act = pow_act.binary_operation(&pow_act)
         }
-        for d in (1..=each).rev() {
+        for d in (1..=common).rev() {
             if (l >> d) << d != l {
                 self.propagate(l >> d);
             }
@@ -233,7 +233,7 @@ impl<F: Monoid + Clone> AssignSegmentTree<F> {
 
         // update `data`
         if self.lazy_pow.len() < self.data.len() {
-            for d in 1..=self.height {
+            for d in 1..=self.lazy_height {
                 if (l >> d) << d != l {
                     self.update(l >> d);
                 }
@@ -266,7 +266,7 @@ impl<F: Monoid + Clone> From<Vec<F>> for AssignSegmentTree<F> {
             lazy_map: vec![Self::NULL_ID; buf_len].into_boxed_slice(),
             lazy_pow: Vec::with_capacity(buf_len + len),
             len,
-            height: buf_len.trailing_zeros(),
+            lazy_height: buf_len.trailing_zeros(),
         };
         res.update_all();
 
