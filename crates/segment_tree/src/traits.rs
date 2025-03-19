@@ -25,7 +25,7 @@ pub trait MonoidAction<Arg> {
 }
 
 pub trait MonoidAct {
-    type Arg;
+    type Arg: Monoid;
 
     /// If acts are commutative, then it should be set `true`. Otherwise `false`.
     const IS_COMMUTATIVE: bool;

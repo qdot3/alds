@@ -1,15 +1,14 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
 
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, Monoid, MonoidAction};
+use segment_tree::{LazySegmentTree, Monoid, MonoidAct};
 
 #[fastout]
 fn main() {
     input! { n: usize, q: usize, a: [u64; n], }
 
     // test `from`
-    let mut seg_tree =
-        LazySegmentTree::<_, F>::from(Vec::from_iter(a.into_iter().map(|a| M::new(a))));
+    let mut seg_tree = LazySegmentTree::<F>::from(Vec::from_iter(a.into_iter().map(|a| M::new(a))));
 
     for _ in 0..q {
         input! { flag: u8, }
@@ -59,14 +58,15 @@ impl Monoid for M {
 #[derive(Clone)]
 struct F(u64);
 
-impl MonoidAction<M> for F {
+impl MonoidAct for F {
+    type Arg = M;
     const IS_COMMUTATIVE: bool = true;
 
     fn identity() -> Self {
         F(0)
     }
 
-    fn apply(&self, arg: &M) -> M {
+    fn apply(&self, arg: &Self::Arg) -> Self::Arg {
         M {
             value: self.0 * arg.size as u64 + arg.value,
             size: arg.size,

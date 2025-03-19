@@ -1,15 +1,14 @@
-use std::{fmt::Debug, ops::RangeBounds};
+use std::ops::RangeBounds;
 
-use crate::{Monoid, MonoidAction};
+use crate::{Monoid, MonoidAct};
 
 /// A segment tree that supports range updates and range queries.
 ///
 /// # Size dependent operations
-/// 
-/// If 
-#[derive(Debug, Clone)]
-pub struct LazySegmentTree<T: Monoid, F: MonoidAction<T>> {
-    data: Box<[T]>,
+///
+/// If
+pub struct LazySegmentTree<F: MonoidAct + Clone> {
+    data: Box<[<F as MonoidAct>::Arg]>,
     /// store pending actions
     lazy: Box<[F]>,
     len: usize,
@@ -17,15 +16,16 @@ pub struct LazySegmentTree<T: Monoid, F: MonoidAction<T>> {
     height: u32,
 }
 
-impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
+impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     pub fn new(n: usize) -> Self {
         assert!(n > 0 && n < usize::MAX);
 
         let buf_len = n.next_power_of_two(); // non-commutative monoid
         let height = buf_len.trailing_zeros() + 1;
-        let data =
-            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n + n % 2 + buf_len)) // save space
-                .into_boxed_slice();
+        let data = Vec::from_iter(
+            std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(n + n % 2 + buf_len),
+        ) // save space
+        .into_boxed_slice();
         let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
             .into_boxed_slice();
 
@@ -79,7 +79,7 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
         self.lazy[i] = F::identity()
     }
 
-    pub fn get(&mut self, i: usize) -> &T {
+    pub fn get(&mut self, i: usize) -> &<F as MonoidAct>::Arg {
         let i = self.inner_index(i);
 
         // apply pending actions
@@ -90,7 +90,7 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
         &self.data[i]
     }
 
-    pub fn set(&mut self, i: usize, value: T) {
+    pub fn set(&mut self, i: usize, value: <F as MonoidAct>::Arg) {
         // apply pending actions
         self.get(i);
 
@@ -163,14 +163,14 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
         }
     }
 
-    pub fn eval<R>(&mut self, range: R) -> T
+    pub fn eval<R>(&mut self, range: R) -> <F as MonoidAct>::Arg
     where
         R: RangeBounds<usize>,
     {
         let (mut l, mut r) = self.inner_range(range);
 
         if l >= r {
-            return T::identity();
+            return <F as MonoidAct>::Arg::identity();
         }
 
         // apply pending actions
@@ -185,7 +185,10 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
         }
 
         // calculate result
-        let (mut res_l, mut res_r) = (T::identity(), T::identity());
+        let (mut res_l, mut res_r) = (
+            <F as MonoidAct>::Arg::identity(),
+            <F as MonoidAct>::Arg::identity(),
+        );
         while l < r {
             if l % 2 == 1 {
                 res_l = res_l.binary_operation(&self.data[l]);
@@ -204,16 +207,16 @@ impl<T: Monoid, F: MonoidAction<T> + Clone> LazySegmentTree<T, F> {
     }
 }
 
-impl<T: Monoid, F: MonoidAction<T>> From<Vec<T>> for LazySegmentTree<T, F> {
-    fn from(values: Vec<T>) -> Self {
+impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<F> {
+    fn from(values: Vec<<F as MonoidAct>::Arg>) -> Self {
         let len = values.len();
         let buf_len = len.next_power_of_two(); // non-commutative monoid
         let height = buf_len.trailing_zeros() + 1;
         let mut data = Vec::from_iter(
-            std::iter::repeat_with(|| T::identity())
+            std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity())
                 .take(buf_len)
                 .chain(values)
-                .chain(std::iter::repeat_with(|| T::identity()).take(len % 2)), // save space
+                .chain(std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(len % 2)), // save space
         )
         .into_boxed_slice();
         for i in (1..data.len() / 2).rev() {

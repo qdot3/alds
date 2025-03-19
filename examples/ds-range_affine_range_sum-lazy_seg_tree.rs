@@ -2,16 +2,16 @@
 
 use mod_int::SMint;
 use proconio::{fastout, input};
-use segment_tree::{LazySegmentTree, Monoid, MonoidAction};
+use segment_tree::{LazySegmentTree, Monoid, MonoidAct};
+
+type Mint = SMint<998_244_353>;
 
 #[fastout]
 fn main() {
     input! { n: usize, q: usize, a: [u64; n], }
 
-    const MOD: u64 = 998_244_353;
-    let mut lst = LazySegmentTree::<SUM<MOD>, Affine<MOD>>::from(Vec::from_iter(
-        a.into_iter().map(|a| SUM::new(a)),
-    ));
+    let mut lst =
+        LazySegmentTree::<Affine>::from(Vec::from_iter(a.into_iter().map(|a| SUM::new(a))));
 
     for _ in 0..q {
         input! { flag: u8, }
@@ -31,12 +31,12 @@ fn main() {
 }
 
 #[derive(Debug)]
-struct SUM<const MOD: u64> {
-    sum: SMint<MOD>,
-    size: SMint<MOD>,
+struct SUM {
+    sum: Mint,
+    size: Mint,
 }
 
-impl<const MOD: u64> SUM<MOD> {
+impl SUM {
     fn new(value: u64) -> Self {
         Self {
             sum: SMint::new(value),
@@ -45,7 +45,7 @@ impl<const MOD: u64> SUM<MOD> {
     }
 }
 
-impl<const MOD: u64> Monoid for SUM<MOD> {
+impl Monoid for SUM {
     const IS_COMMUTATIVE: bool = true;
 
     fn identity() -> Self {
@@ -64,12 +64,12 @@ impl<const MOD: u64> Monoid for SUM<MOD> {
 }
 
 #[derive(Clone)]
-struct Affine<const MOD: u64> {
-    tilt: SMint<MOD>,
-    offset: SMint<MOD>,
+struct Affine {
+    tilt: Mint,
+    offset: Mint,
 }
 
-impl<const MOD: u64> Affine<MOD> {
+impl Affine {
     fn new(tilt: u64, offset: u64) -> Self {
         Self {
             tilt: SMint::new(tilt),
@@ -78,14 +78,15 @@ impl<const MOD: u64> Affine<MOD> {
     }
 }
 
-impl<const MOD: u64> MonoidAction<SUM<MOD>> for Affine<MOD> {
+impl MonoidAct for Affine {
+    type Arg = SUM;
     const IS_COMMUTATIVE: bool = false;
 
     fn identity() -> Self {
         Self::new(1, 0)
     }
 
-    fn apply(&self, arg: &SUM<MOD>) -> SUM<MOD> {
+    fn apply(&self, arg: &Self::Arg) -> Self::Arg {
         SUM {
             sum: self.tilt * arg.sum + self.offset * arg.size,
             size: arg.size,
