@@ -4,14 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# original crates
-mod_int = { path = "crates/mod_int" }
-union_find = { path = "crates/union_find" }
-seg_lib = { path = "crates/seg_lib" }
-
-# third-party
-proconio = { version = "0.5.0", features = ["derive"] }
-rustc-hash = "2.1.1"
 
 [workspace.dependencies]
 proconio = { version = "0.5.0", features = ["derive"] }

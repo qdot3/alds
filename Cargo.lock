@@ -5,13 +5,6 @@ version = 4
 [[package]]
 name = "alds"
 version = "0.1.0"
-dependencies = [
- "mod_int",
- "proconio",
- "rustc-hash",
- "seg_lib",
- "union_find",
-]
 
 [[package]]
 name = "mod_int"
