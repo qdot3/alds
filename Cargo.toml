@@ -11,10 +11,10 @@ seg_lib = { path = "crates/seg_lib" }
 
 # third-party
 proconio = { version = "0.5.0", features = ["derive"] }
+rustc-hash = "2.1.1"
 
 [workspace.dependencies]
 proconio = { version = "0.5.0", features = ["derive"] }
-
 
 [workspace]
 members = [
