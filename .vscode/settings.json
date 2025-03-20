@@ -4,6 +4,7 @@
         "binop",
         "cbrt",
         "cipolla",
+        "efgh",
         "monoid",
         "semigroup",
         "thiserror",

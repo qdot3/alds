@@ -1,3 +1,5 @@
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/staticrmq
+
 use proconio::{fastout, input};
 use sparse_table::{IdempotentSemigroup, SparseTable};
 
