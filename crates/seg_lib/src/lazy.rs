@@ -261,11 +261,11 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
         let buf_len = n.next_power_of_two(); // non-commutative monoid
         let lazy_height = buf_len.trailing_zeros() + 1;
         let data = Vec::from_iter(
-            std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(n + n % 2 + buf_len),
+            std::iter::repeat_with(<F as MonoidAct>::Arg::identity).take(n + n % 2 + buf_len),
         ) // save space
         .into_boxed_slice();
-        let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
-            .into_boxed_slice();
+        let lazy =
+            Vec::from_iter(std::iter::repeat_with(F::identity).take(buf_len)).into_boxed_slice();
 
         Self {
             data,
@@ -276,6 +276,7 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     }
 
     /// Returns the number of elements.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.len
     }
@@ -312,18 +313,16 @@ impl<F: MonoidAct + Clone> FromIterator<<F as MonoidAct>::Arg> for LazySegmentTr
             let len = min;
             let buf_len = min.next_power_of_two();
             let mut data = Vec::from_iter(
-                std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity())
+                std::iter::repeat_with(<F as MonoidAct>::Arg::identity)
                     .take(buf_len)
                     .chain(iter)
-                    .chain(
-                        std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(len % 2),
-                    ), // save space
+                    .chain(std::iter::repeat_with(<F as MonoidAct>::Arg::identity).take(len % 2)), // save space
             )
             .into_boxed_slice();
             for i in (1..data.len() / 2).rev() {
                 data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
             }
-            let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
+            let lazy = Vec::from_iter(std::iter::repeat_with(F::identity).take(buf_len))
                 .into_boxed_slice();
 
             Self {
@@ -343,17 +342,17 @@ impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<
         let len = values.len();
         let buf_len = len.next_power_of_two(); // non-commutative monoid
         let mut data = Vec::from_iter(
-            std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity())
+            std::iter::repeat_with(<F as MonoidAct>::Arg::identity)
                 .take(buf_len)
                 .chain(values)
-                .chain(std::iter::repeat_with(|| <F as MonoidAct>::Arg::identity()).take(len % 2)), // save space
+                .chain(std::iter::repeat_with(<F as MonoidAct>::Arg::identity).take(len % 2)), // save space
         )
         .into_boxed_slice();
         for i in (1..data.len() / 2).rev() {
             data[i] = data[i * 2].binary_operation(&data[i * 2 + 1])
         }
-        let lazy = Vec::from_iter(std::iter::repeat_with(|| F::identity()).take(buf_len))
-            .into_boxed_slice();
+        let lazy =
+            Vec::from_iter(std::iter::repeat_with(F::identity).take(buf_len)).into_boxed_slice();
 
         Self {
             data,

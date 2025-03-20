@@ -254,10 +254,10 @@ impl<F: Monoid + Clone> From<Vec<F>> for AssignSegmentTree<F> {
         let len = values.len();
         let buf_len = len.next_power_of_two();
         let data = Vec::from_iter(
-            std::iter::repeat_with(|| F::identity())
+            std::iter::repeat_with(F::identity)
                 .take(buf_len)
                 .chain(values)
-                .chain(std::iter::repeat_with(|| F::identity()).take(len % 2)),
+                .chain(std::iter::repeat_with(F::identity).take(len % 2)),
         )
         .into_boxed_slice();
 

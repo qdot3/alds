@@ -7,7 +7,7 @@ name = "alds"
 version = "0.1.0"
 dependencies = [
  "mod_int",
- "rustc-hash",
+ "proconio",
  "seg_lib",
  "union_find",
 ]

@@ -169,7 +169,7 @@ impl<T: Monoid> SegmentTree<T> {
 
 impl<T: Monoid> SegmentTree<T> {
     pub fn new(n: usize) -> Self {
-        let data = Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n << 1))
+        let data = Vec::from_iter(std::iter::repeat_with( T::identity).take(n << 1))
             .into_boxed_slice();
 
         Self { data }
@@ -212,7 +212,7 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
     fn from(elements: Vec<T>) -> Self {
         // this space optimization is valid even in commutative operation cases.
         let mut data = Vec::from_iter(
-            std::iter::repeat_with(|| T::identity())
+            std::iter::repeat_with( T::identity)
                 .take(elements.len())
                 .chain(elements),
         )
@@ -234,7 +234,7 @@ impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
         if Some(min) == max {
             // same as `from()`
             let mut data = Vec::from_iter(
-                std::iter::repeat_with(|| T::identity())
+                std::iter::repeat_with(T::identity)
                     .take(min)
                     .chain(iter),
             )

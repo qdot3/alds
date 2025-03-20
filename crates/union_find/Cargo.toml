@@ -3,6 +3,8 @@ name = "union_find"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+
 [dev-dependencies]
 mod_int = { path = "../mod_int" }
 proconio = { workspace = true }

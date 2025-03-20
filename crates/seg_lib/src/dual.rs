@@ -156,9 +156,8 @@ impl<T: Monoid> DualSegmentTree<T> {
     /// *O*(*N*)
     pub fn new(n: usize) -> Self {
         let buf_len: usize = n.next_power_of_two();
-        let lazy =
-            Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(buf_len + n + n % 2))
-                .into_boxed_slice();
+        let lazy = Vec::from_iter(std::iter::repeat_with(T::identity).take(buf_len + n + n % 2))
+            .into_boxed_slice();
 
         Self {
             len: n,
@@ -168,6 +167,7 @@ impl<T: Monoid> DualSegmentTree<T> {
     }
 
     /// Returns the number of elements.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.len
     }

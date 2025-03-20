@@ -9,8 +9,8 @@ mod_int = { path = "crates/mod_int" }
 union_find = { path = "crates/union_find" }
 seg_lib = { path = "crates/seg_lib" }
 
-# third-party crates
-rustc-hash = "2.1.1"
+# third-party
+proconio = { version = "0.5.0", features = ["derive"] }
 
 [workspace.dependencies]
 proconio = { version = "0.5.0", features = ["derive"] }
