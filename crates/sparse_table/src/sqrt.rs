@@ -30,6 +30,7 @@ impl<T: Semigroup + Clone> SqrtTable<T> {
         }
 
         let (il, ir) = (l / self.block_size, r / self.block_size);
+
         if il == ir {
             return self.small_table[il]
                 .range_query(l - il * self.block_size..r - ir * self.block_size);

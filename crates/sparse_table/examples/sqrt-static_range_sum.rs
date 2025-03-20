@@ -1,3 +1,5 @@
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/static_range_sum
+
 use proconio::{fastout, input};
 use sparse_table::{Semigroup, SqrtTable};
 
