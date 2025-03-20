@@ -1,7 +1,7 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/staticrmq
 
 use proconio::{fastout, input};
-use sparse_table::{IdempotentSemigroup, SparseTable};
+use sparse_table::{Idempotent, Semigroup, SparseTable};
 
 #[fastout]
 fn main() {
@@ -16,7 +16,9 @@ fn main() {
 #[derive(Debug)]
 struct RMQ(u32);
 
-impl IdempotentSemigroup for RMQ {
+impl Idempotent for RMQ {}
+
+impl Semigroup for RMQ {
     fn binary_operation(&self, rhs: &Self) -> Self {
         Self(self.0.min(rhs.0))
     }

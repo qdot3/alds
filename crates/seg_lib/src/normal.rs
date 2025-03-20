@@ -1,7 +1,7 @@
 use std::ops::{Index, RangeBounds};
 
 
-use crate::Monoid;
+use super::Monoid;
 
 /// A data structure that supports point updates and range queries.
 ///

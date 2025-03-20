@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeBounds};
 
-use crate::Monoid;
+use super::Monoid;
 
 /// Segment tree for large array.
 #[derive(Debug, Clone)]

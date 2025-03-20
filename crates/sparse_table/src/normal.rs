@@ -1,18 +1,16 @@
 use std::{fmt::Debug, ops::RangeBounds};
 
-/// Defines a set of elements which forms a monoid
-pub trait IdempotentSemigroup {
-    /// Performs the associative binary operation on the monoid.
-    fn binary_operation(&self, rhs: &Self) -> Self;
-}
+use crate::Idempotent;
+
+use super::Semigroup;
 
 #[derive(Clone)]
-pub struct SparseTable<T: IdempotentSemigroup> {
+pub struct SparseTable<T: Semigroup + Idempotent> {
     table: Box<[T]>,
     partition: Box<[usize]>,
 }
 
-impl<T: IdempotentSemigroup> SparseTable<T> {
+impl<T: Semigroup + Idempotent> SparseTable<T> {
     pub fn range_query<R>(&self, range: R) -> Option<T>
     where
         R: RangeBounds<usize>,
@@ -40,7 +38,7 @@ impl<T: IdempotentSemigroup> SparseTable<T> {
     }
 }
 
-impl<T: IdempotentSemigroup + Debug> Debug for SparseTable<T> {
+impl<T: Semigroup + Idempotent + Debug> Debug for SparseTable<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SparseTable")
             .field(
@@ -55,7 +53,7 @@ impl<T: IdempotentSemigroup + Debug> Debug for SparseTable<T> {
     }
 }
 
-impl<T: IdempotentSemigroup> FromIterator<T> for SparseTable<T> {
+impl<T: Semigroup + Idempotent> FromIterator<T> for SparseTable<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let (min, max) = iter.size_hint();
@@ -94,7 +92,7 @@ impl<T: IdempotentSemigroup> FromIterator<T> for SparseTable<T> {
     }
 }
 
-impl<T: IdempotentSemigroup> From<Vec<T>> for SparseTable<T> {
+impl<T: Semigroup + Idempotent> From<Vec<T>> for SparseTable<T> {
     fn from(value: Vec<T>) -> Self {
         Self::from_iter(value)
     }

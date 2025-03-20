@@ -1,6 +1,6 @@
 use std::ops::RangeBounds;
 
-use crate::Monoid;
+use super::Monoid;
 
 /// A segment tree that supports range updates and point queries.
 ///

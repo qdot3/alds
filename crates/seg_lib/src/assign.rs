@@ -1,6 +1,6 @@
 use std::ops::RangeBounds;
 
-use crate::Monoid;
+use super::Monoid;
 
 /// A segment tree specialized for efficiently assigning functions to consecutive elements
 /// and composing them over a range.

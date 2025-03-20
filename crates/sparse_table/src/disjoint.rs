@@ -1,8 +1,6 @@
 use std::ops::RangeBounds;
 
-pub trait Semigroup {
-    fn binary_operation(&self, rhs: &Self) -> Self;
-}
+use super::Semigroup;
 
 #[derive(Debug, Clone)]
 pub struct DisjointSparseTable<T: Semigroup + Clone> {
@@ -21,22 +19,25 @@ impl<T: Semigroup + Clone> DisjointSparseTable<T> {
             std::ops::Bound::Unbounded => 0,
         };
         let r = match range.end_bound() {
-            std::ops::Bound::Included(r) => *r,
-            std::ops::Bound::Excluded(r) => r - 1,
-            std::ops::Bound::Unbounded => self.len - 1,
+            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Excluded(r) => *r,
+            std::ops::Bound::Unbounded => self.len,
         };
 
+        if l >= r {
+            return None;
+        }
+
         // result over [l, r] (inclusive)
-        match l.cmp(&r) {
-            std::cmp::Ordering::Less => {
-                let level = (l ^ r).ilog2() as usize;
-                Some(
-                    self.table[level * self.len + l]
-                        .binary_operation(&self.table[level * self.len + r]),
-                )
-            }
-            std::cmp::Ordering::Equal => Some(self.table[l].clone()),
-            std::cmp::Ordering::Greater => None,
+        let r = r - 1;
+        if l == r {
+            Some(self.table[l].clone())
+        } else {
+            let level = (l ^ r).ilog2() as usize;
+            Some(
+                self.table[level * self.len + l]
+                    .binary_operation(&self.table[level * self.len + r]),
+            )
         }
     }
 }
