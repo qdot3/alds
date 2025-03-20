@@ -8,7 +8,6 @@ fn main() {
     input! { n: usize, q: usize, a: [u64; n], lr: [(usize, usize); q], }
 
     let sqrt = SqrtTable::from(Vec::from_iter(a.into_iter().map(|a| RangeSum(a))));
-    println!("{:?}", sqrt);
     for (l, r) in lr {
         println!("{}", sqrt.range_query(l..r).unwrap().0)
     }
