@@ -41,6 +41,20 @@ impl<T: Semigroup + Clone> DisjointSparseTable<T> {
     }
 }
 
+impl<T: Semigroup + Clone> DisjointSparseTable<T> {
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn into_vec(self) -> Vec<T> {
+        let mut res = self.table.into_vec();
+        res.truncate(self.len);
+
+        res
+    }
+}
+
 impl<T: Semigroup + Clone> FromIterator<T> for DisjointSparseTable<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
@@ -52,7 +66,11 @@ impl<T: Semigroup + Clone> FromIterator<T> for DisjointSparseTable<T> {
 
             (height, table)
         } else {
-            todo!()
+            let mut table = Vec::from_iter(iter);
+            let height = table.len().next_power_of_two().trailing_zeros() as usize;
+            table.reserve(table.len() * height.saturating_sub(1));
+
+            (height, table)
         };
 
         let n = table.len();
@@ -86,5 +104,11 @@ impl<T: Semigroup + Clone> FromIterator<T> for DisjointSparseTable<T> {
             table: table.into_boxed_slice(),
             len: n,
         }
+    }
+}
+
+impl<T: Semigroup + Clone> From<Vec<T>> for DisjointSparseTable<T> {
+    fn from(value: Vec<T>) -> Self {
+        Self::from_iter(value)
     }
 }
