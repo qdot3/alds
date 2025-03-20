@@ -12,6 +12,7 @@ proconio = { version = "0.5.0", features = ["derive"] }
 members = [
     "crates/mod_int",
     "crates/seg_lib",
+    "crates/sparse_table",
     "crates/union_find",
 ]
 
