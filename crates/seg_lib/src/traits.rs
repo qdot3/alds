@@ -1,4 +1,7 @@
+use cargo_snippet::snippet;
+
 /// Defines a set of elements which forms a monoid
+#[snippet("monoid")]
 pub trait Monoid {
     const IS_COMMUTATIVE: bool;
 
@@ -10,6 +13,7 @@ pub trait Monoid {
 }
 
 /// Defines a set of operations (or acts) on monoid which forms a monoid
+#[snippet("monoid act", include = "monoid")]
 pub trait MonoidAct {
     type Arg: Monoid + Clone;
 

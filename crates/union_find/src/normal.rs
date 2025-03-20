@@ -178,6 +178,7 @@ impl UnionFind {
     /// }
     /// ```
     pub fn groups<'a>(&self) -> Groups<'a> {
+        // TODO: lazy implementation
         let n = self.par_or_size.len();
         let mut group_id = vec![usize::MAX; n];
         let mut size = Vec::with_capacity(n);

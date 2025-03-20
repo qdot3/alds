@@ -7,7 +7,6 @@ use std::{
 use crate::{
     inv_gcd,
     macros::{forward_ref_mint_binop, forward_ref_mint_op_assign, forward_ref_mint_unop},
-    Barret,
 };
 
 /// Modular integer with a compile-time fixed modulus.
@@ -60,19 +59,6 @@ impl<const MOD: u64> SMint<MOD> {
         }
 
         None
-    }
-
-    /// Returns the logarithm of `self` with respect to the given `base` if exists.
-    ///
-    /// # Note
-    ///
-    /// * `0^0` is defined to be `1`.
-    /// * Wrapper of [`BDMint::log()`](crate::BDMint::log)
-    pub fn log(self, base: Self) -> Option<u32> {
-        let barret = Barret::new(MOD as u32);
-        let x = barret.mint(base.value);
-        let y = barret.mint(self.value);
-        y.log(x)
     }
 }
 
