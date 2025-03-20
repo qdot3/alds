@@ -1,4 +1,4 @@
-use std::ops::RangeBounds;
+use std::{fmt::Debug, ops::RangeBounds};
 
 /// Defines a set of elements which forms a monoid
 pub trait IdempotentSemigroup {
@@ -6,7 +6,7 @@ pub trait IdempotentSemigroup {
     fn binary_operation(&self, rhs: &Self) -> Self;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SparseTable<T: IdempotentSemigroup> {
     table: Box<[T]>,
     partition: Box<[usize]>,
@@ -40,6 +40,21 @@ impl<T: IdempotentSemigroup> SparseTable<T> {
     }
 }
 
+impl<T: IdempotentSemigroup + Debug> Debug for SparseTable<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SparseTable")
+            .field(
+                "table",
+                &Vec::from_iter(
+                    self.partition
+                        .windows(2)
+                        .map(|lr| &self.table[lr[0]..lr[1]]),
+                ),
+            )
+            .finish()
+    }
+}
+
 impl<T: IdempotentSemigroup> FromIterator<T> for SparseTable<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
@@ -61,9 +76,9 @@ impl<T: IdempotentSemigroup> FromIterator<T> for SparseTable<T> {
         let mut partition = Vec::with_capacity(height + 1);
         partition.extend_from_slice(&[0, table.len()]);
 
-        for i in 1..=height {
-            for i in (partition[i - 1]..partition[i]).skip(1) {
-                table.push(table[i - 1].binary_operation(&table[i]));
+        for i in 1..height {
+            for j in (partition[i - 1]..partition[i]).skip(1 << i - 1) {
+                table.push(table[j - (1 << i - 1)].binary_operation(&table[j]));
             }
             partition.push(table.len());
         }

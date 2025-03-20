@@ -13,6 +13,7 @@ fn main() {
     }
 }
 
+#[derive(Debug)]
 struct RMQ(u32);
 
 impl IdempotentSemigroup for RMQ {
