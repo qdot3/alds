@@ -59,7 +59,7 @@ impl<T: IdempotentSemigroup> FromIterator<T> for SparseTable<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let (min, max) = iter.size_hint();
-        let (height, mut table) = if Some(min) == max {
+        let (mut height, mut table) = if Some(min) == max {
             let height = min.next_power_of_two().trailing_zeros() as usize;
             let mut table = Vec::with_capacity(min * (height + 1));
             table.extend(iter);
@@ -75,6 +75,10 @@ impl<T: IdempotentSemigroup> FromIterator<T> for SparseTable<T> {
 
         let mut partition = Vec::with_capacity(height + 1);
         partition.extend_from_slice(&[0, table.len()]);
+
+        if table.len().is_power_of_two() {
+            height += 1
+        }
 
         for i in 1..height {
             for j in (partition[i - 1]..partition[i]).skip(1 << i - 1) {
