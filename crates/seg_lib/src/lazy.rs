@@ -1,7 +1,5 @@
 use std::ops::RangeBounds;
 
-use cargo_snippet::snippet;
-
 use crate::{Monoid, MonoidAct};
 
 /// A segment tree that supports range updates and range queries.
@@ -11,8 +9,6 @@ use crate::{Monoid, MonoidAct};
 /// - [range affine range sum](): size-dependent updates
 ///
 /// If the cost of n-folding composition of acts is high, /TODO/ is more suitable.
-#[snippet("Lazy Segment Tree")]
-#[snippet(doc_hidden, include = "monoid act", prefix="use std::ops::RangeBounds;")]
 #[derive(Clone)]
 pub struct LazySegmentTree<F: MonoidAct + Clone> {
     /// Stores given elements with buffer. The size will be even for simplicity.
@@ -25,7 +21,6 @@ pub struct LazySegmentTree<F: MonoidAct + Clone> {
     lazy_height: u32,
 }
 
-#[snippet("Lazy Segment Tree")]
 impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     #[inline]
     const fn inner_index(&self, i: usize) -> usize {
@@ -252,7 +247,6 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     }
 }
 
-#[snippet("Lazy Segment Tree")]
 impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     /// Creates a new [LazySegmentTree] instance initialized with identity elements.
     ///
@@ -301,7 +295,6 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     }
 }
 
-#[snippet("Lazy Segment Tree")]
 impl<F: MonoidAct + Clone> IntoIterator for LazySegmentTree<F> {
     type Item = <F as MonoidAct>::Arg;
     type IntoIter = <Vec<Self::Item> as IntoIterator>::IntoIter;
@@ -311,7 +304,6 @@ impl<F: MonoidAct + Clone> IntoIterator for LazySegmentTree<F> {
     }
 }
 
-#[snippet("Lazy Segment Tree")]
 impl<F: MonoidAct + Clone> FromIterator<<F as MonoidAct>::Arg> for LazySegmentTree<F> {
     fn from_iter<T: IntoIterator<Item = <F as MonoidAct>::Arg>>(iter: T) -> Self {
         let iter = iter.into_iter();
@@ -346,7 +338,6 @@ impl<F: MonoidAct + Clone> FromIterator<<F as MonoidAct>::Arg> for LazySegmentTr
     }
 }
 
-#[snippet("Lazy Segment Tree")]
 impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<F> {
     fn from(values: Vec<<F as MonoidAct>::Arg>) -> Self {
         let len = values.len();

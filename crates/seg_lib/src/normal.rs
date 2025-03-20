@@ -1,6 +1,5 @@
 use std::ops::{Index, RangeBounds};
 
-use cargo_snippet::snippet;
 
 use crate::Monoid;
 
@@ -68,14 +67,11 @@ use crate::Monoid;
 /// assert_eq!(seg_tree.range_query(3..).0, 0);
 /// assert_eq!(seg_tree.range_query(3..).1, 100);
 /// ```
-#[snippet("Segment Tree")]
-#[snippet(doc_hidden, include = "monoid", prefix = "use std::ops::{Index, RangeBounds};")]
 #[derive(Clone, Debug)]
 pub struct SegmentTree<T: Monoid> {
     data: Box<[T]>,
 }
 
-#[snippet("Segment Tree")]
 impl<T: Monoid> SegmentTree<T> {
     #[inline]
     const fn inner_index(&self, i: usize) -> usize {
@@ -171,7 +167,6 @@ impl<T: Monoid> SegmentTree<T> {
     // TODO: impl max_right() & max_left()
 }
 
-#[snippet("Segment Tree")]
 impl<T: Monoid> SegmentTree<T> {
     pub fn new(n: usize) -> Self {
         let data = Vec::from_iter(std::iter::repeat_with(|| T::identity()).take(n << 1))
@@ -211,7 +206,6 @@ impl<T: Monoid> SegmentTree<T> {
     }
 }
 
-#[snippet("Segment Tree")]
 impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial `elements` in *O*(*N*) time,
     /// where *N* is the number of elements in `elements`.
@@ -231,7 +225,6 @@ impl<T: Monoid> From<Vec<T>> for SegmentTree<T> {
     }
 }
 
-#[snippet("Segment Tree")]
 impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
     /// Creates a new segment tree with the given initial elements in *O*(*N*) time,
     /// where *N* is the number of elements.
@@ -257,7 +250,6 @@ impl<T: Monoid> FromIterator<T> for SegmentTree<T> {
     }
 }
 
-#[snippet("Segment Tree")]
 impl<T: Monoid> IntoIterator for SegmentTree<T> {
     type Item = T;
     type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
@@ -267,7 +259,6 @@ impl<T: Monoid> IntoIterator for SegmentTree<T> {
     }
 }
 
-#[snippet("Segment Tree")]
 impl<T: Monoid> Index<usize> for SegmentTree<T> {
     type Output = T;
 
