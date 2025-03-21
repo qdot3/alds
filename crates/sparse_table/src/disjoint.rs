@@ -28,15 +28,14 @@ impl<T: Semigroup + Clone> DisjointSparseTable<T> {
             return None;
         }
 
-        // result over [l, r] (inclusive)
-        let r = r - 1;
-        if l == r {
+        // result over [l, r)
+        if l + 1 == r {
             Some(self.table[l].clone())
         } else {
-            let level = (l ^ r).ilog2() as usize;
+            let level = (l ^ (r - 1)).ilog2() as usize;
             Some(
                 self.table[level * self.len + l]
-                    .binary_operation(&self.table[level * self.len + r]),
+                    .binary_operation(&self.table[level * self.len + (r - 1)]),
             )
         }
     }

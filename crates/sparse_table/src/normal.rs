@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::RangeBounds};
 
-use super::{Semigroup, Idempotent};
+use super::{Idempotent, Semigroup};
 
 #[derive(Clone)]
 pub struct SparseTable<T: Semigroup + Idempotent> {
@@ -41,11 +41,9 @@ impl<T: Semigroup + Idempotent + Debug> Debug for SparseTable<T> {
         f.debug_struct("SparseTable")
             .field(
                 "table",
-                &Vec::from_iter(
-                    self.partition
-                        .windows(2)
-                        .map(|lr| &self.table[lr[0]..lr[1]]),
-                ),
+                &Vec::from_iter(self.partition.windows(2).enumerate().map(|(i, lr)| {
+                    format!("block width = {}; {:?}", 1 << i, &self.table[lr[0]..lr[1]])
+                })),
             )
             .finish()
     }
@@ -75,7 +73,6 @@ impl<T: Semigroup + Idempotent> FromIterator<T> for SparseTable<T> {
         if table.len().is_power_of_two() {
             height += 1
         }
-
         for i in 1..height {
             for j in (partition[i - 1]..partition[i]).skip(1 << i - 1) {
                 table.push(table[j - (1 << i - 1)].binary_operation(&table[j]));

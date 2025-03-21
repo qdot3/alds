@@ -2,7 +2,7 @@ use std::ops::RangeBounds;
 
 use super::{DisjointSparseTable, Semigroup};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SqrtTable<T: Semigroup + Clone> {
     large_table: DisjointSparseTable<T>,
     small_table: Box<[DisjointSparseTable<T>]>,
