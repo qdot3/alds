@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+proconio = { version = "=0.4.3", features = ["derive"] }
 
 [workspace.dependencies]
 proconio = { version = "=0.4.3", features = ["derive"] }
