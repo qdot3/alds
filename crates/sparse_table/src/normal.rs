@@ -1,8 +1,6 @@
 use std::{fmt::Debug, ops::RangeBounds};
 
-use crate::Idempotent;
-
-use super::Semigroup;
+use super::{Semigroup, Idempotent};
 
 #[derive(Clone)]
 pub struct SparseTable<T: Semigroup + Idempotent> {
