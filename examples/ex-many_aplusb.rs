@@ -1,4 +1,4 @@
-// verification-helper: PROBLEM https://judge.yosupo.jp/problem/static_range_sum
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
 
 use std::{fmt::Write, io::Read, num::IntErrorKind};
 
@@ -11,14 +11,13 @@ fn main() {
     while let Some(x) = num.next() {
         let y = num.next().unwrap();
 
-        write!(
+        writeln!(
             &mut buf_w,
             "{}",
             // x.parse::<u64>().unwrap() + y.parse::<u64>().unwrap()
             u64::from_str_radix10(x).unwrap() + u64::from_str_radix10(y).unwrap()
         )
         .unwrap();
-        buf_w.push('\n');
     }
 
     print!("{}", buf_w)

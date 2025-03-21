@@ -6,3 +6,7 @@
 実装は`/crates`、検証用コードは`/examples`にあります。
 `/archive`はファイル構造の変更をサボっているものです。
 実装途中のものを含みます。
+
+## License
+
+Choose MIT or APACHE-2.0 at your opinion
