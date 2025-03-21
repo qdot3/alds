@@ -53,7 +53,8 @@ impl<T: Semigroup + Clone> SqrtTable<T> {
 impl<T: Semigroup + Clone> From<Vec<T>> for SqrtTable<T> {
     fn from(mut value: Vec<T>) -> Self {
         let len = value.len();
-        let block_size = len.isqrt() + 1;
+        // TODO: use ilog2()
+        let block_size = len.next_power_of_two().ilog2() as usize;
         let large_table = DisjointSparseTable::from_iter(value.chunks(block_size).map(|b| {
             if b.len() == 1 {
                 b[0].clone()

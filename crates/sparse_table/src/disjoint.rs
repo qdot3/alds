@@ -76,7 +76,8 @@ impl<T: Semigroup + Clone> FromIterator<T> for DisjointSparseTable<T> {
         let n = table.len();
         let mut stack = Vec::with_capacity(n);
         for b in (1..height).map(|i| 1 << i) {
-            for i in 0..n.div_ceil(b) {
+            // TODO: use div_ceil()
+            for i in 0..(n + b - 1) / b {
                 if i & 1 == 1 {
                     stack.push(table[i * b].clone());
                     for v in &table[i * b + 1..n.min(i * b + b)] {

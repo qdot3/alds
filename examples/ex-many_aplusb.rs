@@ -1,15 +1,15 @@
-// verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
+// verification-helper: PROBLEM https://judge.yosupo.jp/problem/static_range_sum
 
 use std::{fmt::Write, io::Read, num::IntErrorKind};
 
 fn main() {
     let mut buf_r = String::with_capacity(40_000_000);
     let _ = std::io::stdin().lock().read_to_string(&mut buf_r);
-    let mut nums = buf_r.split_ascii_whitespace().skip(1);
+    let mut num = buf_r.split_ascii_whitespace().skip(1);
 
     let mut buf_w = String::with_capacity(20_000_000);
-    while let Some(x) = nums.next() {
-        let y = nums.next().unwrap();
+    while let Some(x) = num.next() {
+        let y = num.next().unwrap();
 
         write!(
             &mut buf_w,
@@ -34,13 +34,13 @@ macro_rules! from_str_radix10_impl_large {
             fn from_str_radix10(src: &str) -> Result<Self, IntErrorKind> {
                 let src = src.as_bytes();
                 let (is_positive, digits) = match src {
-                    [b'+', b'-'] => return Err(IntErrorKind::InvalidDigit),
+                    [b'+'| b'-'] => return Err(IntErrorKind::InvalidDigit),
                     [b'+', rest @ ..] => (true, rest),
                     [b'-', rest @ ..] => (false, rest),
                     _ => (true, src),
                 };
 
-                macro_rules! run_checked_loop {
+                macro_rules! perform_checked_op {
                     ( $checked_op:ident, $overflow:ident ) => {{
                         let mut res: $int = 0;
 
@@ -70,9 +70,9 @@ macro_rules! from_str_radix10_impl_large {
                 }
 
                 let res = if is_positive {
-                    run_checked_loop!(checked_add, PosOverflow)
+                    perform_checked_op!(checked_add, PosOverflow)
                 } else {
-                    run_checked_loop!(checked_sub, NegOverflow)
+                    perform_checked_op!(checked_sub, NegOverflow)
                 };
                 Ok(res)
             }
@@ -88,13 +88,13 @@ macro_rules! from_str_radix10_impl_small {
             fn from_str_radix10(src: &str) -> Result<Self, IntErrorKind> {
                 let src = src.as_bytes();
                 let (is_positive, digits) = match src {
-                    [b'+', b'-'] => return Err(IntErrorKind::InvalidDigit),
+                    [b'+'| b'-'] => return Err(IntErrorKind::InvalidDigit),
                     [b'+', rest @ ..] => (true, rest),
                     [b'-', rest @ ..] => (false, rest),
                     _ => (true, src),
                 };
 
-                macro_rules! run_checked_loop {
+                macro_rules! perform_checked_op {
                     ( $checked_op:ident, $overflow:ident ) => {{
                         let mut res: $int = 0;
 
@@ -113,9 +113,9 @@ macro_rules! from_str_radix10_impl_small {
                 }
 
                 let res = if is_positive {
-                    run_checked_loop!(checked_add, PosOverflow)
+                    perform_checked_op!(checked_add, PosOverflow)
                 } else {
-                    run_checked_loop!(checked_sub, NegOverflow)
+                    perform_checked_op!(checked_sub, NegOverflow)
                 };
                 Ok(res)
             }
@@ -134,10 +134,9 @@ const fn from_str_radix10_8digits(digits: [u8; 8]) -> Result<u64, IntErrorKind> 
         return Err(IntErrorKind::InvalidDigit);
     }
     // 8 = 0b1000, 9 = 0b1001, 0xa = 0b1010, ..
-    if (reversed & 0x0808_0808_0808_0808) & ((reversed & 0x0404_0404_0404_0404) << 1) != 0 {
-        return Err(IntErrorKind::InvalidDigit);
-    }
-    if (reversed & 0x0808_0808_0808_0808) & ((reversed & 0x0202_0202_0202_0202) << 2) != 0 {
+    let test =
+        ((reversed & 0x0404_0404_0404_0404) << 1) | ((reversed & 0x0202_0202_0202_0202) << 2);
+    if (reversed & 0x0808_0808_0808_0808) & test != 0 {
         return Err(IntErrorKind::InvalidDigit);
     }
 
@@ -146,7 +145,7 @@ const fn from_str_radix10_8digits(digits: [u8; 8]) -> Result<u64, IntErrorKind> 
     // |gh|ef|cd|ba| -> |efgh|abcd|
     reversed = (reversed & 0x00ff_00ff_00ff_00ff).wrapping_mul((100 << 16) + 1) >> 16;
     // |efgh|abcd| -> |abcdefgh|
-    reversed = (reversed & 0x0000_ffff_0000_ffff).wrapping_mul((10000 << 32) + 1) >> 32;
+    reversed = (reversed & 0x0000_ffff_0000_ffff).wrapping_mul((10_000 << 32) + 1) >> 32;
 
     Ok(reversed)
 }

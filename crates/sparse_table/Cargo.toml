@@ -9,4 +9,4 @@ edition = "2021"
 proconio = { workspace = true }
 
 [lib]
-path = "src/lib.rs"
+name = "sparse_table"

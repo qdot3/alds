@@ -228,7 +228,8 @@ impl BDMint<'_> {
 
             // solve x^k = y by baby-step-giant-step algorithm
             // x^(p * i + j) = y, 0 <= i, j < p  <=>  x^j = y * (x^-p)^i
-            let p = (x.modulus() as u32).isqrt() + 1;
+            // TODO: use isqrt()
+            let p = (x.modulus() as f64).sqrt() as u32 + 1;
 
             let mut pow_x = x.pow(p);
             let mut lhs = FxHashMap::default();

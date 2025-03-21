@@ -10,4 +10,4 @@ rustc-hash = "2.1.1"
 proconio = { workspace = true }
 
 [lib]
-path = "src/lib.rs"
+name = "mod_int"

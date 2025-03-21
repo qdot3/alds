@@ -10,4 +10,4 @@ mod_int = { path = "../mod_int" }
 proconio = { workspace = true }
 
 [lib]
-path = "src/lib.rs"
+name = "union_find"
