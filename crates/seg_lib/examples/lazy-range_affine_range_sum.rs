@@ -11,7 +11,7 @@ fn main() {
     input! { n: usize, q: usize, a: [u64; n], }
 
     let mut lst =
-        LazySegmentTree::<Affine>::from(Vec::from_iter(a.into_iter().map(|a| SUM::new(a))));
+        LazySegmentTree::<Affine>::from_iter(a.into_iter().map(|a| SUM::new(a)));
 
     for _ in 0..q {
         input! { flag: u8, }
