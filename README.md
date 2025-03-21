@@ -9,4 +9,4 @@
 
 ## License
 
-Choose MIT or APACHE-2.0 at your opinion.
+Choose MIT or Apache-2.0 at your opinion.
