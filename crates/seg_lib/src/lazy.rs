@@ -288,15 +288,6 @@ impl<F: MonoidAct + Clone> LazySegmentTree<F> {
     }
 }
 
-impl<F: MonoidAct + Clone> IntoIterator for LazySegmentTree<F> {
-    type Item = <F as MonoidAct>::Arg;
-    type IntoIter = <Vec<Self::Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.into_vec().into_iter()
-    }
-}
-
 impl<F: MonoidAct + Clone> FromIterator<<F as MonoidAct>::Arg> for LazySegmentTree<F> {
     fn from_iter<T: IntoIterator<Item = <F as MonoidAct>::Arg>>(iter: T) -> Self {
         let iter = iter.into_iter();
@@ -342,13 +333,5 @@ impl<F: MonoidAct + Clone> FromIterator<<F as MonoidAct>::Arg> for LazySegmentTr
             lazy,
             lazy_height: buf_len.trailing_zeros(),
         }
-    }
-}
-
-impl<F: MonoidAct + Clone> From<Vec<<F as MonoidAct>::Arg>> for LazySegmentTree<F> {
-    fn from(values: Vec<<F as MonoidAct>::Arg>) -> Self {
-        // the size will be fixed.
-        // See <https://doc.rust-lang.org/std/vec/struct.IntoIter.html#impl-ExactSizeIterator-for-IntoIter%3CT,+A%3E>
-        Self::from_iter(values)
     }
 }
