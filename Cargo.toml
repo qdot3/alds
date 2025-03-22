@@ -13,10 +13,10 @@ categories = ["algorithms", "data-structures"]
 publish = false
 
 [dependencies]
-proconio = { version = "=0.4.3", features = ["derive"] }
+proconio = { version = "=0.5.0", features = ["derive"] }
 
 [workspace.dependencies]
-proconio = { version = "=0.4.3", features = ["derive"] }
+proconio = { version = "=0.5.0", features = ["derive"] }
 
 [workspace]
 members = [
@@ -24,7 +24,11 @@ members = [
     "crates/seg_lib",
     "crates/sparse_table",
     "crates/union_find",
-    "crates/combinatorics"
+    "crates/combinatorics",
+    "crates/tree/csr",
+    "crates/tree/lca",
+    "crates/string/manacher",
+    "crates/string/z_algorithm",
 ]
 
 exclude = [

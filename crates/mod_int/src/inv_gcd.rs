@@ -1,5 +1,5 @@
 /// Returns `(inv?(a) mod b, gcd(a, b))`, where `a < b` and `a * inv?(a) = g mod b`.
-pub(crate) const fn inv_gcd(a: u64, b: u64) -> Option<(u64, u64)> {
+pub const fn inv_gcd(a: u64, b: u64) -> Option<(u64, u64)> {
     if a == 0 || b == 0 {
         return None;
     }
