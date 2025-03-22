@@ -27,6 +27,7 @@ members = [
     "crates/combinatorics",
 
     "crates/tree/csr",
+    "crates/tree/lca",
 ]
 
 exclude = [
