@@ -25,10 +25,6 @@ members = [
     "crates/sparse_table",
     "crates/union_find",
     "crates/combinatorics",
-    "crates/tree/csr",
-    "crates/tree/lca",
-    "crates/string/manacher",
-    "crates/string/z_algorithm",
 ]
 
 exclude = [

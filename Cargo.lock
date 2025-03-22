@@ -14,18 +14,6 @@ name = "combinatorics"
 version = "0.1.0"
 
 [[package]]
-name = "csr"
-version = "0.1.0"
-
-[[package]]
-name = "lca"
-version = "0.1.0"
-
-[[package]]
-name = "manacher"
-version = "0.1.0"
-
-[[package]]
 name = "mod_int"
 version = "0.1.0"
 dependencies = [
@@ -116,7 +104,3 @@ dependencies = [
  "mod_int",
  "proconio",
 ]
-
-[[package]]
-name = "z_algorithm"
-version = "0.1.0"
