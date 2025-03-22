@@ -14,7 +14,7 @@ enum PermutationState {
 }
 
 impl<T: Ord> Permutation<T> {
-    pub fn new(data: Vec<T>) -> Self {
+    pub const fn new(data: Vec<T>) -> Self {
         Self {
             data,
             state: PermutationState::Entry,
