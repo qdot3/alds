@@ -24,6 +24,7 @@ members = [
     "crates/seg_lib",
     "crates/sparse_table",
     "crates/union_find",
+    "crates/combinatorics"
 ]
 
 exclude = [
