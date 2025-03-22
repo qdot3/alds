@@ -28,6 +28,7 @@ members = [
 
     "crates/tree/csr",
     "crates/tree/lca",
+    "crates/tree/euler_tour",
 ]
 
 exclude = [

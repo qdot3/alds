@@ -1,5 +1,5 @@
 [package]
-name = "lca"
+name = "euler_tour"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,9 +12,6 @@ publish.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "lca"
+name = "euler_tour"
 
 [dependencies]
-
-[dev-dependencies]
-proconio = { workspace = true }

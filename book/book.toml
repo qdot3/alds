@@ -4,6 +4,3 @@ language = "ja"
 multilingual = false
 src = "src"
 title = "alds book"
-
-[build]
-build-dir = "book"
