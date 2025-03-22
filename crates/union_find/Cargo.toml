@@ -3,7 +3,6 @@ name = "union_find"
 version = "0.1.0"
 edition = "2021"
 
-author.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true

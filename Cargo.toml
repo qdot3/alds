@@ -26,8 +26,7 @@ members = [
     "crates/union_find",
     "crates/combinatorics",
 
-    "crates/tree/least_common_ancestor",
-    "crates/tree/compressed_sparse_row"
+    "crates/tree/csr",
 ]
 
 exclude = [
