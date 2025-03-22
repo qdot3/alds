@@ -1,0 +1,9 @@
+[book]
+authors = ["qdot3"]
+language = "ja"
+multilingual = false
+src = "src"
+title = "alds book"
+
+[build]
+build-dir = "book"

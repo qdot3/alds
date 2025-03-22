@@ -14,6 +14,14 @@ name = "combinatorics"
 version = "0.1.0"
 
 [[package]]
+name = "compressed_sparse_row"
+version = "0.1.0"
+
+[[package]]
+name = "least_common_ancestor"
+version = "0.1.0"
+
+[[package]]
 name = "mod_int"
 version = "0.1.0"
 dependencies = [
