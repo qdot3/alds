@@ -53,7 +53,7 @@ impl LCA {
 
         let mut ancestor_table = Vec::with_capacity(n * max_depth.ilog2() as usize);
         for _ in 0..=max_depth.ilog2() {
-            ancestor_table.extend(parent.clone());
+            ancestor_table.extend(parent.iter().copied());
             parent = Vec::from_iter(parent.iter().map(|&i| parent[i]))
         }
 
@@ -91,7 +91,11 @@ impl LCA {
         while diff > 0 {
             let k = diff.trailing_zeros() as usize;
             diff ^= 1 << k;
-            i = ancestor_table[len * k + i];
+            if let Some(&a) = ancestor_table.get(len * k + i) {
+                i = a
+            } else {
+                return (1_000_000, 0);
+            }
         }
 
         if i == j {
@@ -120,7 +124,6 @@ impl LCA {
 
         if node_list.len() > 2 {
             let (mut lca, mut len) = self.lca(node_list[0], node_list[1]);
-            // TODO: use tuple_windows() if implemented
             for pair in node_list.windows(2).skip(1) {
                 let (lca1, _) = self.lca(pair[0], pair[1]);
                 let (lca2, len2) = self.lca(lca, pair[1]);
