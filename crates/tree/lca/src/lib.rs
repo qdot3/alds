@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct LCA {
     depth: Box<[usize]>,
-    dfs_preorder: Box<[usize]>,
+    dfs_postorder: Box<[usize]>,
     ancestor_table: Box<[usize]>,
     len: usize,
 }
@@ -27,7 +27,7 @@ impl LCA {
         const NULL: usize = !0;
         let mut depth = vec![NULL; n].into_boxed_slice();
         let mut max_depth = 0;
-        let mut dfs_preorder = vec![NULL; n].into_boxed_slice();
+        let mut dfs_postorder = vec![NULL; n].into_boxed_slice();
         let mut counter = 0;
         let mut parent = vec![NULL; n];
         parent[root] = root;
@@ -46,20 +46,21 @@ impl LCA {
             } else {
                 dfs_stack.pop();
 
-                dfs_preorder[i] = counter;
+                dfs_postorder[i] = counter;
                 counter += 1;
             }
         }
 
         let mut ancestor_table = Vec::with_capacity(n * max_depth.ilog2() as usize);
-        for _ in 0..=max_depth.ilog2() {
+        for _ in 0..max_depth.ilog2() {
             ancestor_table.extend(parent.iter().copied());
             parent = Vec::from_iter(parent.iter().map(|&i| parent[i]))
         }
+        ancestor_table.extend(parent);
 
         Self {
             depth,
-            dfs_preorder,
+            dfs_postorder,
             ancestor_table: ancestor_table.into_boxed_slice(),
             len: n,
         }
@@ -77,7 +78,7 @@ impl LCA {
 
         let Self {
             depth,
-            dfs_preorder: _,
+            dfs_postorder: _,
             ancestor_table,
             len,
         } = self;
@@ -111,11 +112,11 @@ impl LCA {
         (lca, dist)
     }
 
-    /// Returns the lca of given nodes minimum length of path which connects all of them.
+    /// Returns the lca of given nodes and the minimum length of path which connects all of them.
     pub fn lca_many(&self, mut node_list: Vec<usize>) -> Option<(usize, usize)> {
         // ３つ以上のノードのLCAとすべての頂点を結ぶ最短パスの長さを求める
-        // dfs preorderでノードをソートして、順にLCAを計算
-        node_list.sort_unstable_by_key(|&i| self.dfs_preorder[i]);
+        // dfs postorderでノードをソートして、順にLCAを計算
+        node_list.sort_unstable_by_key(|&i| self.dfs_postorder[i]);
         node_list.dedup();
 
         if node_list.len() > 2 {
