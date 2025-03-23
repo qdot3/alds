@@ -91,11 +91,7 @@ impl LCA {
         while diff > 0 {
             let k = diff.trailing_zeros() as usize;
             diff ^= 1 << k;
-            if let Some(&a) = ancestor_table.get(len * k + i) {
-                i = a
-            } else {
-                return (1_000_000, 0);
-            }
+            i = ancestor_table[len * k + i];
         }
 
         if i == j {
@@ -111,7 +107,7 @@ impl LCA {
         }
 
         let lca = ancestor_table[i];
-        let dist = d - depth[lca * 2];
+        let dist = d - 2 * depth[lca];
         (lca, dist)
     }
 
