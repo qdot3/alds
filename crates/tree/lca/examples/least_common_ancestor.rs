@@ -11,7 +11,6 @@ fn main() {
         Vec::from_iter(p.into_iter().enumerate().map(|(i, p)| (i + 1, p))),
         0,
     );
-    println!("{:?}", lca);
     for (u, v) in uv {
         println!("{}", lca.lca(u, v).0)
     }

@@ -4,3 +4,6 @@ language = "ja"
 multilingual = false
 src = "src"
 title = "alds book"
+
+[output.html]
+mathjax-support = true

@@ -99,16 +99,11 @@ impl LCA {
         }
 
         // step 2
-        loop {
-            // TODO: use iter.partition_in_place() if stabilized
-            let k = (0..ancestor_table.len() / len)
-                .take_while(|&k| ancestor_table[len * k + i] != ancestor_table[len * k + j])
-                .count();
-            if k == 0 {
-                break;
+        for k in (0..ancestor_table.len() / len).rev() {
+            if ancestor_table[len * k + i] != ancestor_table[len * k + j] {
+                i = ancestor_table[len * k + i];
+                j = ancestor_table[len * k + j];
             }
-            i = ancestor_table[len * k + i];
-            j = ancestor_table[len * k + j];
         }
 
         let lca = ancestor_table[i];
