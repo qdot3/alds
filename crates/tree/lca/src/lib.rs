@@ -31,8 +31,10 @@ impl LCA {
         let mut counter = 0;
         let mut parent = vec![NULL; n];
         parent[root] = root;
+        let mut num_visited = 0;
         while let Some(&i) = dfs_stack.last() {
             if depth[i] == NULL {
+                num_visited += 1;
                 // NULL + 1 = 0 for the root node
                 depth[i] = depth[parent[i]].wrapping_add(1);
                 max_depth = max_depth.max(depth[i]);
@@ -50,6 +52,7 @@ impl LCA {
                 counter += 1;
             }
         }
+        assert_eq!(num_visited, n, "invalid input");
 
         let mut ancestor_table = Vec::with_capacity(n * max_depth.ilog2() as usize);
         for _ in 0..max_depth.ilog2() {
@@ -112,7 +115,7 @@ impl LCA {
         (lca, dist)
     }
 
-    /// Returns the lca of given nodes and the minimum length of path which connects all of them.
+    /// Returns the LCA of given nodes and the minimum length of path which connects all of them.
     pub fn lca_many(&self, mut node_list: Vec<usize>) -> Option<(usize, usize)> {
         // ３つ以上のノードのLCAとすべての頂点を結ぶ最短パスの長さを求める
         // dfs postorderでノードをソートして、順にLCAを計算
@@ -122,13 +125,12 @@ impl LCA {
         if node_list.len() > 2 {
             let (mut lca, mut len) = self.lca(node_list[0], node_list[1]);
             for pair in node_list.windows(2).skip(1) {
-                let (lca1, _) = self.lca(pair[0], pair[1]);
-                let (lca2, len2) = self.lca(lca, pair[1]);
-                if self.depth[lca1] < self.depth[lca2] {
-                    len += self.depth[lca1] - self.depth[pair[1]]
+                let (new_lca, _) = self.lca(pair[0], pair[1]);
+                if self.depth[new_lca] >= self.depth[lca] {
+                    len += self.depth[pair[1]] - self.depth[new_lca]
                 } else {
-                    len += len2;
-                    lca = lca2
+                    len += self.depth[lca] + self.depth[pair[1]] - 2 * self.depth[new_lca];
+                    lca = new_lca;
                 }
             }
 
