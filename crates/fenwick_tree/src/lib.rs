@@ -31,7 +31,8 @@ impl<T: Group + Commutative> FenwickTree<T> {
 
         while let Some(data) = self.data.get_mut(i) {
             *data = elem.bin_op(data);
-            i += 1 << i.trailing_zeros();
+            // i += 1 << i.trailing_zeros();
+            i += i & i.wrapping_neg()
         }
     }
 
@@ -46,7 +47,8 @@ impl<T: Group + Commutative> FenwickTree<T> {
         let mut res = T::identity();
         while i > 0 {
             res = res.bin_op(&self.data[i]);
-            i -= 1 << i.trailing_zeros();
+            // i -= 1 << i.trailing_zeros()
+            i &= i.wrapping_sub(1)
         }
 
         res
@@ -78,6 +80,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
         while l != r {
             if l > r {
                 res = res.bin_op(&self.data[l].inverse());
+                // l -= 1 << l.trailing_zeros()
                 l &= l.wrapping_sub(1);
             } else {
                 res = res.bin_op(&self.data[r]);
@@ -113,28 +116,18 @@ impl<T: Group + Commutative> FenwickTree<T> {
 
 impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        let iter = iter.into_iter();
-        let (min, max) = iter.size_hint();
-
-        if Some(min) == max {
-            let mut ft = Self::new(min);
-            for (i, v) in iter.enumerate() {
-                ft.point_update(i, v)
+        let mut data = Vec::from_iter(std::iter::once(T::identity()).chain(iter));
+        for i in (1..data.len()).rev() {
+            let (prefix, suffix) = data.split_at_mut(i + 1);
+            // let mut j = i + (1 << i.trailing_zeros());
+            let mut j = i + (i & i.wrapping_neg());
+            while let Some(acc) = suffix.get_mut(j - i - 1) {
+                *acc = prefix[i].bin_op(acc);
+                // j += 1 << j.trailing_zeros()
+                j += j & j.wrapping_neg()
             }
-
-            ft
-        } else {
-            let mut data = Vec::from_iter(std::iter::once(T::identity()).chain(iter));
-            for i in 1..data.len() {
-                let (prefix, suffix) = data.split_at_mut(i + 1);
-                let mut j = i + (1 << i.trailing_zeros());
-                while let Some(acc) = suffix.get_mut(j - i - 1) {
-                    *acc = prefix[i].bin_op(acc);
-                    j += 1 << j.trailing_zeros()
-                }
-            }
-
-            Self { data }
         }
+
+        Self { data }
     }
 }
