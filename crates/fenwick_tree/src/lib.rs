@@ -116,7 +116,8 @@ impl<T: Group + Commutative> FenwickTree<T> {
 
 impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        let mut data = Vec::from_iter(std::iter::once(T::identity()).chain(iter));
+        let mut data = vec![T::identity()];
+        data.extend(iter);
         for i in (1..data.len()).rev() {
             let (prefix, suffix) = data.split_at_mut(i + 1);
             // let mut j = i + (1 << i.trailing_zeros());
