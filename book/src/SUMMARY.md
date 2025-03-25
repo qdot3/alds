@@ -4,6 +4,8 @@
 
 # Algorithms
 
+- [Bit Manipulation](./bit.md)
+
 # Data Structures
 
 - [Range Query]()
