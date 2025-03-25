@@ -1,5 +1,5 @@
 [package]
-name = "euler_tour"
+name = "math-traits"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,8 +11,5 @@ publish.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-name = "euler_tour"
-
 [dependencies]
-math-traits = { path = "../../math-traits" }
+

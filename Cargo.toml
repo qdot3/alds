@@ -20,11 +20,16 @@ proconio = { version = "=0.5.0", features = ["derive"] }
 
 [workspace]
 members = [
+    # utility
+    "crates/math-traits",
+
     "crates/mod_int",
     "crates/seg_lib",
     "crates/sparse_table",
     "crates/union_find",
     "crates/combinatorics",
+
+    "crates/fenwick_tree",
 
     "crates/tree/csr",
     "crates/tree/lca",

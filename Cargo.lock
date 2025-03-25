@@ -20,6 +20,17 @@ version = "0.1.0"
 [[package]]
 name = "euler_tour"
 version = "0.1.0"
+dependencies = [
+ "math-traits",
+]
+
+[[package]]
+name = "fenwick_tree"
+version = "0.1.0"
+dependencies = [
+ "math-traits",
+ "proconio",
+]
 
 [[package]]
 name = "lca"
@@ -27,6 +38,10 @@ version = "0.1.0"
 dependencies = [
  "proconio",
 ]
+
+[[package]]
+name = "math-traits"
+version = "0.1.0"
 
 [[package]]
 name = "mod_int"
