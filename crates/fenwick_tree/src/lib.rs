@@ -8,11 +8,7 @@ pub struct FenwickTree<T: Group + Commutative> {
 }
 
 impl<T: Group + Commutative> FenwickTree<T> {
-    /// Creates new fixed-size Fenwick tree.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `size` is [`usize::MAX`].
+    /// Creates a new instance initialized with the identity element defined in the [Group] trait.
     pub fn new(n: usize) -> Self {
         Self {
             data: Vec::from_iter(std::iter::repeat_with(T::identity).take(n + 1)),
@@ -29,32 +25,34 @@ impl<T: Group + Commutative> FenwickTree<T> {
         // one-based indexing
         i += 1;
 
-        while let Some(data) = self.data.get_mut(i) {
-            *data = elem.bin_op(data);
-            // i += 1 << i.trailing_zeros();
+        while i < self.data.len() {
+            self.data[i] = elem.bin_op(&self.data[i]);
+            // add LSSB
             i += i & i.wrapping_neg()
         }
     }
 
-    /// Calculates the product of elements over [0, i).
+    /// Returns the result of combining elements over the [0, i).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given index is out of bounds.
     ///
     /// # Time complexity
     ///
     /// *O*(log *N*)
     pub fn prefix_query(&self, mut i: usize) -> T {
-        i = i.min(self.data.len() - 1);
-
         let mut res = T::identity();
         while i > 0 {
             res = res.bin_op(&self.data[i]);
-            // i -= 1 << i.trailing_zeros()
+            // remove LSSB
             i &= i.wrapping_sub(1)
         }
 
         res
     }
 
-    /// Calculate the sum of the range.
+    /// Returns the result of combining elements over the given range.
     ///
     /// # Time complexity
     ///
@@ -75,27 +73,27 @@ impl<T: Group + Commutative> FenwickTree<T> {
             std::ops::Bound::Unbounded => self.data.len() - 1,
         };
 
-        let mut res = T::identity();
+        let (mut res_l, mut res_r) = (T::identity(), T::identity());
         // if l = r, then the result of remaining operations is net zero.
         while l != r {
             if l > r {
-                res = res.bin_op(&self.data[l].inverse());
-                // l -= 1 << l.trailing_zeros()
+                res_l = res_l.bin_op(&self.data[l]);
+                // remove LSSB
                 l &= l.wrapping_sub(1);
             } else {
-                res = res.bin_op(&self.data[r]);
+                res_r = res_r.bin_op(&self.data[r]);
                 r &= r.wrapping_sub(1);
             }
         }
 
-        res
+        res_l.inverse().bin_op(&res_r)
     }
 
-    /// See [`std::slice::partition_point`](https://doc.rust-lang.org/std/primitive.slice.html#method.partition_point).
+    /// Returns minimum `i` which satisfies `pred(prefix_query(i)) = true`.
     ///
     /// # Time complexity
     ///
-    /// *O*(log *N*)
+    /// *Θ*(log *N*)
     pub fn partition_point(&self, pred: impl Fn(T) -> bool) -> usize {
         let mut res = 0;
         let mut sum = T::identity();
@@ -120,11 +118,11 @@ impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
         data.extend(iter);
         for i in (1..data.len()).rev() {
             let (prefix, suffix) = data.split_at_mut(i + 1);
-            // let mut j = i + (1 << i.trailing_zeros());
+            // add LSSB
             let mut j = i + (i & i.wrapping_neg());
             while let Some(acc) = suffix.get_mut(j - i - 1) {
                 *acc = prefix[i].bin_op(acc);
-                // j += 1 << j.trailing_zeros()
+                // add LSSB
                 j += j & j.wrapping_neg()
             }
         }
