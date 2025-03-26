@@ -25,8 +25,8 @@ impl<T: Group + Commutative> FenwickTree<T> {
         // one-based indexing
         i += 1;
 
-        while i < self.data.len() {
-            self.data[i] = elem.bin_op(&self.data[i]);
+        while let Some(data) = self.data.get_mut(i) {
+            *data = elem.bin_op(data);
             // add LSSB
             i += i & i.wrapping_neg()
         }
@@ -74,7 +74,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
         };
 
         let (mut res_l, mut res_r) = (T::identity(), T::identity());
-        // if l = r, then the result of remaining operations is net zero.
+        // if l == r, then the result of remaining operations is net zero.
         while l != r {
             if l > r {
                 res_l = res_l.bin_op(&self.data[l]);
@@ -117,11 +117,10 @@ impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
         let mut data = vec![T::identity()];
         data.extend(iter);
         for i in (1..data.len()).rev() {
-            let (prefix, suffix) = data.split_at_mut(i + 1);
             // add LSSB
             let mut j = i + (i & i.wrapping_neg());
-            while let Some(acc) = suffix.get_mut(j - i - 1) {
-                *acc = prefix[i].bin_op(acc);
+            while j < data.len() {
+                data[j] = data[i].bin_op(&data[j]);
                 // add LSSB
                 j += j & j.wrapping_neg()
             }
