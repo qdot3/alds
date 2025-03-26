@@ -73,35 +73,36 @@ impl<T: Group + Commutative> FenwickTree<T> {
             std::ops::Bound::Unbounded => self.data.len() - 1,
         };
 
-        let mut res = T::identity();
-        let mask = usize::MAX >> (l ^ r).leading_zeros();
-        while l & mask != 0 {
-            res = res.bin_op(&self.data[l]);
-            // remove LSSB
-            l &= l.wrapping_sub(1)
-        }
-        res = res.inverse();
-        while r & mask != 0 {
-            res = res.bin_op(&self.data[r]);
-            r &= r.wrapping_sub(1)
-        }
-
-        res
-
-        // let (mut res_l, mut res_r) = (T::identity(), T::identity());
-        // // if l == r, then the result of remaining operations is net zero.
-        // while l != r {
-        //     if l > r {
-        //         res_l = res_l.bin_op(&self.data[l]);
-        //         // remove LSSB
-        //         l &= l.wrapping_sub(1);
-        //     } else {
-        //         res_r = res_r.bin_op(&self.data[r]);
-        //         r &= r.wrapping_sub(1);
-        //     }
+        // // avoid the use of if statements to suppress branch mispredictions and improve CPU efficiency
+        // let mut res = T::identity();
+        // let mask = usize::MAX >> (l ^ r).leading_zeros();
+        // while l & mask != 0 {
+        //     res = res.bin_op(&self.data[l]);
+        //     // remove LSSB
+        //     l &= l.wrapping_sub(1)
+        // }
+        // res = res.inverse();
+        // while r & mask != 0 {
+        //     res = res.bin_op(&self.data[r]);
+        //     r &= r.wrapping_sub(1)
         // }
 
-        // res_l.inverse().bin_op(&res_r)
+        // res
+
+        let (mut res_l, mut res_r) = (T::identity(), T::identity());
+        // if l == r, then the result of remaining operations is net zero.
+        while l != r {
+            if l > r {
+                res_l = res_l.bin_op(&self.data[l]);
+                // remove LSSB
+                l &= l.wrapping_sub(1);
+            } else {
+                res_r = res_r.bin_op(&self.data[r]);
+                r &= r.wrapping_sub(1);
+            }
+        }
+
+        res_l.inverse().bin_op(&res_r)
     }
 
     /// Returns minimum `i` which satisfies `pred(prefix_query(i)) = true`.
