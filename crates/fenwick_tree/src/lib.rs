@@ -74,12 +74,13 @@ impl<T: Group + Commutative> FenwickTree<T> {
         };
 
         let mut res = T::identity();
-        while l > 0 {
+        while (l ^ r) >= l & l.wrapping_neg() {
             res = res.bin_op(&self.data[l]);
+            // remove LSSB
             l &= l.wrapping_sub(1)
         }
         res = res.inverse();
-        while r > 0 {
+        while l ^ r != 0 {
             res = res.bin_op(&self.data[r]);
             r &= r.wrapping_sub(1)
         }
