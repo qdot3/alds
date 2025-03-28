@@ -11,7 +11,7 @@ i.ilog2() // panics if i == 0
 ```
 
 ```rust, ignore
-u64::BITS - i.leading_zeros() // == 0 if i == 0
+usize::BITS - i.leading_zeros() // == 0 if i == 0_usize
 ```
 
 TODO: O(1)の複雑な（＝定数倍が重い）方法があるらしい
@@ -21,19 +21,19 @@ TODO: O(1)の複雑な（＝定数倍が重い）方法があるらしい
 ### 最下位の1ビットの位置
 
 ```rust, ignore
-i.trailing_zeros()
+i.trailing_zeros() // == usize::BITS if i == 0_usize
 ```
 
 ### 最下位の1ビットそのもの
 
 ```rust, ignore
-i & i.wrapping_neg()
+i & i.wrapping_neg() // == 0 if i == 0
 ```
 
 ### 最下位の1ビットを減じる
 
 ```rust, ignore
-i &= i.wrapping_sub(1)
+i &= i.wrapping_sub(1) // == 0 if i == 0
 ```
 
 ## 組み合わせ
@@ -46,7 +46,7 @@ for mut member in 0..1 << n {
         let i = member.trailing_zeros() as usize;
         member ^= 1 << i;
 
-        todo!("i番目のメンバーに対して何かする")
+        todo!("i番目の要素に対して何かする")
     }
 }
 ```
@@ -58,4 +58,4 @@ for mut member in 0..1 << n {
 
 フェニック木において、`trailing_zeros()`を適切なビット演算に置き換えることで実行時間が200 msから120 msになった。GitHub ActionsのLinux環境で1回ずつしか計測していないので、参考程度にとどめておくこと。
 
-`v1.85.1`時点では、`ilog2()`や`leading_zeros()`の類は内部で`intrinsics::ctlz`や`intrinsics::cttz`を呼び出している。これはハードウェア命令があればそれを用いるが、なければ二分探索などのソフトウェア実装を用いることを意味する。とくに後者の場合、\\( O(\log \mathrm{BITS})\\)のコストがかかるため遅くなる。
+`v1.85.1`時点では、`ilog2()`や`leading_zeros()`の類は内部で`intrinsics::ctlz`や`intrinsics::cttz`を呼び出している。これはハードウェア命令があればそれを用いるが、なければ二分探索などのソフトウェア実装を用いることを意味する。とくに後者の場合、\\( \Theta(\log\mathrm{BITS})\\)のコストがかかるため遅くなる。
