@@ -9,7 +9,7 @@ fn main() {
     let mut num = buf_r
         .split_ascii_whitespace()
         .skip(1)
-        .filter_map(|bytes| u128::from_bytes(bytes.as_bytes()).ok());
+        .filter_map(|bytes| u64::from_bytes(bytes.as_bytes()).ok());
 
     let mut buf_w = BufWriter::new(stdout().lock());
     while let Some(x) = num.next() {
