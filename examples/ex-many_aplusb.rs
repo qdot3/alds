@@ -1,25 +1,20 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
 
 use fast_io::FromBytes;
-use std::{fmt::Write, io::Read};
+use std::io::{stdout, BufWriter, Read, Write};
 
 fn main() {
     let mut buf_r = String::with_capacity(40_000_000);
     let _ = std::io::stdin().lock().read_to_string(&mut buf_r);
-    let mut num = buf_r.split_ascii_whitespace().skip(1);
+    let mut num = buf_r
+        .split_ascii_whitespace()
+        .skip(1)
+        .filter_map(|bytes| u128::from_bytes(bytes.as_bytes()).ok());
 
-    let mut buf_w = String::with_capacity(20_000_000);
+    let mut buf_w = BufWriter::new(stdout().lock());
     while let Some(x) = num.next() {
         let y = num.next().unwrap();
 
-        writeln!(
-            &mut buf_w,
-            "{}",
-            // x.parse::<u64>().unwrap() + y.parse::<u64>().unwrap()
-            u64::from_bytes(x.as_bytes()).unwrap() + u64::from_bytes(y.as_bytes()).unwrap()
-        )
-        .unwrap();
+        buf_w.write_fmt(format_args!("{}\n", x + y)).unwrap()
     }
-
-    print!("{}", buf_w)
 }
