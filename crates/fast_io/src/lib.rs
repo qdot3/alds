@@ -1,9 +1,5 @@
 mod parser;
-
-use std::io::StdinLock;
+mod reader;
 
 pub use parser::FromBytes;
-
-pub struct FastIn<'a> {
-    stdin: StdinLock<'a>,
-}
+pub use reader::FastIn;
