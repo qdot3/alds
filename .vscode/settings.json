@@ -8,8 +8,10 @@
         "efgh",
         "LSSB",
         "monoid",
+        "nonoverlapping",
         "semigroup",
         "thiserror",
+        "Uninit",
         "unionfind",
         "unop"
     ]

@@ -1,6 +1,6 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
 
-use fast_io::FromBytes;
+use fast_io::{FromBytes, IntoBytes};
 use std::io::{stdout, BufWriter, Read, Write};
 
 fn main() {
@@ -16,6 +16,8 @@ fn main() {
     while let Some(x) = num.next() {
         let y = num.next().unwrap();
 
-        writeln!(&mut buf_w, "{}", x + y).unwrap();
+        buf_w.write(&(x + y).into_bytes()).unwrap();
+        buf_w.write(b"\n").unwrap();
+        // writeln!(&mut buf_w, "{}", x + y).unwrap();
     }
 }

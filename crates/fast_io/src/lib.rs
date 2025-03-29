@@ -1,5 +1,5 @@
-mod parser;
-mod reader;
+mod from_bytes;
+mod into_bytes;
 
-pub use parser::FromBytes;
-pub use reader::FastIn;
+pub use from_bytes::FromBytes;
+pub use into_bytes::IntoBytes;
