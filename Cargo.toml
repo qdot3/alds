@@ -14,6 +14,7 @@ publish = false
 
 [dependencies]
 fast_io = { path = "crates/fast_io" }
+atoi = "2"
 
 [workspace.dependencies]
 proconio = { version = "=0.5.0", features = ["derive"] }
