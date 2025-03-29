@@ -9,12 +9,12 @@ fn main() {
     let mut num = buf_r
         .split_ascii_whitespace()
         .skip(1)
-        .filter_map(|bytes| u64::from_bytes(bytes.as_bytes()).ok());
+        .filter_map(|bytes| u128::from_bytes(bytes.as_bytes()).ok());
 
     let mut buf_w = BufWriter::new(stdout().lock());
     while let Some(x) = num.next() {
         let y = num.next().unwrap();
 
-        buf_w.write_fmt(format_args!("{}\n", x + y)).unwrap()
+        buf_w.write((x + y).to_string().as_bytes()).unwrap();
     }
 }
