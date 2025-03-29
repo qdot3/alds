@@ -16,5 +16,6 @@ fn main() {
         let y = num.next().unwrap();
 
         buf_w.write((x + y).to_string().as_bytes()).unwrap();
+        buf_w.write(b"\n").unwrap();
     }
 }
