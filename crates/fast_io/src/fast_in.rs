@@ -32,6 +32,10 @@ impl<'a> FastInput<'a> {
             if start == bytes.len() {
                 self.source.consume(start);
                 continue;
+            } else if start != 0 && !self.concat_buf.is_empty() {
+                let result = T::from_bytes(&self.concat_buf);
+                self.concat_buf.clear();
+                return result;
             }
 
             let end = start
@@ -39,7 +43,6 @@ impl<'a> FastInput<'a> {
                     .iter()
                     .take_while(|b| !b.is_ascii_whitespace())
                     .count();
-
             // token may be partitioned
             if end == bytes.len() {
                 self.concat_buf.extend_from_slice(&bytes[start..]);
