@@ -1,6 +1,7 @@
-mod fast_out;
-mod fast_write;
+mod fast_in;
+mod write;
 mod from_bytes;
 
-pub use fast_write::{FastWrite, Writable};
+pub use write::{FastWrite, Writable};
 pub use from_bytes::FromBytes;
+pub use fast_in::FastInput;

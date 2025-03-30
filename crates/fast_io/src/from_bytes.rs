@@ -120,13 +120,17 @@ pub enum Sign {
 }
 
 pub trait FromBytes: Sized {
-    fn from_bytes(bytes: &[u8]) -> Result<Self, IntErrorKind>;
+    type Output;
+
+    fn from_bytes(bytes: &[u8]) -> Self::Output;
 }
 
 macro_rules! from_bytes_impl {
     ( $( $int_ty:ty[max_len=$n:expr; max_prefix=$b:expr] )* ) => {$(
         impl FromBytes for $int_ty {
-            fn from_bytes(bytes: &[u8]) -> Result<Self, IntErrorKind> {
+            type Output = Result<Self, IntErrorKind>;
+
+            fn from_bytes(bytes: &[u8]) -> Self::Output {
                 let (sign, bytes) = match bytes {
                     [b'+' | b'-'] => return Err(IntErrorKind::InvalidDigit),
                     [b'+', rest @ ..] => (Sign::Plus, rest),
