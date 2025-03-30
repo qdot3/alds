@@ -20,8 +20,11 @@ impl<'a> FastInput<'a> {
         T: FromBytes,
     {
         while let Ok(bytes) = self.source.fill_buf() {
+            // EOF
             if bytes.is_empty() {
-                todo!("EOF")
+                let result = T::from_bytes(&self.concat_buf);
+                self.concat_buf.clear();
+                return result;
             }
 
             let start = bytes.iter().take_while(|b| b.is_ascii_whitespace()).count();
