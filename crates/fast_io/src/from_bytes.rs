@@ -131,6 +131,9 @@ macro_rules! from_bytes_impl {
             type Output = Result<Self, IntErrorKind>;
 
             fn from_bytes(bytes: &[u8]) -> Self::Output {
+                if bytes.is_empty() {
+                    return Err(IntErrorKind::Empty);
+                }
                 let (sign, bytes) = match bytes {
                     [b'+' | b'-'] => return Err(IntErrorKind::InvalidDigit),
                     [b'+', rest @ ..] => (Sign::Plus, rest),

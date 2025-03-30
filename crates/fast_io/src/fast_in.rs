@@ -124,15 +124,15 @@ impl<'a> Tokenizer<'a> {
                 i += 1;
             }
             if i < len {
-                if buf.is_empty() || i == 0 {
+                return if buf.is_empty() {
                     let result = T::from_bytes(&bytes[..i]);
                     self.source.consume(i);
-                    return result;
+                    result
                 } else {
                     buf.extend_from_slice(&bytes[..i]);
                     self.source.consume(i);
-                    return T::from_bytes(&buf);
-                }
+                    T::from_bytes(&buf)
+                };
             } else {
                 buf.extend_from_slice(&bytes);
                 self.source.consume(len);
