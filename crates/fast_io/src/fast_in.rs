@@ -19,6 +19,7 @@ impl<'a> FastInput<'a> {
     where
         T: FromBytes,
     {
+        // token may be very long
         while let Ok(bytes) = self.source.fill_buf() {
             // EOF
             if bytes.is_empty() {
@@ -42,13 +43,13 @@ impl<'a> FastInput<'a> {
             // token may be partitioned
             if end == bytes.len() {
                 self.concat_buf.extend_from_slice(&bytes[start..]);
-                self.source.consume(end - start);
+                self.source.consume(end);
                 continue;
             }
 
             let result = if self.concat_buf.is_empty() {
                 let result = T::from_bytes(&bytes[start..end]);
-                self.source.consume(end - start);
+                self.source.consume(end);
                 result
             } else {
                 // token is partitioned
