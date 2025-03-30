@@ -27,6 +27,18 @@ pub trait Writable {
     fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize>;
 }
 
+impl Writable for String {
+    fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize> {
+        writer.write(self.as_bytes())
+    }
+}
+
+impl Writable for str {
+    fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize> {
+        writer.write(self.as_bytes())
+    }
+}
+
 macro_rules! writable_int_impl {
     ( $( ($signed:ty, $unsigned:ty) ),* ) => {$(
         impl Writable for $unsigned {
@@ -61,7 +73,7 @@ macro_rules! writable_int_impl {
                             // otherwise `curr < 0`. But then `n` was originally at least `10000^10`
                             // which is `10^40 > 2^128 > n`.
                             curr -= 4;
-                            ptr::copy_nonoverlapping(lut_ptr.add(rem as usize * 2), buf_ptr.add(curr), 4);
+                            ptr::copy_nonoverlapping(lut_ptr.add(rem as usize * 4), buf_ptr.add(curr), 4);
                         }
                     }
 
@@ -71,16 +83,16 @@ macro_rules! writable_int_impl {
                     // decode at most 4 chars
                     if num >= 1_000 {
                         curr -= 4;
-                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 2), buf_ptr.add(curr), 4);
+                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 4), buf_ptr.add(curr), 4);
                     } else if num >= 100 {
                         curr -= 3;
-                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 2 + 1), buf_ptr.add(curr), 3);
+                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 4 + 1), buf_ptr.add(curr), 3);
                     } else if num >= 10 {
                         curr -= 2;
-                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 2 + 2), buf_ptr.add(curr), 2);
+                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 4 + 2), buf_ptr.add(curr), 2);
                     } else {
                         curr -= 1;
-                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 2 + 3), buf_ptr.add(curr), 1);
+                        ptr::copy_nonoverlapping(lut_ptr.add(num as usize * 4 + 3), buf_ptr.add(curr), 1);
                     }
                 }
 
@@ -99,7 +111,8 @@ macro_rules! writable_int_impl {
     )*};
 }
 
-writable_int_impl! { (i8, u8), (i16, u16), (i32, u32), (i64, u64), (isize, usize) }
+// TODO: specialize 128 bit integers
+writable_int_impl! { (i8, u8), (i16, u16), (i32, u32), (i64, u64), (isize, usize), (i128, u128) }
 
 // look up table
 static DEC_DIGITS_LUT: [u8; 40000] = {
