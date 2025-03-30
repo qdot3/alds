@@ -1,22 +1,16 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
 
-use fast_io::{FastWrite, FromBytes};
-use std::io::{stdin, stdout, BufWriter, Read};
+use fast_io::{FastInput, FastWrite};
+use std::io::{stdout, BufWriter};
 
 fn main() {
-    let mut buf_r = Vec::with_capacity(42 << 20);
-    stdin().lock().read_to_end(&mut buf_r).unwrap();
-    let mut num = buf_r
-        .split(|b| b.is_ascii_whitespace())
-        .filter(|bytes| !bytes.is_empty())
-        .skip(1)
-        .map(|bytes| u64::from_bytes(bytes).unwrap());
-
+    let mut fast_in = FastInput::new();
+    let n = fast_in.next_token::<usize>().unwrap();
     let mut buf_w = BufWriter::new(stdout().lock());
-    while let Some(x) = num.next() {
-        let y = num.next().unwrap();
+    for _ in 0..n {
+        let x = fast_in.next_token::<u64>().unwrap();
+        let y = fast_in.next_token::<u64>().unwrap();
 
         buf_w.fast_writeln(x + y).unwrap();
-        // writeln!(&mut buf_w, "{}", x + y).unwrap();
     }
 }

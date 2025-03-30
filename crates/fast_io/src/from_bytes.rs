@@ -184,6 +184,8 @@ from_bytes_impl! { i128[max_len=39; max_prefix=b'1'] }
 from_bytes_impl! { u128[max_len=39; max_prefix=b'3'] }
 from_bytes_impl! { i64 [max_len=19; max_prefix=b'9'] }
 from_bytes_impl! { u64 [max_len=20; max_prefix=b'1'] }
+from_bytes_impl! { isize [max_len=19; max_prefix=b'9'] }
+from_bytes_impl! { usize [max_len=20; max_prefix=b'1'] }
 from_bytes_impl! { i32 [max_len=10; max_prefix=b'2'] }
 from_bytes_impl! { u32 [max_len=10; max_prefix=b'4'] }
 from_bytes_impl! { i16 [max_len=5;  max_prefix=b'3'] }
