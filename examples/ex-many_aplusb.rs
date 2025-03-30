@@ -1,12 +1,13 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
 
-use fast_io::{FromBytes, FastWrite};
-use std::io::{stdout, BufWriter, Read};
+use fast_io::{FastWrite, FromBytes};
+use std::io::{stdin, stdout, BufRead, BufReader, BufWriter};
 
 fn main() {
-    let mut buf_r = Vec::new();
-    let _ = std::io::stdin().lock().read_to_end(&mut buf_r);
+    let mut buf_r = BufReader::with_capacity(40_000_000, stdin().lock());
     let mut num = buf_r
+        .fill_buf()
+        .unwrap()
         .split(|b| b.is_ascii_whitespace())
         .filter(|bytes| !bytes.is_empty())
         .skip(1)
