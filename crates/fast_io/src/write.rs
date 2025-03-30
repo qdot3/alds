@@ -16,8 +16,44 @@ pub trait FastWrite: Write {
     where
         T: Writable,
     {
-        value.write(self)?;
-        self.write(b"\n")
+        Ok(value.write(self)? + self.write(b"\n")?)
+    }
+
+    fn fast_write_all<T, U>(&mut self, values: &[T], sep: U) -> io::Result<usize>
+    where
+        T: Writable,
+        U: Writable,
+    {
+        let mut iter = values.into_iter();
+        let mut n = 0;
+        if let Some(value) = iter.next() {
+            n += value.write(self)?;
+            for value in iter {
+                n += sep.write(self)?;
+                n += value.write(self)?;
+            }
+        }
+
+        Ok(n)
+    }
+
+    fn fast_writeln_all<T, U>(&mut self, values: &[T], sep: U) -> io::Result<usize>
+    where
+        T: Writable,
+        U: Writable,
+    {
+        let mut iter = values.into_iter();
+        let mut n = 0;
+        if let Some(value) = iter.next() {
+            n += value.write(self)?;
+            for value in iter {
+                n += sep.write(self)?;
+                n += value.write(self)?;
+            }
+        }
+        n += self.write(b"\n")?;
+
+        Ok(n)
     }
 }
 

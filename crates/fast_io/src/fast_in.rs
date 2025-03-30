@@ -1,7 +1,11 @@
-use std::io::{stdin, BufRead, StdinLock};
+use std::{
+    io::{stdin, BufRead, StdinLock},
+    result,
+};
 
 use crate::FromBytes;
 
+// TODO: make faster. this is too late.
 pub struct FastInput<'a> {
     source: StdinLock<'a>,
     concat_buf: Vec<u8>,
@@ -19,54 +23,48 @@ impl<'a> FastInput<'a> {
     where
         T: FromBytes,
     {
-        // token may be very long
+        let (mut l, mut r) = (0, 0);
         while let Ok(bytes) = self.source.fill_buf() {
-            // EOF
             if bytes.is_empty() {
                 let result = T::from_bytes(&self.concat_buf);
                 self.concat_buf.clear();
                 return result;
             }
-
-            let start = bytes.iter().take_while(|b| b.is_ascii_whitespace()).count();
-            if start == bytes.len() {
-                self.source.consume(start);
-                continue;
-            } else if start != 0 && !self.concat_buf.is_empty() {
+            if !self.concat_buf.is_empty() && bytes[l].is_ascii_whitespace() {
                 let result = T::from_bytes(&self.concat_buf);
                 self.concat_buf.clear();
                 return result;
             }
-
-            let end = start
-                + bytes[start..]
-                    .iter()
-                    .take_while(|b| !b.is_ascii_whitespace())
-                    .count();
-            // token may be partitioned
-            if end == bytes.len() {
-                self.concat_buf.extend_from_slice(&bytes[start..]);
-                self.source.consume(end);
-                continue;
+            while l < bytes.len() {
+                if bytes[l].is_ascii_whitespace() {
+                    l += 1
+                }
+            }
+            r += l;
+            while r < bytes.len() {
+                if !bytes[r].is_ascii_whitespace() {
+                    r += 1
+                }
             }
 
-            let result = if self.concat_buf.is_empty() {
-                let result = T::from_bytes(&bytes[start..end]);
-                self.source.consume(end);
-                result
+            if r == bytes.len() {
+                self.concat_buf.extend_from_slice(&bytes[l..]);
+                self.source.consume(r);
+                (l, r) = (0, 0);
+                continue;
+            } else if self.concat_buf.is_empty() {
+                let result = T::from_bytes(&bytes[l..r]);
+                self.source.consume(r);
+                return result;
             } else {
-                // token is partitioned
-                debug_assert_eq!(start, 0);
-                self.concat_buf.extend_from_slice(&bytes[..end]);
-                self.source.consume(end);
+                self.concat_buf.extend_from_slice(&bytes[..r]);
+                self.source.consume(r);
 
                 let result = T::from_bytes(&self.concat_buf);
                 self.concat_buf.clear();
-                result
-            };
-            return result;
+                return result;
+            }
         }
-
-        todo!("error handling")
+        todo!("I/O error handling")
     }
 }
