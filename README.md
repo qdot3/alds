@@ -7,6 +7,16 @@
 `/archive`はファイル構造の変更をサボっているものです。
 実装途中のものを含みます。
 
+## Competitive Programming
+
+`Cargo.toml`の`[dependencies]`に下記のスニペットをコピペする。
+
+```text
+TODO
+```
+
+[`cargo-equip`](https://github.com/qryxip/cargo-equip)でバンドルして提出
+
 ## License
 
 Choose MIT or Apache-2.0 at your opinion.
