@@ -20,24 +20,21 @@ pub mod marker {
 
                 fn read<R: BufRead, S: Source<R>>(source: &mut S) -> Self::Output {
                     let token = source.next_token_unwrap();
-                    match <$inner>::from_bytes(token.as_bytes()) {
-                        Ok(v) => v,
-                        Err(e) => panic!(
-                            concat!(
-                                "failed to parse the input `{input}` ",
-                                "to the value of type `{ty}`: {err:?}; ",
-                                "ensure that the input format is correctly specified ",
-                                "and that the input value must handle specified type.",
-                            ),
-                            input = token,
-                            ty = type_name::<$inner>(),
-                            err = e,
+                    <$inner>::from_bytes(token.as_bytes()).unwrap_or_else(|e| panic!(
+                        concat!(
+                            "failed to parse the input `{input}` ",
+                            "to the value of type `{ty}`: {err:?}; ",
+                            "ensure that the input format is correctly specified ",
+                            "and that the input value must handle specified type.",
                         ),
-                    }
+                        input = token,
+                        ty = type_name::<$inner>(),
+                        err = e,
+                    ))
                 }
             }
         )*};
-}
+    }
 
     readable_int_impl! {
         I8(i8) U8(u8) I16(i16) U16(u16) I32(i32) U32(u32) I64(i64) U64(u64)

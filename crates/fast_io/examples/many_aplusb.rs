@@ -2,7 +2,10 @@
 
 use std::io::{stdout, BufWriter};
 
-use fast_io::{FastWrite, marker::{Usize, U64}, };
+use fast_io::{
+    marker::{Usize, U64},
+    FastWrite,
+};
 use proconio::input;
 
 fn main() {
