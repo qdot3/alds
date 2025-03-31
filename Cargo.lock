@@ -20,9 +20,6 @@ dependencies = [
 [[package]]
 name = "fast_io"
 version = "0.1.0"
-dependencies = [
- "proconio",
-]
 
 [[package]]
 name = "fenwick_tree"

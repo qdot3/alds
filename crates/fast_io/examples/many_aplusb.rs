@@ -1,18 +1,22 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/many_aplusb
 
-use std::io::{stdout, BufWriter};
-
-use fast_io::{
-    marker::{Usize, U64},
-    FastWrite,
-};
-use proconio::input;
+use fast_io::{FastWrite, FromBytes};
+use std::io::{stdin, stdout, BufWriter, Read};
 
 fn main() {
-    input! { n: Usize, xy: [(U64, U64); n], }
+    let mut buf_r = Vec::new();
+    stdin().lock().read_to_end(&mut buf_r).unwrap();
+    let mut num = buf_r
+        .split(|b| !b.is_ascii_graphic())
+        .filter(|bytes| !bytes.is_empty())
+        .skip(1)
+        .map(|bytes| u64::from_bytes(bytes).unwrap());
 
     let mut buf_w = BufWriter::new(stdout().lock());
-    for (x, y) in xy {
+    while let Some(x) = num.next() {
+        let y = num.next().unwrap();
+
         buf_w.fast_writeln(x + y).unwrap();
+        // writeln!(&mut buf_w, "{}", x + y).unwrap();
     }
 }

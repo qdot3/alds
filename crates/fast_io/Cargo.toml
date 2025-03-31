@@ -16,4 +16,3 @@ publish.workspace = true
 name = "fast_io"
 
 [dependencies]
-proconio = { workspace = true }
