@@ -130,8 +130,8 @@ pub enum Token<'a> {
 impl<'a> Token<'a> {
     pub fn as_slice(&self) -> &[u8] {
         match self {
-            Token::Slice(bytes) => &bytes,
-            Token::Bytes(bytes) => &bytes,
+            Token::Slice(bytes) => bytes,
+            Token::Bytes(bytes) => bytes,
         }
     }
 }

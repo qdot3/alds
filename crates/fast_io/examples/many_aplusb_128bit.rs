@@ -4,7 +4,7 @@ use fast_io::{FastInput, FastOutput, FromBytes};
 use std::io::{stdin, stdout};
 
 fn main() {
-    let mut fast_in = FastInput::<{ 8 * 1024 }, _>::new(stdin().lock());
+    let mut fast_in = FastInput::<{ 8 * 1024 * 2 }, _>::new(stdin().lock());
     let n = usize::from_bytes(fast_in.next_token().unwrap().as_slice()).unwrap();
 
     let mut fast_out = FastOutput::new(stdout().lock());

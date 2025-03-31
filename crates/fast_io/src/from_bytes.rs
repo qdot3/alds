@@ -2,7 +2,7 @@ use std::num::IntErrorKind;
 
 #[inline]
 fn parse_2_digits_radix_10(mut bytes_le: u16) -> Result<u16, IntErrorKind> {
-    if (bytes_le & 0xf0f0) | (((bytes_le & 0x0808) * 0b11 >> 2) & bytes_le) != 0x3030 {
+    if (bytes_le & 0xf0f0) | ((((bytes_le & 0x0808) * 0b11) >> 2) & bytes_le) != 0x3030 {
         return Err(IntErrorKind::InvalidDigit);
     }
 
@@ -13,7 +13,8 @@ fn parse_2_digits_radix_10(mut bytes_le: u16) -> Result<u16, IntErrorKind> {
 
 #[inline]
 fn parse_4_digits_radix_10(mut bytes_le: u32) -> Result<u32, IntErrorKind> {
-    if (bytes_le & 0xf0f0_f0f0) | (((bytes_le & 0x0808_0808) * 0b11 >> 2) & bytes_le) != 0x3030_3030
+    if (bytes_le & 0xf0f0_f0f0) | ((((bytes_le & 0x0808_0808) * 0b11) >> 2) & bytes_le)
+        != 0x3030_3030
     {
         return Err(IntErrorKind::InvalidDigit);
     }
@@ -28,7 +29,7 @@ fn parse_4_digits_radix_10(mut bytes_le: u32) -> Result<u32, IntErrorKind> {
 #[inline]
 fn parse_8_digits_radix_10(mut bytes_le: u64) -> Result<u64, IntErrorKind> {
     if (bytes_le & 0xf0f0_f0f0_f0f0_f0f0)
-        | (((bytes_le & 0x0808_0808_0808_0808) * 0b11 >> 2) & bytes_le)
+        | ((((bytes_le & 0x0808_0808_0808_0808) * 0b11) >> 2) & bytes_le)
         != 0x3030_3030_3030_3030
     {
         return Err(IntErrorKind::InvalidDigit);

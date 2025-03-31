@@ -41,7 +41,7 @@ impl<W: Write> FastOutput<W> {
         T: Writable,
         U: Writable,
     {
-        let mut iter = values.into_iter();
+        let mut iter = values.iter();
         let mut n = 0;
         if let Some(value) = iter.next() {
             n += value.write(&mut self.writer)?;
@@ -59,7 +59,7 @@ impl<W: Write> FastOutput<W> {
         T: Writable,
         U: Writable,
     {
-        let mut iter = values.into_iter();
+        let mut iter = values.iter();
         let mut n = 0;
         if let Some(value) = iter.next() {
             n += value.write(&mut self.writer)?;
@@ -153,10 +153,13 @@ macro_rules! writable_int_impl {
 
         impl Writable for $signed {
             fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize> {
+                let mut n = 0;
                 if self.is_negative() {
-                    writer.write(b"-")?;
+                    n += writer.write(b"-")?;
                 }
-                self.unsigned_abs().write(writer)
+                n += self.unsigned_abs().write(writer)?;
+
+                Ok(n)
             }
         }
     )*};
@@ -171,7 +174,7 @@ static DEC_DIGITS_LUT: [u8; 40000] = {
     let mut i = 0;
     while i < 10_000 {
         let (upper, lower) = (i / 100, i % 100);
-        lut[i * 4 + 0] = (upper / 10) as u8 + b'0';
+        lut[i * 4] = (upper / 10) as u8 + b'0';
         lut[i * 4 + 1] = (upper % 10) as u8 + b'0';
         lut[i * 4 + 2] = (lower / 10) as u8 + b'0';
         lut[i * 4 + 3] = (lower % 10) as u8 + b'0';
