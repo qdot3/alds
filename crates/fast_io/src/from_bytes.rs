@@ -121,17 +121,17 @@ pub enum Sign {
 }
 
 pub trait FromBytes: Sized {
-    type Output;
+    type Err;
 
-    fn from_bytes(bytes: &[u8]) -> Self::Output;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
 }
 
 macro_rules! from_bytes_int_impl {
     ( $( $int_ty:ty )* ) => {$(
         impl FromBytes for $int_ty {
-            type Output = Result<Self, IntErrorKind>;
+            type Err = IntErrorKind;
 
-            fn from_bytes(bytes: &[u8]) -> Self::Output {
+            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
                 if bytes.is_empty() {
                     return Err(IntErrorKind::Empty);
                 }
@@ -192,9 +192,9 @@ from_bytes_int_impl! { i8 u8 i16 u16 i32 u32 i64 u64 i128 u128 }
 macro_rules! from_bytes_size_impl {
     ( $( $size:ty as $fixed_size:ty ), * $(,)?) => {$(
         impl FromBytes for $size {
-            type Output = Result<Self, IntErrorKind>;
+            type Err = IntErrorKind;
 
-            fn from_bytes(bytes: &[u8]) -> Self::Output {
+            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
                 match <$fixed_size>::from_bytes(bytes) {
                     Ok(v) => Ok(v as $size),
                     Err(e) => Err(e)
