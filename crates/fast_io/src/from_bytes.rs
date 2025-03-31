@@ -126,7 +126,7 @@ pub trait FromBytes: Sized {
 }
 
 macro_rules! from_bytes_int_impl {
-    ( $( $int_ty:ty[max_len=$n:expr; max_prefix=$b:expr] )* ) => {$(
+    ( $( $int_ty:ty )* ) => {$(
         impl FromBytes for $int_ty {
             type Output = Result<Self, IntErrorKind>;
 
@@ -142,19 +142,22 @@ macro_rules! from_bytes_int_impl {
                     _ => (Sign::Plus, bytes),
                 };
 
+                // ignore prefix zeros
                 let i = bytes.iter().take_while(|&&b| b == b'0').count();
-                match (bytes.len() - i).cmp(&$n) {
+                const MAX_DIGIT_NUM: usize = <$int_ty>::MAX.ilog10() as usize + 1;
+                const MAX_TEN_POW: $int_ty = (10 as $int_ty).pow(MAX_DIGIT_NUM as u32 - 1);
+                const MAX_PREFIX_BYTE: u8 = (<$int_ty>::MAX / MAX_TEN_POW) as u8 + b'0';
+                match (bytes.len() - i).cmp(&MAX_DIGIT_NUM) {
                     std::cmp::Ordering::Less => match sign {
                         Sign::Plus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_add)),
                         Sign::Minus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_sub)),
                     },
-                    std::cmp::Ordering::Equal if bytes[i] <= $b => {
+                    std::cmp::Ordering::Equal if bytes[i] <= MAX_PREFIX_BYTE => {
                         match sign {
                             Sign::Plus => {
                                 let result = parse_digits!(bytes[i..]; as $int_ty; wrapping_add);
 
-                                const TH: $int_ty = (10 as $int_ty).pow($n as u32 - 1);
-                                if result / TH == 0 {
+                                if result / MAX_TEN_POW == 0 {
                                     Err(IntErrorKind::PosOverflow)
                                 } else {
                                     Ok(result)
@@ -183,16 +186,7 @@ macro_rules! from_bytes_int_impl {
     )*};
 }
 
-from_bytes_int_impl! { i128 [max_len=39; max_prefix=b'1'] }
-from_bytes_int_impl! { u128 [max_len=39; max_prefix=b'3'] }
-from_bytes_int_impl! { i64  [max_len=19; max_prefix=b'9'] }
-from_bytes_int_impl! { u64  [max_len=20; max_prefix=b'1'] }
-from_bytes_int_impl! { i32  [max_len=10; max_prefix=b'2'] }
-from_bytes_int_impl! { u32  [max_len=10; max_prefix=b'4'] }
-from_bytes_int_impl! { i16  [max_len=5;  max_prefix=b'3'] }
-from_bytes_int_impl! { u16  [max_len=5;  max_prefix=b'6'] }
-from_bytes_int_impl! { i8   [max_len=3;  max_prefix=b'1'] }
-from_bytes_int_impl! { u8   [max_len=3;  max_prefix=b'2'] }
+from_bytes_int_impl! { i8 u8 i16 u16 i32 u32 i64 u64 i128 u128 }
 
 macro_rules! from_bytes_size_impl {
     ( $( $size:ty as $fixed_size:ty ), * $(,)?) => {$(
