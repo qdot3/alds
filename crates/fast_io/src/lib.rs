@@ -4,7 +4,7 @@ mod write;
 
 pub use from_bytes::FromBytes;
 pub use input::{FastInput, Token};
-pub use write::{FastWrite, Writable};
+pub use write::{FastOutput, Writable};
 
 // /// [proconio](https://docs.rs/proconio/latest/proconio/)
 // pub mod marker {

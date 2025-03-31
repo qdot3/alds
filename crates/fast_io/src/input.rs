@@ -55,7 +55,7 @@ impl<const N: usize, R: BufRead> FastInput<N, R> {
 
             // EOF or empty
             if self.filled == 0 {
-                return Err(io::Error::new(ErrorKind::UnexpectedEof, "reached EOF"));
+                return Err(io::Error::new(ErrorKind::Other, "empty"));
             }
 
             if let Some(skip) = self.buf[..self.filled]

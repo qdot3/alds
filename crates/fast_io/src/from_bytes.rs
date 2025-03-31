@@ -125,7 +125,7 @@ pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Self::Output;
 }
 
-macro_rules! from_bytes_impl {
+macro_rules! from_bytes_int_impl {
     ( $( $int_ty:ty[max_len=$n:expr; max_prefix=$b:expr] )* ) => {$(
         impl FromBytes for $int_ty {
             type Output = Result<Self, IntErrorKind>;
@@ -183,19 +183,38 @@ macro_rules! from_bytes_impl {
     )*};
 }
 
-from_bytes_impl! { i128 [max_len=39; max_prefix=b'1'] }
-from_bytes_impl! { u128 [max_len=39; max_prefix=b'3'] }
-from_bytes_impl! { i64  [max_len=19; max_prefix=b'9'] }
-from_bytes_impl! { u64  [max_len=20; max_prefix=b'1'] }
-// usize::BITS = 32 or 64
-from_bytes_impl! { isize[max_len=19; max_prefix=b'9'] }
-from_bytes_impl! { usize[max_len=20; max_prefix=b'1'] }
-from_bytes_impl! { i32  [max_len=10; max_prefix=b'2'] }
-from_bytes_impl! { u32  [max_len=10; max_prefix=b'4'] }
-from_bytes_impl! { i16  [max_len=5;  max_prefix=b'3'] }
-from_bytes_impl! { u16  [max_len=5;  max_prefix=b'6'] }
-from_bytes_impl! { i8   [max_len=3;  max_prefix=b'1'] }
-from_bytes_impl! { u8   [max_len=3;  max_prefix=b'2'] }
+from_bytes_int_impl! { i128 [max_len=39; max_prefix=b'1'] }
+from_bytes_int_impl! { u128 [max_len=39; max_prefix=b'3'] }
+from_bytes_int_impl! { i64  [max_len=19; max_prefix=b'9'] }
+from_bytes_int_impl! { u64  [max_len=20; max_prefix=b'1'] }
+from_bytes_int_impl! { i32  [max_len=10; max_prefix=b'2'] }
+from_bytes_int_impl! { u32  [max_len=10; max_prefix=b'4'] }
+from_bytes_int_impl! { i16  [max_len=5;  max_prefix=b'3'] }
+from_bytes_int_impl! { u16  [max_len=5;  max_prefix=b'6'] }
+from_bytes_int_impl! { i8   [max_len=3;  max_prefix=b'1'] }
+from_bytes_int_impl! { u8   [max_len=3;  max_prefix=b'2'] }
+
+macro_rules! from_bytes_size_impl {
+    ( $( $size:ty as $fixed_size:ty ), * $(,)?) => {$(
+        impl FromBytes for $size {
+            type Output = Result<Self, IntErrorKind>;
+
+            fn from_bytes(bytes: &[u8]) -> Self::Output {
+                match <$fixed_size>::from_bytes(bytes) {
+                    Ok(v) => Ok(v as $size),
+                    Err(e) => Err(e)
+                }
+            }
+        }
+    )*};
+}
+
+#[cfg(target_pointer_width = "16")]
+from_bytes_size_impl! { isize as i16, usize as u16 }
+#[cfg(target_pointer_width = "32")]
+from_bytes_size_impl! { isize as i32, usize as u32 }
+#[cfg(target_pointer_width = "64")]
+from_bytes_size_impl! { isize as i64, usize as u64 }
 
 #[cfg(test)]
 mod tests {

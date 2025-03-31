@@ -4,22 +4,39 @@ use std::{
     ptr, slice,
 };
 
-pub trait FastWrite: Write {
-    fn fast_write<T>(&mut self, value: T) -> io::Result<usize>
+/// A wrapper of [BufWriter].
+pub struct FastOutput<W: Write> {
+    writer: BufWriter<W>,
+}
+
+impl<W: Write> FastOutput<W> {
+    pub fn new(writer: W) -> Self {
+        Self {
+            writer: BufWriter::new(writer),
+        }
+    }
+
+    pub fn with_capacity(capacity: usize, writer: W) -> Self {
+        Self {
+            writer: BufWriter::with_capacity(capacity, writer),
+        }
+    }
+
+    pub fn fast_write<T>(&mut self, value: T) -> io::Result<usize>
     where
         T: Writable,
     {
-        value.write(self)
+        value.write(&mut self.writer)
     }
 
-    fn fast_writeln<T>(&mut self, value: T) -> io::Result<usize>
+    pub fn fast_writeln<T>(&mut self, value: T) -> io::Result<usize>
     where
         T: Writable,
     {
-        Ok(value.write(self)? + self.write(b"\n")?)
+        Ok(value.write(&mut self.writer)? + self.writer.write(b"\n")?)
     }
 
-    fn fast_write_all<T, U>(&mut self, values: &[T], sep: U) -> io::Result<usize>
+    pub fn fast_write_all<T, U>(&mut self, values: &[T], sep: U) -> io::Result<usize>
     where
         T: Writable,
         U: Writable,
@@ -27,17 +44,17 @@ pub trait FastWrite: Write {
         let mut iter = values.into_iter();
         let mut n = 0;
         if let Some(value) = iter.next() {
-            n += value.write(self)?;
+            n += value.write(&mut self.writer)?;
             for value in iter {
-                n += sep.write(self)?;
-                n += value.write(self)?;
+                n += sep.write(&mut self.writer)?;
+                n += value.write(&mut self.writer)?;
             }
         }
 
         Ok(n)
     }
 
-    fn fast_writeln_all<T, U>(&mut self, values: &[T], sep: U) -> io::Result<usize>
+    pub fn fast_writeln_all<T, U>(&mut self, values: &[T], sep: U) -> io::Result<usize>
     where
         T: Writable,
         U: Writable,
@@ -45,19 +62,17 @@ pub trait FastWrite: Write {
         let mut iter = values.into_iter();
         let mut n = 0;
         if let Some(value) = iter.next() {
-            n += value.write(self)?;
+            n += value.write(&mut self.writer)?;
             for value in iter {
-                n += sep.write(self)?;
-                n += value.write(self)?;
+                n += sep.write(&mut self.writer)?;
+                n += value.write(&mut self.writer)?;
             }
         }
-        n += self.write(b"\n")?;
+        n += self.writer.write(b"\n")?;
 
         Ok(n)
     }
 }
-
-impl<W: Write> FastWrite for BufWriter<W> {}
 
 pub trait Writable {
     fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize>;
