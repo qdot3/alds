@@ -3,13 +3,6 @@
 version = 3
 
 [[package]]
-name = "alds"
-version = "0.1.0"
-dependencies = [
- "fast_io",
-]
-
-[[package]]
 name = "combinatorics"
 version = "0.1.0"
 
@@ -27,6 +20,9 @@ dependencies = [
 [[package]]
 name = "fast_io"
 version = "0.1.0"
+dependencies = [
+ "proconio",
+]
 
 [[package]]
 name = "fenwick_tree"

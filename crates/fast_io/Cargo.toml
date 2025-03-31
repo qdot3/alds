@@ -3,6 +3,7 @@ name = "fast_io"
 version = "0.1.0"
 edition = "2021"
 
+author.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
@@ -15,3 +16,4 @@ publish.workspace = true
 name = "fast_io"
 
 [dependencies]
+proconio = { workspace = true }
