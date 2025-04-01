@@ -133,10 +133,10 @@ macro_rules! writable_int_impl {
                     // This block will be removed for smaller types at compile time and in the worst
                     // case, it will prevent to have the literal to overflow for smaller types.
                     if core::mem::size_of::<$unsigned>() >= core::mem::size_of::<u128>() {
-                        // eagerly decode 4 characters at a time
                         if num >= 1_0000_0000_0000_0000 {
+                            // eagerly decode 4 characters at a time
                             for _ in 0..4 {
-                                let rem = (num % 10000) as usize;
+                                let rem = (num % 1_0000) as usize;
                                 num /= 1_0000;
 
                                 // We are allowed to copy to `buf_ptr[curr..curr + 4]` here since otherwise `curr < 0`.

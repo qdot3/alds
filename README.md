@@ -3,9 +3,12 @@
 [![Actions Status](https://github.com/qdot3/alds/workflows/verify/badge.svg)](https://github.com/qdot3/alds/actions)
 
 競技プログラミング用のコードを実装・検証しています。
-実装は`/crates`、検証用コードはそれぞれの`/examples`にあります。
-`/archive`はファイル構造の変更をサボっているものです。
-実装途中のものを含みます。
+まだまだ発展途上です。
+
+- `/crates/*/src`：各種アルゴリズム・データ構造の実装があります。
+- `/crates/*/examples`：検証用コードがあります。使用例としても使えます。
+- `/book`：ライブラリ作成時に得た知見を`mdbook`でまとめていきたい。
+- `/archive`：ゴミ箱。お宝が眠っているかも？
 
 ## Competitive Programming
 
