@@ -10,12 +10,14 @@ pub struct FastOutput<W: Write> {
 }
 
 impl<W: Write> FastOutput<W> {
+    #[inline]
     pub fn new(writer: W) -> Self {
         Self {
             writer: BufWriter::new(writer),
         }
     }
 
+    #[inline]
     pub fn with_capacity(capacity: usize, writer: W) -> Self {
         Self {
             writer: BufWriter::with_capacity(capacity, writer),
@@ -23,6 +25,7 @@ impl<W: Write> FastOutput<W> {
     }
 
     /// Writes the given value into the inner buffer, returning how many bytes were written.
+    #[inline]
     pub fn fast_write<T>(&mut self, value: &T) -> io::Result<usize>
     where
         T: Writable,
@@ -32,6 +35,7 @@ impl<W: Write> FastOutput<W> {
 
     /// Writes the given value into the inner buffer with a newline appended,
     /// returning how many bytes were written.
+    #[inline]
     pub fn fast_writeln<T>(&mut self, value: &T) -> io::Result<usize>
     where
         T: Writable,
@@ -98,12 +102,14 @@ pub trait Writable {
 }
 
 impl Writable for &String {
+    #[inline]
     fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize> {
         writer.write(self.as_bytes())
     }
 }
 
 impl Writable for &str {
+    #[inline]
     fn write<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<usize> {
         writer.write(self.as_bytes())
     }
