@@ -4,6 +4,8 @@ use fast_io::{prelude::DEFAULT_BUF_SIZE, FastInput, FastOutput};
 use std::io::{stdin, stdout};
 
 fn main() {
+    // optimal buffer size depends on the size of L1 chase
+    // DEFAULT_BUF_SIZE = 8 KB
     let mut fast_in = FastInput::<{ DEFAULT_BUF_SIZE * 4 }, _>::new(stdin().lock());
     let n = fast_in.parse_unwrap();
 
@@ -12,6 +14,6 @@ fn main() {
         let x: i128 = fast_in.parse_unwrap();
         let y: i128 = fast_in.parse_unwrap();
 
-        fast_out.fast_writeln(x + y).unwrap();
+        fast_out.fast_writeln(&(x + y)).unwrap();
     }
 }

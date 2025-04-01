@@ -11,6 +11,6 @@ fn main() {
         let x = fast_in.parse_unwrap::<u64>();
         let y = fast_in.parse_unwrap::<u64>();
 
-        fast_out.fast_writeln(x + y).unwrap();
+        fast_out.fast_writeln(&(x + y)).unwrap();
     }
 }
