@@ -21,14 +21,14 @@ pub mod prelude {
 
     /// Constructs a new handle to the standard input of the current process.
     #[inline]
-    pub fn fast_stdin_locked() -> FastInput<{ 1 << 17 }, StdinLock<'static>> {
+    pub fn fast_stdin_locked() -> FastInput<{ DEFAULT_BUF_SIZE }, StdinLock<'static>> {
         FastInput::new(stdin().lock())
     }
 
     /// Constructs a new handle to the standard output of the current process.
     #[inline]
     pub fn fast_stdout_locked() -> FastOutput<StdoutLock<'static>> {
-        FastOutput::with_capacity(1 << 17, stdout().lock())
+        FastOutput::new(stdout().lock())
     }
 }
 
