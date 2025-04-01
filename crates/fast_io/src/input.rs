@@ -3,8 +3,9 @@ use std::{
     io::{self, BufRead, ErrorKind},
 };
 
-use crate::FromBytes;
+use super::FromBytes;
 
+/// A wrapper of [BufReader](std::io::BufReader).
 pub struct FastInput<const N: usize, R: BufRead> {
     reader: R,
     buf: [u8; N],
@@ -13,6 +14,7 @@ pub struct FastInput<const N: usize, R: BufRead> {
 }
 
 impl<const N: usize, R: BufRead> FastInput<N, R> {
+    /// Cheats a new buffered handler of the given reader.
     pub fn new(mut reader: R) -> Self {
         assert!(N != 0);
 
@@ -69,7 +71,7 @@ impl<const N: usize, R: BufRead> FastInput<N, R> {
         }
         self.pos = self.filled;
 
-        // Otherwise, the loop usually completes within two iterations."
+        // Otherwise, the loop usually completes within two iterations.
         if self.cold_next_token_2(&mut buf)? {
             return Ok(Token::Bytes(buf));
         } else {

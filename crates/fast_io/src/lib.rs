@@ -24,7 +24,14 @@ pub mod prelude {
         FastInput::new(stdin().lock())
     }
 
+    /// Constructs a new handle to the standard output of the current process.
     pub fn fast_stdout_locked() -> FastOutput<StdoutLock<'static>> {
         FastOutput::new(stdout().lock())
+    }
+}
+
+pub mod macros {
+    macro_rules! f_input {
+        () => {};
     }
 }

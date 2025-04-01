@@ -25,8 +25,8 @@ version = "0.1.0"
 name = "fenwick_tree"
 version = "0.1.0"
 dependencies = [
+ "fast_io",
  "math-traits",
- "proconio",
 ]
 
 [[package]]

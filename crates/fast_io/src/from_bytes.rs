@@ -2,47 +2,47 @@ use std::num::IntErrorKind;
 
 #[inline]
 fn parse_2_digits_radix_10(mut bytes_le: u16) -> Result<u16, IntErrorKind> {
-    if (bytes_le & 0xf0f0) | ((((bytes_le & 0x0808) * 0b11) >> 2) & bytes_le) != 0x3030 {
-        return Err(IntErrorKind::InvalidDigit);
-    }
+    let test = (bytes_le & 0xf0f0) | ((((bytes_le & 0x0808) * 0b11) >> 2) & bytes_le) == 0x3030;
+    test.then_some({
+        // [b|a] -> [ab]
+        bytes_le = (bytes_le & 0x0f0f).wrapping_mul((10 << 8) + 1) >> 8;
 
-    // [b|a] -> [ab]
-    bytes_le = (bytes_le & 0x0f0f).wrapping_mul((10 << 8) + 1) >> 8;
-    Ok(bytes_le)
+        bytes_le
+    })
+    .ok_or(IntErrorKind::InvalidDigit)
 }
 
 #[inline]
 fn parse_4_digits_radix_10(mut bytes_le: u32) -> Result<u32, IntErrorKind> {
-    if (bytes_le & 0xf0f0_f0f0) | ((((bytes_le & 0x0808_0808) * 0b11) >> 2) & bytes_le)
-        != 0x3030_3030
-    {
-        return Err(IntErrorKind::InvalidDigit);
-    }
+    let test = (bytes_le & 0xf0f0_f0f0) | ((((bytes_le & 0x0808_0808) * 0b11) >> 2) & bytes_le)
+        == 0x3030_3030;
+    test.then_some({
+        // [d|c|b|a] -> [cd|ab]
+        bytes_le = (bytes_le & 0x0f0f_0f0f).wrapping_mul((10 << 8) + 1) >> 8;
+        // [cd|ab] -> [abcd]
+        bytes_le = (bytes_le & 0x00ff_00ff).wrapping_mul((100 << 16) + 1) >> 16;
 
-    // [d|c|b|a] -> [cd|ab]
-    bytes_le = (bytes_le & 0x0f0f_0f0f).wrapping_mul((10 << 8) + 1) >> 8;
-    // [cd|ab] -> [abcd]
-    bytes_le = (bytes_le & 0x00ff_00ff).wrapping_mul((100 << 16) + 1) >> 16;
-    Ok(bytes_le)
+        bytes_le
+    })
+    .ok_or(IntErrorKind::InvalidDigit)
 }
 
 #[inline]
 fn parse_8_digits_radix_10(mut bytes_le: u64) -> Result<u64, IntErrorKind> {
-    if (bytes_le & 0xf0f0_f0f0_f0f0_f0f0)
+    let test = (bytes_le & 0xf0f0_f0f0_f0f0_f0f0)
         | ((((bytes_le & 0x0808_0808_0808_0808) * 0b11) >> 2) & bytes_le)
-        != 0x3030_3030_3030_3030
-    {
-        return Err(IntErrorKind::InvalidDigit);
-    }
+        == 0x3030_3030_3030_3030;
+    test.then_some({
+        // [h|g|f|e|d|c|b|a] -> [gh|ef|cd|ab]
+        bytes_le = (bytes_le & 0x0f0f_0f0f_0f0f_0f0f).wrapping_mul((10 << 8) + 1) >> 8;
+        // [gh|ef|cd|ab] -> [efgh|abcd]
+        bytes_le = (bytes_le & 0x00ff_00ff_00ff_00ff).wrapping_mul((100 << 16) + 1) >> 16;
+        // [efgh|abcd] -> [abcdefgh]
+        bytes_le = (bytes_le & 0x0000_ffff_0000_ffff).wrapping_mul((10000 << 32) + 1) >> 32;
 
-    // [h|g|f|e|d|c|b|a] -> [gh|ef|cd|ab]
-    bytes_le = (bytes_le & 0x0f0f_0f0f_0f0f_0f0f).wrapping_mul((10 << 8) + 1) >> 8;
-    // [gh|ef|cd|ab] -> [efgh|abcd]
-    bytes_le = (bytes_le & 0x00ff_00ff_00ff_00ff).wrapping_mul((100 << 16) + 1) >> 16;
-    // [efgh|abcd] -> [abcdefgh]
-    bytes_le = (bytes_le & 0x0000_ffff_0000_ffff).wrapping_mul((10000 << 32) + 1) >> 32;
-
-    Ok(bytes_le)
+        bytes_le
+    })
+    .ok_or(IntErrorKind::InvalidDigit)
 }
 
 macro_rules! parse_digits {

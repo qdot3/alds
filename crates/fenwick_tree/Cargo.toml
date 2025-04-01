@@ -16,4 +16,4 @@ publish.workspace = true
 math-traits = { path = "../math-traits" }
 
 [dev-dependencies]
-proconio = { workspace = true }
+fast_io = { path = "../fast_io" }

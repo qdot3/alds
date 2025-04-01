@@ -1,24 +1,28 @@
 // verification-helper: PROBLEM https://judge.yosupo.jp/problem/point_add_range_sum
 
+use fast_io::prelude::fast_stdin_locked;
 use fenwick_tree::FenwickTree;
 use math_traits::{marker::Commutative, Group};
-use proconio::{fastout, input};
 
-#[fastout]
 fn main() {
-    input! { n: usize, q: usize, a: [i64; n], }
+    let mut fast_in = fast_stdin_locked();
+    let n = fast_in.parse_unwrap::<usize>();
+    let q = fast_in.parse_unwrap::<usize>();
 
-    let mut ft = FenwickTree::from_iter(a.into_iter().map(|a| A(a)));
+    let mut ft =
+        FenwickTree::from_iter(std::iter::repeat_with(|| A(fast_in.parse_unwrap::<i64>())).take(n));
     for _ in 0..q {
-        input! { flag: u8, }
+        let flag = fast_in.parse_unwrap::<u8>();
         match flag {
             0 => {
-                input! { p: usize, x: i64, }
+                let p = fast_in.parse_unwrap::<usize>();
+                let x = fast_in.parse_unwrap::<i64>();
 
                 ft.point_update(p, A(x))
             }
             1 => {
-                input! { l: usize, r: usize, }
+                let l = fast_in.parse_unwrap::<usize>();
+                let r = fast_in.parse_unwrap::<usize>();
 
                 println!("{}", ft.range_query(l..r).0)
             }
