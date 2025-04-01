@@ -121,72 +121,25 @@ macro_rules! writable_int_impl {
                 let buf_ptr = buf.as_mut_ptr() as *mut u8;
                 let lut_ptr = DEC_DIGITS_LUT.as_ptr();
 
-                // SAFETY: Since `rem` are always less than or equal to `9996`, we can copy
-                // from `lut_ptr[rem..rem + 4]`. To show that it's OK to copy into `buf_ptr`,
-                // notice that at the beginning `curr == SIZE > log10(n = MAX)`, and at each step
+                // SAFETY: Since `rem` are always less than or equal to `9996`, we can copy from
+                // `lut_ptr[rem..rem + 4]`. To show that it's OK to copy into `buf_ptr`,
+                // notice that at the beginning `curr == SIZE > log(n = MAX)`, and at each step
                 // this is kept the same as `n` is divided. Since `n` is always non-negative,
                 // this means that `curr > 0` so `buf_ptr[curr..curr + 4]` is safe to access.
                 unsafe {
-                    // if `num` >= 10^32 for 128-bit integers
+                    // need at least 16 bits for the 4-characters-at-a-time to work.
                     #[allow(overflowing_literals)]
                     #[allow(unused_comparisons)]
                     // This block will be removed for smaller types at compile time and in the worst
-                    // case, it will prevent to have the literal to overflow for smaller types.
-                    if core::mem::size_of::<$unsigned>() >= core::mem::size_of::<u128>() {
-                        if num >= 1_0000_0000_0000_0000 {
-                            // eagerly decode 4 characters at a time
-                            for _ in 0..4 {
-                                let rem = (num % 1_0000) as usize;
-                                num /= 1_0000;
-
-                                // We are allowed to copy to `buf_ptr[curr..curr + 4]` here since otherwise `curr < 0`.
-                                curr -= 4;
-                                ptr::copy_nonoverlapping(lut_ptr.add(rem as usize * 4), buf_ptr.add(curr), 4);
-                            }
-                        }
-                    }
-
-                    // u32::MAX < 10^16 < i64::MAX
-                    #[allow(overflowing_literals)]
-                    #[allow(unused_comparisons)]
-                    if core::mem::size_of::<$unsigned>() >= core::mem::size_of::<u64>() {
-                        if num >= 1_0000_0000_0000_0000 {
-                            for _ in 0..4 {
-                                let rem = (num % 10000) as usize;
-                                num /= 1_0000;
-
-                                // We are allowed to copy to `buf_ptr[curr..curr + 4]` here since otherwise `curr < 0`.
-                                curr -= 4;
-                                ptr::copy_nonoverlapping(lut_ptr.add(rem as usize * 4), buf_ptr.add(curr), 4);
-                            }
-                        }
-                    }
-
-                    // u16::MAX < 10^8 < i32::MAX
-                    #[allow(overflowing_literals)]
-                    #[allow(unused_comparisons)]
-                    if core::mem::size_of::<$unsigned>() >= core::mem::size_of::<u32>() {
-                        if num >= 1_0000_0000 {
-                            for _ in 0..2 {
-                                let rem = (num % 10000) as usize;
-                                num /= 1_0000;
-
-                                // We are allowed to copy to `buf_ptr[curr..curr + 4]` here since otherwise `curr < 0`.
-                                curr -= 4;
-                                ptr::copy_nonoverlapping(lut_ptr.add(rem as usize * 4), buf_ptr.add(curr), 4);
-                            }
-                        }
-                    }
-
-                    // u8::MAX < 10^4 < i16::MAX
-                    #[allow(overflowing_literals)]
-                    #[allow(unused_comparisons)]
-                    if core::mem::size_of::<$unsigned>() >= core::mem::size_of::<u16>() {
-                        if num >= 1_0000 {
+                    // case, it will prevent to have the `10000` literal to overflow for `i8` and `u8`.
+                    if core::mem::size_of::<$unsigned>() >= 2 {
+                        // eagerly decode 4 characters at a time
+                        while num >= 1_0000 {
                             let rem = (num % 10000) as usize;
                             num /= 1_0000;
 
-                            // We are allowed to copy to `buf_ptr[curr..curr + 3]` here since otherwise `curr < 0`.
+                            // We are allowed to copy to `buf_ptr[curr..curr + 4]` here since
+                            // otherwise `curr < 0`.
                             curr -= 4;
                             ptr::copy_nonoverlapping(lut_ptr.add(rem as usize * 4), buf_ptr.add(curr), 4);
                         }
