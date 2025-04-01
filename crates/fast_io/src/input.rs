@@ -15,6 +15,7 @@ pub struct FastInput<const N: usize, R: BufRead> {
 
 impl<const N: usize, R: BufRead> FastInput<N, R> {
     /// Cheats a new buffered handler of the given reader.
+    #[inline]
     pub fn new(mut reader: R) -> Self {
         assert!(N != 0);
 
@@ -42,6 +43,7 @@ impl<const N: usize, R: BufRead> FastInput<N, R> {
     ///
     /// 1. no more data is found, or
     /// 2. parsing fails.
+    #[inline]
     pub fn parse_unwrap<T>(&mut self) -> T
     where
         T: FromBytes,
@@ -52,8 +54,7 @@ impl<const N: usize, R: BufRead> FastInput<N, R> {
     }
 
     pub fn next_token(&mut self) -> io::Result<Token> {
-        let mut buf = Vec::new();
-        // The loop usually completes in a single iteration
+        let mut bytes = Vec::new();
         if let Some(skip) = self.buf[self.pos..self.filled]
             .iter()
             .position(|b| b.is_ascii_graphic())
@@ -66,93 +67,66 @@ impl<const N: usize, R: BufRead> FastInput<N, R> {
                 self.pos += n;
                 return Ok(Token::Slice(&self.buf[self.pos - n..self.pos]));
             } else {
-                buf.extend_from_slice(&self.buf[self.pos..self.filled])
+                bytes.extend_from_slice(&self.buf[self.pos..self.filled])
             }
         }
-        self.pos = self.filled;
-
-        // Otherwise, the loop usually completes within two iterations.
-        if self.cold_next_token_2(&mut buf)? {
-            return Ok(Token::Bytes(buf));
-        } else {
-            return self.cold_next_token_3_or_more(buf);
-        }
-    }
-
-    #[cold]
-    #[inline(never)]
-    fn cold_next_token_2(&mut self, buf: &mut Vec<u8>) -> io::Result<bool> {
-        debug_assert_eq!(self.pos, self.filled);
-
-        self.filled = self.reader.read(&mut self.buf)?;
-        self.pos = 0;
-
-        // EOF or empty
-        if self.filled == 0 {
-            return Err(io::Error::new(ErrorKind::Other, "no more data"));
-        }
-
-        if let Some(skip) = self.buf[..self.filled]
-            .iter()
-            .position(|b| b.is_ascii_graphic())
         {
-            self.pos += skip;
-            if !buf.is_empty() && skip > 0 {
-                return Ok(true);
-            }
-
-            if let Some(n) = self.buf[self.pos..self.filled]
-                .iter()
-                .position(|b| !b.is_ascii_graphic())
-            {
-                self.pos += n;
-                buf.extend_from_slice(&self.buf[self.pos - n..self.pos]);
-                return Ok(true);
-            } else {
-                buf.extend_from_slice(&self.buf[self.pos..])
-            }
-        }
-        self.pos = self.filled;
-
-        Ok(false)
-    }
-
-    #[cold]
-    #[inline(never)]
-    fn cold_next_token_3_or_more(&mut self, mut buf: Vec<u8>) -> io::Result<Token> {
-        debug_assert_eq!(self.pos, self.filled);
-
-        loop {
             self.filled = self.reader.read(&mut self.buf)?;
             self.pos = 0;
-
-            // EOF or empty
             if self.filled == 0 {
-                return Err(io::Error::new(ErrorKind::Other, "no more data"));
+                return Err(io::Error::new(ErrorKind::Other, "empty"));
             }
-
             if let Some(skip) = self.buf[..self.filled]
                 .iter()
                 .position(|b| b.is_ascii_graphic())
             {
                 self.pos += skip;
-                if !buf.is_empty() && skip > 0 {
-                    return Ok(Token::Bytes(buf));
+                if !bytes.is_empty() && skip > 0 {
+                    return Ok(Token::Bytes(bytes));
                 }
-
                 if let Some(n) = self.buf[self.pos..self.filled]
                     .iter()
                     .position(|b| !b.is_ascii_graphic())
                 {
                     self.pos += n;
-                    return if buf.is_empty() {
+                    return if bytes.is_empty() {
                         Ok(Token::Slice(&self.buf[self.pos - n..self.pos]))
                     } else {
-                        buf.extend_from_slice(&self.buf[0..self.pos]);
-                        Ok(Token::Bytes(buf))
+                        bytes.extend_from_slice(&self.buf[0..self.pos]);
+                        Ok(Token::Bytes(bytes))
                     };
                 } else {
-                    buf.extend_from_slice(&self.buf[self.pos..])
+                    bytes.extend_from_slice(&self.buf[self.pos..])
+                }
+            }
+        }
+        loop {
+            self.filled = self.reader.read(&mut self.buf)?;
+            self.pos = 0;
+            if self.filled == 0 {
+                return Err(io::Error::new(ErrorKind::Other, "empty"));
+            }
+            if let Some(skip) = self.buf[..self.filled]
+                .iter()
+                .position(|b| b.is_ascii_graphic())
+            {
+                self.pos += skip;
+                if !bytes.is_empty() && skip > 0 {
+                    return Ok(Token::Bytes(bytes));
+                }
+                if let Some(n) = self.buf[self.pos..self.filled]
+                    .iter()
+                    .position(|b| !b.is_ascii_graphic())
+                {
+                    self.pos += n;
+                    return if bytes.is_empty() {
+                        Ok(Token::Slice(&self.buf[self.pos - n..self.pos]))
+                    } else {
+                        bytes.extend_from_slice(&self.buf[0..self.pos]);
+                        Ok(Token::Bytes(bytes))
+                    };
+                } else {
+                    bytes.extend_from_slice(&self.buf[self.pos..])
                 }
             }
         }
