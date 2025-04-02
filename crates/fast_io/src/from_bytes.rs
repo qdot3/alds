@@ -115,7 +115,7 @@ macro_rules! parse_digits {
     }};
 }
 
-pub enum Sign {
+enum Sign {
     Plus,
     Minus,
 }
@@ -143,21 +143,44 @@ macro_rules! from_bytes_int_impl {
                     _ => (Sign::Plus, bytes),
                 };
 
+                enum CheckOverflow {
+                    Never,
+                    Always,
+                    Unknown,
+                }
+
+               #[inline]
+                fn check_overflow(digits: &[u8]) -> CheckOverflow {
+                    const MAX_DIGIT_NUM: usize = <$int_ty>::MAX.ilog10() as usize + 1;
+                    const MAX_TEN_POW: $int_ty = (10 as $int_ty).pow(MAX_DIGIT_NUM as u32 - 1);
+                    const MAX_PREFIX_BYTE: u8 = (<$int_ty>::MAX / MAX_TEN_POW) as u8 + b'0';
+
+                    match digits.len().cmp(&MAX_DIGIT_NUM) {
+                        std::cmp::Ordering::Less => CheckOverflow::Never,
+                        std::cmp::Ordering::Equal => match digits[0].cmp(&MAX_PREFIX_BYTE) {
+                            std::cmp::Ordering::Less => CheckOverflow::Never,
+                            std::cmp::Ordering::Equal => CheckOverflow::Unknown,
+                            std::cmp::Ordering::Greater => CheckOverflow::Always,
+                        },
+                        std::cmp::Ordering::Greater => CheckOverflow::Always,
+                    }
+                }
+
                 // ignore prefix zeros
                 let i = bytes.iter().take_while(|&&b| b == b'0').count();
-                const MAX_DIGIT_NUM: usize = <$int_ty>::MAX.ilog10() as usize + 1;
-                const MAX_TEN_POW: $int_ty = (10 as $int_ty).pow(MAX_DIGIT_NUM as u32 - 1);
-                const MAX_PREFIX_BYTE: u8 = (<$int_ty>::MAX / MAX_TEN_POW) as u8 + b'0';
-                match (bytes.len() - i).cmp(&MAX_DIGIT_NUM) {
-                    std::cmp::Ordering::Less => match sign {
-                        Sign::Plus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_add)),
-                        Sign::Minus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_sub)),
+                match check_overflow(&bytes[i..]) {
+                    CheckOverflow::Never => {
+                        match sign {
+                            Sign::Plus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_add)),
+                            Sign::Minus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_sub)),
+                        }
                     },
-                    std::cmp::Ordering::Equal if bytes[i] <= MAX_PREFIX_BYTE => {
+                    CheckOverflow::Unknown => {
                         match sign {
                             Sign::Plus => {
                                 let result = parse_digits!(bytes[i..]; as $int_ty; wrapping_add);
 
+                                const MAX_TEN_POW: $int_ty = (10 as $int_ty).pow(<$int_ty>::MAX.ilog10());
                                 if result / MAX_TEN_POW == 0 {
                                     Err(IntErrorKind::PosOverflow)
                                 } else {
@@ -174,8 +197,8 @@ macro_rules! from_bytes_int_impl {
                                 }
                             },
                         }
-                    }
-                    _ => {
+                    },
+                    CheckOverflow::Always => {
                         match sign {
                             Sign::Plus => Err(IntErrorKind::PosOverflow),
                             Sign::Minus => Err(IntErrorKind::NegOverflow),

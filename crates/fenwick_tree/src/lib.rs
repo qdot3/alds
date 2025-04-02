@@ -9,6 +9,7 @@ pub struct FenwickTree<T: Group + Commutative> {
 
 impl<T: Group + Commutative> FenwickTree<T> {
     /// Creates a new instance initialized with the identity element defined in the [Group] trait.
+    #[inline]
     pub fn new(n: usize) -> Self {
         Self {
             data: Vec::from_iter(std::iter::repeat_with(T::identity).take(n + 1)),

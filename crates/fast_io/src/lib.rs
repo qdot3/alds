@@ -21,7 +21,7 @@ pub mod prelude {
 
     /// Constructs a new handle to the standard input of the current process.
     #[inline]
-    pub fn fast_stdin_locked() -> FastInput<{ DEFAULT_BUF_SIZE }, StdinLock<'static>> {
+    pub fn fast_stdin_locked() -> FastInput<StdinLock<'static>> {
         FastInput::new(stdin().lock())
     }
 
@@ -29,11 +29,5 @@ pub mod prelude {
     #[inline]
     pub fn fast_stdout_locked() -> FastOutput<StdoutLock<'static>> {
         FastOutput::new(stdout().lock())
-    }
-}
-
-pub mod macros {
-    macro_rules! f_input {
-        () => {};
     }
 }

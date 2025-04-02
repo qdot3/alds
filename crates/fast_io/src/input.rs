@@ -1,149 +1,130 @@
 use std::{
     fmt::Debug,
-    io::{self, BufRead, ErrorKind},
+    io::{self, BufRead, Error, ErrorKind},
+    marker::PhantomData,
 };
 
 use super::FromBytes;
 
 /// A wrapper of [BufReader](std::io::BufReader).
-pub struct FastInput<const N: usize, R: BufRead> {
+pub struct FastInput<R: BufRead> {
     reader: R,
-    buf: [u8; N],
-    pos: usize,
-    filled: usize,
+    consumed: usize,
 }
 
-impl<const N: usize, R: BufRead> FastInput<N, R> {
+impl<R: BufRead> FastInput<R> {
     /// Cheats a new buffered handler of the given reader.
     #[inline]
-    pub fn new(mut reader: R) -> Self {
-        assert!(N != 0);
-
-        let mut buf = [0; N];
-        if let Ok(n) = reader.read(&mut buf) {
-            FastInput {
-                reader,
-                buf,
-                pos: 0,
-                filled: n,
-            }
-        } else {
-            FastInput {
-                reader,
-                buf,
-                pos: 0,
-                filled: 0,
-            }
+    pub fn new(reader: R) -> Self {
+        Self {
+            reader,
+            consumed: 0,
         }
     }
 
-    /// # Panics
-    ///
-    /// Panics if
-    ///
-    /// 1. no more data is found, or
-    /// 2. parsing fails.
-    #[inline]
-    pub fn parse_unwrap<T>(&mut self) -> T
+    // TODO: use thiserror
+    pub fn next_token<T: FromBytes>(&mut self) -> io::Result<T>
     where
-        T: FromBytes,
-        T::Err: Debug,
+        <T as FromBytes>::Err: Debug,
     {
-        let token = self.next_token().unwrap();
-        T::from_bytes(token.as_slice()).unwrap()
-    }
+        // self.consumed will be 0.
+        self.reader.consume(std::mem::take(&mut self.consumed));
 
-    pub fn next_token(&mut self) -> io::Result<Token> {
-        let mut bytes = Vec::new();
-        if let Some(skip) = self.buf[self.pos..self.filled]
-            .iter()
-            .position(|b| b.is_ascii_graphic())
+        let mut buf = Vec::new();
+        // the process usually completes in two iteration
         {
-            self.pos += skip;
-            if let Some(n) = self.buf[self.pos..self.filled]
-                .iter()
-                .position(|b| !b.is_ascii_graphic())
-            {
-                self.pos += n;
-                return Ok(Token::Slice(&self.buf[self.pos - n..self.pos]));
-            } else {
-                bytes.extend_from_slice(&self.buf[self.pos..self.filled])
+            let src = self.reader.fill_buf()?;
+            if src.is_empty() {
+                return Err(Error::new(ErrorKind::Other, "no more data"));
             }
+            if let Some(skip) = src.iter().position(|b| b.is_ascii_graphic()) {
+                if let Some(n) = src[skip..].iter().position(|b| !b.is_ascii_graphic()) {
+                    self.consumed = skip + n;
+                    // TODO: parsing error
+                    return Ok(T::from_bytes(&src[skip..skip + n]).unwrap());
+                } else {
+                    buf.extend_from_slice(&src[skip..]);
+                }
+            }
+            let len = src.len();
+            self.reader.consume(len);
         }
         {
-            self.filled = self.reader.read(&mut self.buf)?;
-            self.pos = 0;
-            if self.filled == 0 {
-                return Err(io::Error::new(ErrorKind::Other, "empty"));
+            let src = self.reader.fill_buf()?;
+            if src.is_empty() {
+                return Err(Error::new(ErrorKind::Other, "no more data"));
             }
-            if let Some(skip) = self.buf[..self.filled]
-                .iter()
-                .position(|b| b.is_ascii_graphic())
-            {
-                self.pos += skip;
-                if !bytes.is_empty() && skip > 0 {
-                    return Ok(Token::Bytes(bytes));
+            if let Some(skip) = src.iter().position(|b| b.is_ascii_graphic()) {
+                if !buf.is_empty() && skip != 0 {
+                    // TODO: parsing error
+                    self.reader.consume(skip);
+                    return Ok(T::from_bytes(&buf).unwrap());
                 }
-                if let Some(n) = self.buf[self.pos..self.filled]
-                    .iter()
-                    .position(|b| !b.is_ascii_graphic())
-                {
-                    self.pos += n;
-                    return if bytes.is_empty() {
-                        Ok(Token::Slice(&self.buf[self.pos - n..self.pos]))
+                if let Some(n) = src[skip..].iter().position(|b| !b.is_ascii_graphic()) {
+                    self.consumed = skip + n;
+                    // TODO: parsing error
+                    if !buf.is_empty() {
+                        debug_assert_eq!(skip, 0);
+
+                        buf.extend_from_slice(&src[..n]);
+                        return Ok(T::from_bytes(&buf).unwrap());
                     } else {
-                        bytes.extend_from_slice(&self.buf[0..self.pos]);
-                        Ok(Token::Bytes(bytes))
-                    };
+                        return Ok(T::from_bytes(&src[skip..skip + n]).unwrap());
+                    }
                 } else {
-                    bytes.extend_from_slice(&self.buf[self.pos..])
+                    buf.extend_from_slice(&src[skip..]);
                 }
             }
+            let len = src.len();
+            self.reader.consume(len);
         }
-        loop {
-            self.filled = self.reader.read(&mut self.buf)?;
-            self.pos = 0;
-            if self.filled == 0 {
-                return Err(io::Error::new(ErrorKind::Other, "empty"));
+
+        const ITERATION_LIMIT: usize = 1_000_000;
+        for _ in 0..ITERATION_LIMIT {
+            let src = self.reader.fill_buf()?;
+            if src.is_empty() {
+                return Err(Error::new(ErrorKind::Other, "no more data"));
             }
-            if let Some(skip) = self.buf[..self.filled]
-                .iter()
-                .position(|b| b.is_ascii_graphic())
-            {
-                self.pos += skip;
-                if !bytes.is_empty() && skip > 0 {
-                    return Ok(Token::Bytes(bytes));
+            if let Some(skip) = src.iter().position(|b| b.is_ascii_graphic()) {
+                if !buf.is_empty() && skip != 0 {
+                    // TODO: parsing error
+                    self.reader.consume(skip);
+                    return Ok(T::from_bytes(&buf).unwrap());
                 }
-                if let Some(n) = self.buf[self.pos..self.filled]
-                    .iter()
-                    .position(|b| !b.is_ascii_graphic())
-                {
-                    self.pos += n;
-                    return if bytes.is_empty() {
-                        Ok(Token::Slice(&self.buf[self.pos - n..self.pos]))
+                if let Some(n) = src[skip..].iter().position(|b| !b.is_ascii_graphic()) {
+                    self.consumed = skip + n;
+                    // TODO: parsing error
+                    if !buf.is_empty() {
+                        debug_assert_eq!(skip, 0);
+
+                        buf.extend_from_slice(&src[..n]);
+                        return Ok(T::from_bytes(&buf).unwrap());
                     } else {
-                        bytes.extend_from_slice(&self.buf[0..self.pos]);
-                        Ok(Token::Bytes(bytes))
-                    };
+                        return Ok(T::from_bytes(&src[skip..skip + n]).unwrap());
+                    }
                 } else {
-                    bytes.extend_from_slice(&self.buf[self.pos..])
+                    buf.extend_from_slice(&src[skip..]);
                 }
             }
+            let len = src.len();
+            self.reader.consume(len);
         }
+
+        panic!("reached iteration limit: {}", ITERATION_LIMIT);
     }
 }
 
-pub enum Token<'a> {
-    Slice(&'a [u8]),
+pub enum Token<'a, R: BufRead> {
+    Slice(&'a [u8], PhantomData<&'a R>),
     Bytes(Vec<u8>),
 }
 
-impl<'a> Token<'a> {
-    #[inline]
-    pub fn as_slice(&self) -> &[u8] {
-        match self {
-            Token::Slice(buf) => buf,
-            Token::Bytes(buf) => buf,
-        }
-    }
-}
+// impl<'a> Token<'a> {
+//     #[inline]
+//     pub fn as_slice(&self) -> &[u8] {
+//         match self {
+//             Token::Slice(buf) => buf,
+//             Token::Bytes(buf) => buf,
+//         }
+//     }
+// }

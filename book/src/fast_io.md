@@ -4,7 +4,7 @@
 
 このページの内容は[Library Checker](https://judge.yosupo.jp/)の問題[Many A + B](https://judge.yosupo.jp/problem/many_aplusb)および[Many A + B (128 bit)](https://judge.yosupo.jp/problem/many_aplusb_128bit)で計測しています。
 
-[^note-buffer-size]: `read_to_end()`などで一度にすべての入力を読み込むこともできますが、不要なデータを保持することは速度の低下につながります。これは、Fastestランキングからも見て取れます。適切に設定することで25%の高速化を実現しました。
+[^note-buffer-size]: `read_to_end()`などで一度にすべての入力を読み込むこともできますが、不要なデータを保持することは速度の低下につながります。これは、Fastestランキングからも見て取れます。
 
 ## 標準入力
 
@@ -60,12 +60,7 @@ pub const DEFAULT_BUF_SIZE: usize = if cfg!(target_os = "espidf") { 512 } else {
 - `fill_buf()`は未使用のデータを返します。バッファーをすべて消費していた場合は可能な限り補充します。
 - `consume()`は使用したデータを`BufReader`に伝えます[^note-consume]。
 
-`fill_buf()`でバッファーにアクセスできるのですが、`fill_buf()`をたくさん呼び出すと遅いです。
-**理由は分かりません。**
-`DEFAULT_BUF_SIZE`の整数倍のバッファーを別に確保しておき、`fill_buf()`で得たデータを`extend_from_slice()`ですべてコピーすることで20 %程度高速化できました[^note-fill_buf]。
-
 [^note-consume]: 正しく伝えないとバグります。
-[^note-fill_buf]: `extend_from_slice()`は内部で`memcpy`を呼び出します。不正確な表現ですが、「`fill_buf()`を1000回呼ぶコストが高速なコピー1回分よりも大きい」のかもしれません。いずれにしても、メモリアクセスの問題だと思います。
 
 ## 標準出力
 
