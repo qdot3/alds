@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "alds",
+        "Algorithmica",
         "binop",
         "cbrt",
         "cipolla",
@@ -9,6 +10,7 @@
         "espidf",
         "LSSB",
         "monoid",
+        "MSSB",
         "nonoverlapping",
         "semigroup",
         "thiserror",

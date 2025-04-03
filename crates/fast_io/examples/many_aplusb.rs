@@ -7,7 +7,7 @@ fn main() {
     let mut fast_in = FastInput::new(stdin().lock());
     let n: usize = fast_in.next_token().unwrap();
 
-    let mut fast_out = FastOutput::with_capacity(1 << 17, stdout().lock());
+    let mut fast_out = FastOutput::new(stdout().lock());
     for _ in 0..n {
         let x: u64 = fast_in.next_token().unwrap();
         let y: u64 = fast_in.next_token().unwrap();

@@ -115,11 +115,6 @@ macro_rules! parse_digits {
     }};
 }
 
-enum Sign {
-    Plus,
-    Minus,
-}
-
 pub trait FromBytes: Sized {
     type Err;
 
@@ -135,6 +130,13 @@ macro_rules! from_bytes_int_impl {
                 if bytes.is_empty() {
                     return Err(IntErrorKind::Empty);
                 }
+
+                enum Sign {
+                    Plus,
+                    Minus,
+                }
+
+                // strip sign
                 let (sign, bytes) = match bytes {
                     [b'+' | b'-'] => return Err(IntErrorKind::InvalidDigit),
                     [b'+', rest @ ..] => (Sign::Plus, rest),
@@ -167,7 +169,7 @@ macro_rules! from_bytes_int_impl {
                 }
 
                 // ignore prefix zeros
-                let i = bytes.iter().take_while(|&&b| b == b'0').count();
+                let i = bytes.iter().position(|b| *b != b'0').unwrap_or(0);
                 match check_overflow(&bytes[i..]) {
                     CheckOverflow::Never => {
                         match sign {
@@ -175,6 +177,7 @@ macro_rules! from_bytes_int_impl {
                             Sign::Minus => Ok(parse_digits!(bytes[i..]; as $int_ty; wrapping_sub)),
                         }
                     },
+                    // n * 10^k < MAX, |result| < (n + 1) * 10^k
                     CheckOverflow::Unknown => {
                         match sign {
                             Sign::Plus => {

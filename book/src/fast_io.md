@@ -4,7 +4,7 @@
 
 このページの内容は[Library Checker](https://judge.yosupo.jp/)の問題[Many A + B](https://judge.yosupo.jp/problem/many_aplusb)および[Many A + B (128 bit)](https://judge.yosupo.jp/problem/many_aplusb_128bit)で計測しています。
 
-[^note-buffer-size]: `read_to_end()`などで一度にすべての入力を読み込むこともできますが、不要なデータを保持することは速度の低下につながります。これは、Fastestランキングからも見て取れます。
+[^note-buffer-size]: `read_to_end()`などで一度にすべての入力を読み込むこともできますが、不要なデータを保持することは速度の低下につながることがあります。むしろ速くなることもあります。
 
 ## 標準入力
 
@@ -34,8 +34,8 @@ pub fn stdin() -> Stdin {
 
 競技プログラミングでは、\\( 10^5 \\)個程度の小さなデータを読み込むことがよくあります。
 これらを取得するために毎回readシステムコールを呼ぶよりも、ある程度まとめて読み込んだ方が速いです。
-これを実装したものが`BufReader`です。
-`StdinLock`は`BufReader`のラッパーです。
+`BufReader`はこの仕組みを提供しています。
+`StdinLock`は`BufReader`を持つことが分かります[^note-stdin-buf-read]。
 なお、`MutexGuard`は`Mutex`のロックを保持していることを表現しており、`drop`と同時にアンロックします。
 
 ```rust
@@ -60,6 +60,7 @@ pub const DEFAULT_BUF_SIZE: usize = if cfg!(target_os = "espidf") { 512 } else {
 - `fill_buf()`は未使用のデータを返します。バッファーをすべて消費していた場合は可能な限り補充します。
 - `consume()`は使用したデータを`BufReader`に伝えます[^note-consume]。
 
+[^note-stdin-buf-read]: `Stdin`も`BufReader`を内部に持ちますが、`BufRead`は実装されていません。`<_ as BufRead>.fill_buf()`は`&[u8]`を返しますが、他のスレッドから標準入力を読み込む際にバッファーが解放されると未定義になるためです。ロックをとることで、安全に参照できます。
 [^note-consume]: 正しく伝えないとバグります。
 
 ## 標準出力

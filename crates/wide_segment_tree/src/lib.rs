@@ -11,20 +11,20 @@ pub struct WideSegmentTree<T: Monoid> {
 
 impl<T: Monoid> WideSegmentTree<T> {
     const BITS: u32 = {
+        assert!(
+            std::mem::size_of::<T>().is_power_of_two(),
+            "data does NOT fit cache line"
+        );
         // cache line size is assumed to be 64 bytes.
-        let bits = 64 / std::mem::size_of::<T>();
-        if bits.is_power_of_two() {
-            bits.trailing_zeros()
-        } else {
-            bits.ilog2()
-        }
+        let n = 64 / std::mem::size_of::<T>();
+        n.ilog2()
     };
     /// Number of elements in single cash line.
     const N: usize = 1 << Self::BITS;
 
     #[inline]
     const fn round_up(i: usize) -> usize {
-        Self::round_down(i) + Self::N
+        Self::round_down(i + Self::N - 1)
     }
 
     #[inline]

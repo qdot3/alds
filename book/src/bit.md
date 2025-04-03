@@ -1,46 +1,81 @@
 # ビット演算
 
-## 最上位ビット（Most Significant Bit, MSB）
+符号なしの整数型を前提とします。
 
-### 最上位ビットの位置
+## Least Significant <span style="color: red;">Set</span> Bit (LS<span style="color: red;">S</span>B）
 
-高速な（簡潔な）方法はないかも
+LSSBは立っているビットの内最小のものを指します。
+最下位ビット（LSB）ではありません。
+
+### LSSBの位置
+
+```rust, ignore
+i.trailing_zeros() // == <_>::BITS if i == 0
+```
+
+### LSSBそのもの
+
+```rust, ignore
+i & i.wrapping_neg() // == 0 if i == 0
+```
+
+原理：
+
+```rust, ignore
+0b1010_0100.wrapping_neg() == 0b0101_1011 + 1 == 0b0101_1100 // non-zero case
+```
+
+### LSSBを減じる
+
+```rust, ignore
+i &= i.wrapping_sub(1) // == 0 if i == 0
+```
+
+原理：
+
+```rust, ignore
+0b1010_1000.wrapping_sub(1) == 0b1010_0111 // non-zero case
+```
+
+## Most Significant <span style="color: red;">Set</span> Bit (MS<span style="color: red;">S</span>B）
+
+MSSBは立っているビットの内最大のものを指します。
+最上位ビット（MSB）ではありません。
+
+### MSSBの位置
 
 ```rust, ignore
 i.ilog2() // panics if i == 0
 ```
 
 ```rust, ignore
-usize::BITS - i.leading_zeros() // == 0 if i == 0_usize
+<_>::BITS - i.leading_zeros() // == 0 if i == 0
 ```
 
-TODO: O(1)の複雑な（＝定数倍が重い）方法があるらしい
+### MSSBそのもの
 
-## 最下位の1ビット（Least Significant <span style="color: red;">Set</span> Bit, LS<span style="color: red;">S</span>B）
+`ilog2()`や`trailing_zeros()`はハードウェア実装を呼び出せれば\\( O (1)\\)です。
+ソフトウェア実装の場合は、二分探索で\\( \Theta(\mathrm{BITS})\\)で求めることができます。
 
-### 最下位の1ビットの位置
+直接求める方法があればよいのですが。うーん。
 
 ```rust, ignore
-i.trailing_zeros() // == usize::BITS if i == 0_usize
+1 << i.ilog2() // panics if i == 0
 ```
 
-### 最下位の1ビットそのもの
-
 ```rust, ignore
-i & i.wrapping_neg() // == 0 if i == 0
-```
-
-### 最下位の1ビットを減じる
-
-```rust, ignore
-i &= i.wrapping_sub(1) // == 0 if i == 0
+1.wrapping_shr(i.leading_zeros() + 1) // meaningless if i == 0
 ```
 
 ## 組み合わせ
 
-### 組み合わせの全列挙
+組み合わせを高速に求めることができます。
+計算量は愚直な実装の半分以下です。
+
+### 組み合わせの列挙
 
 ```rust, ignore
+// {0}, {1}, {0, 1}, .., {n}, .., {0, .., n}の順に走査する
 for mut member in 0..1 << n {
     while member > 0 {
         let i = member.trailing_zeros() as usize;
@@ -54,8 +89,30 @@ for mut member in 0..1 << n {
 計算量解析：
 \\[\sum_{k=0}^n k {n \choose k} = n \sum_{k=1}^n {n-1\choose k-1} = n 2^{n-1}\\]
 
+### 組み合わせの列挙2
+
+とびとびのインデックスで指定される要素の組み合わせをすべて求めることもできます。
+要素数を\\( k \\)とすると、計算量は\\( \Theta(k2^{k-1}) \\)です。
+
+```rust, ignore
+let set = 0b0101_1000; // 3, 4, 6番目の要素の組み合わせを考える（k = 3）
+let mut memo = set;
+while memo > 0 {
+    // {3, 4, 6}, {4, 6}, {3, 6}, {6}, {3, 4}, {4}, {3}の順に走査する
+    // {}は個別に扱う必要がある
+    let mut sub_set = set & memo;
+    // `sub_set`のLSSBを削除し、それよりインデックスが小さな要素を追加する
+    memo = set & sub_set.wrapping_sub(1);
+    while sub_set > 0 {
+        let i = sub_set.trailing_zeros();
+        sub_set ^= 1 << i;
+
+        todo!("i番目の要素に対して何かする")
+    }
+}
+```
+
 ## 付録
 
-フェニック木において、`trailing_zeros()`を適切なビット演算に置き換えることで実行時間が200 msから120 msになった。GitHub ActionsのLinux環境で1回ずつしか計測していないので、参考程度にとどめておくこと。
-
-`v1.85.1`時点では、`ilog2()`や`leading_zeros()`の類は内部で`intrinsics::ctlz`や`intrinsics::cttz`を呼び出している。これはハードウェア命令があればそれを用いるが、なければ二分探索などのソフトウェア実装を用いることを意味する。とくに後者の場合、\\( \Theta(\log\mathrm{BITS})\\)のコストがかかるため遅くなる。
+フェニック木において、`trailing_zeros()`を適切なビット演算に置き換えることで実行時間が200 msから120 msになりました。
+GitHub ActionsのLinux環境で1回ずつしか計測していませんが、無視できない差です。
