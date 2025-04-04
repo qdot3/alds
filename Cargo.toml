@@ -18,7 +18,7 @@ members = [
     # utility
     "crates/math-traits",
 
-    #
+    # will be separated
     "crates/mod_int",
     "crates/seg_lib",
     "crates/sparse_table",

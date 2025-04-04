@@ -9,9 +9,9 @@ pub struct FenwickTree<T: Group + Commutative> {
 }
 
 impl<T: Group + Commutative> FenwickTree<T> {
-    /// Creates a new instance initialized with [Group::identity].
+    /// Creates a new instance initialized with [`Group::identity`].
     ///
-    /// Use [from_iter](FenwickTree::from_iter) if initial values are given.
+    /// Use [`from_iter`](Self::from_iter) if initial values are given.
     ///
     /// # Time complexity
     ///
@@ -23,7 +23,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
         }
     }
 
-    /// Updates `i`-th element using [Group::bin_op].
+    /// Updates `i`-th element using [`Group::bin_op`].
     /// More precisely, performs `a[i] <- elem ∘ a[i]`.
     ///
     /// # Time complexity
@@ -66,7 +66,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
 
     /// Returns the result of combining elements over the given range.
     ///
-    /// If the given range is empty, then returns [Group::identity].
+    /// If the given range is empty, then returns [`Group::identity`].
     ///
     /// # Time complexity
     ///
@@ -125,7 +125,8 @@ impl<T: Group + Commutative> FenwickTree<T> {
         // res_l.inverse().bin_op(&res_r)
     }
 
-    /// Returns minimum `i` which satisfies `pred(prefix_query(i)) = true` if sorted.
+    /// [`slice::partition_point`] on the slice whose `i`-th element is
+    /// [`prefix_query(i)`](Self::prefix_query).
     ///
     /// # Time complexity
     ///
@@ -135,7 +136,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
         let mut res = 0;
         let mut sum = T::identity();
 
-        // start from the largest block.
+        // start from the largest block
         for d in (0..=self.data.len().ilog2()).rev() {
             if let Some(block) = self.data.get(res + (1 << d)) {
                 if pred(sum.bin_op(&block)) {
@@ -161,9 +162,10 @@ impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
         data.extend(iter);
         for i in 1..data.len() {
             // add LSSB
-            let j = i + (i & i.wrapping_neg());
-            if j < data.len() {
-                data[j] = data[j].bin_op(&data[i])
+            let p = i + (i & i.wrapping_neg());
+            // add only to the parent node since it will be added to its parent
+            if p < data.len() {
+                data[p] = data[p].bin_op(&data[i])
             }
         }
 

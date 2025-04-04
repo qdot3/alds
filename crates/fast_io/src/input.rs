@@ -1,7 +1,6 @@
 use std::{
     fmt::Debug,
     io::{self, BufRead, Error, ErrorKind},
-    marker::PhantomData,
 };
 
 use super::FromBytes;
@@ -113,18 +112,3 @@ impl<R: BufRead> FastInput<R> {
         panic!("reached iteration limit: {}", ITERATION_LIMIT);
     }
 }
-
-pub enum Token<'a, R: BufRead> {
-    Slice(&'a [u8], PhantomData<&'a R>),
-    Bytes(Vec<u8>),
-}
-
-// impl<'a> Token<'a> {
-//     #[inline]
-//     pub fn as_slice(&self) -> &[u8] {
-//         match self {
-//             Token::Slice(buf) => buf,
-//             Token::Bytes(buf) => buf,
-//         }
-//     }
-// }
