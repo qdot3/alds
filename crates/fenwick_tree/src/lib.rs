@@ -83,7 +83,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
         assert!(r < self.data.len(), "index out of bounds");
 
         let mut res = T::identity();
-        let mask = (1 << (l ^ r).ilog2()) - 1; // will not panic
+        let mask = !0 >> (l ^ r).leading_zeros(); // will not panic
         while l & mask != 0 {
             res = res.bin_op(&self.data[l]);
             l &= l.wrapping_sub(1)
