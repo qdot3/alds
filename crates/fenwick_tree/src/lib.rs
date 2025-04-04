@@ -148,9 +148,12 @@ impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut data = vec![T::identity()];
         data.extend(iter);
-        for i in 1..data.len() - 1 {
+        for i in 1..data.len() {
             // add LSSB
-            data[i + 1] = data[i + 1].bin_op(&data[i])
+            let j = i + (i + i.wrapping_neg());
+            if j < data.len() {
+                data[j] = data[j].bin_op(&data[i])
+            }
         }
 
         Self { data }
