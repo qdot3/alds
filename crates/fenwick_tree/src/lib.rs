@@ -10,6 +10,12 @@ pub struct FenwickTree<T: Group + Commutative> {
 
 impl<T: Group + Commutative> FenwickTree<T> {
     /// Creates a new instance initialized with [Group::identity].
+    ///
+    /// Use [from_iter](FenwickTree::from_iter) if initial values are given.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(*N*)
     #[must_use]
     pub fn new(n: usize) -> Self {
         Self {
@@ -144,13 +150,18 @@ impl<T: Group + Commutative> FenwickTree<T> {
 }
 
 impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
+    /// Creates a new instance initialized with the given values.
+    ///
+    /// # Time complexity
+    ///
+    /// *O*(*N*)
     #[must_use]
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut data = vec![T::identity()];
         data.extend(iter);
         for i in 1..data.len() {
             // add LSSB
-            let j = i + (i + i.wrapping_neg());
+            let j = i + (i & i.wrapping_neg());
             if j < data.len() {
                 data[j] = data[j].bin_op(&data[i])
             }
