@@ -2,21 +2,22 @@ use std::ops::RangeBounds;
 
 use math_traits::{marker::Commutative, Group};
 
+/// A data structure which efficiently performs point updates and range queries.
 pub struct FenwickTree<T: Group + Commutative> {
     /// one-based indexing internally (`data[0]` is the identity element for simple implementation)
     data: Vec<T>,
 }
 
 impl<T: Group + Commutative> FenwickTree<T> {
-    /// Creates a new instance initialized with the identity element defined in the [Group] trait.
-    #[inline]
+    /// Creates a new instance initialized with [Group::identity].
+    #[must_use]
     pub fn new(n: usize) -> Self {
         Self {
             data: Vec::from_iter(std::iter::repeat_with(T::identity).take(n + 1)),
         }
     }
 
-    /// Updates `i`-th element using the binary operation defined in the [Group] trait.
+    /// Updates `i`-th element using [Group::bin_op].
     /// More precisely, performs `a[i] <- elem ∘ a[i]`.
     ///
     /// # Time complexity
@@ -42,6 +43,7 @@ impl<T: Group + Commutative> FenwickTree<T> {
     /// # Time complexity
     ///
     /// *O*(log *N*)
+    #[must_use]
     pub fn prefix_query(&self, mut i: usize) -> T {
         // avoid boundary check in while loop
         assert!(i < self.data.len(), "index out of bounds");
@@ -58,9 +60,12 @@ impl<T: Group + Commutative> FenwickTree<T> {
 
     /// Returns the result of combining elements over the given range.
     ///
+    /// If the given range is empty, then returns [Group::identity].
+    ///
     /// # Time complexity
     ///
     /// *O*(log *N*)
+    #[must_use]
     pub fn range_query<R>(&self, range: R) -> T
     where
         R: RangeBounds<usize>,
@@ -80,10 +85,12 @@ impl<T: Group + Commutative> FenwickTree<T> {
         if l >= r {
             return T::identity();
         }
+        // avoid boundary check in while loop
         assert!(r < self.data.len(), "index out of bounds");
 
         let mut res = T::identity();
-        let mask = !0 >> (l ^ r).leading_zeros(); // will not panic
+        // skip common prefix (net zero)
+        let mask = !0 >> (l ^ r).leading_zeros();
         while l & mask != 0 {
             res = res.bin_op(&self.data[l]);
             l &= l.wrapping_sub(1)
@@ -112,11 +119,12 @@ impl<T: Group + Commutative> FenwickTree<T> {
         // res_l.inverse().bin_op(&res_r)
     }
 
-    /// Returns minimum `i` which satisfies `pred(prefix_query(i)) = true`.
+    /// Returns minimum `i` which satisfies `pred(prefix_query(i)) = true` if sorted.
     ///
     /// # Time complexity
     ///
     /// *Θ*(log *N*)
+    #[must_use]
     pub fn partition_point(&self, pred: impl Fn(T) -> bool) -> usize {
         let mut res = 0;
         let mut sum = T::identity();
@@ -136,17 +144,13 @@ impl<T: Group + Commutative> FenwickTree<T> {
 }
 
 impl<T: Group + Commutative> FromIterator<T> for FenwickTree<T> {
+    #[must_use]
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut data = vec![T::identity()];
         data.extend(iter);
-        for i in (1..data.len()).rev() {
+        for i in 1..data.len() - 1 {
             // add LSSB
-            let mut j = i + (i & i.wrapping_neg());
-            while j < data.len() {
-                data[j] = data[i].bin_op(&data[j]);
-                // add LSSB
-                j += j & j.wrapping_neg()
-            }
+            data[i + 1] = data[i + 1].bin_op(&data[i])
         }
 
         Self { data }
