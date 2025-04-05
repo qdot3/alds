@@ -15,22 +15,22 @@ impl SieveOfEratosthenes {
             std::iter::repeat(DIVIDABLE_BY_3_OR_5_OR_7)
                 .take(n / (105 * 64) + 1)
                 .flatten()
-                .take((n + 127) / 128),
+                .take(n / 128 + 1),
         )
         .into_boxed_slice();
         // push 1 and remove 3, 5, and 7
         is_not_prime[0] ^= 0b1111;
 
         // step 1. find odd prime numbers < sqrt(n)
-        let sqrt_b = (is_not_prime.len() as f32).sqrt().ceil() as usize;
+        let sqrt_b = (is_not_prime.len() as f64).sqrt().ceil() as usize;
         let mut small_primes = Vec::with_capacity(sqrt_b * 64);
         // start from 11
         for i in 5..sqrt_b * 64 {
             // if (2 * i + 1) is odd prime
-            if is_not_prime[i / 64] >> (i % 64) == 0 {
+            if is_not_prime[i / 64] & (1 << (i % 64)) == 0 {
                 small_primes.push(2 * i + 1);
                 for j in (2 * i * (i + 1)..sqrt_b * 64).step_by(2 * i + 1) {
-                    is_not_prime[j % 64] |= 1 << (j % 64)
+                    is_not_prime[j / 64] |= 1 << (j % 64)
                 }
             }
         }
@@ -69,7 +69,7 @@ impl SieveOfEratosthenes {
             max,
         } = self;
 
-        is_not_prime[max / 2 / 64] |= !0 << ((max + 1) / 2 % 64);
+        is_not_prime[max / 128] |= !0 << ((max + 1) / 2 % 64);
         Primes {
             into_iter: is_not_prime.into_vec().into_iter(),
             is_prime: 0,
