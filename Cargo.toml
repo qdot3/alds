@@ -17,6 +17,7 @@ members = [
 
     # utility
     "crates/math-traits",
+    "crates/bit_set",
 
     # will be separated
     "crates/mod_int",
@@ -28,6 +29,9 @@ members = [
     # range query
     "crates/fenwick_tree",
     "crates/wide_segment_tree",
+
+    # prime
+    "crates/sieve_of_eratosthenes",
 
     "crates/tree/csr",
     "crates/tree/lca",

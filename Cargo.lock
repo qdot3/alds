@@ -3,6 +3,10 @@
 version = 3
 
 [[package]]
+name = "bit_set"
+version = "0.1.0"
+
+[[package]]
 name = "combinatorics"
 version = "0.1.0"
 
@@ -98,6 +102,13 @@ version = "0.1.0"
 dependencies = [
  "mod_int",
  "proconio",
+]
+
+[[package]]
+name = "sieve_of_eratosthenes"
+version = "0.1.0"
+dependencies = [
+ "fast_io",
 ]
 
 [[package]]
